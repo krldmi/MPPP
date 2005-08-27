@@ -115,4 +115,5 @@ if __name__ == "__main__":
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_cloudtop(ch4r,ch9,ch10,outname)
         
-        sec = sec + 3600
+        #sec = sec + 3600
+        sec = sec + DSEC_SLOTS

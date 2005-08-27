@@ -125,11 +125,10 @@ if __name__ == "__main__":
         flist = glob.glob(match_str)
         if len(flist) > 1:
             print "ERROR: More than one matching input file: N = ",len(flist)
-            continue
         elif len(flist) == 0:
             print "ERROR: No matching input file"
-            continue            
-        doCloudType(cov,flist[0],areaid,in_aid)
+        else:
+            doCloudType(cov,flist[0],areaid,in_aid)
 
         prefix="SAFNWC_MSG1_CTTH_%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
         match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
@@ -137,10 +136,10 @@ if __name__ == "__main__":
         flist = glob.glob(match_str)
         if len(flist) > 1:
             print "ERROR: More than one matching input file: N = ",len(flist)
-            continue
         elif len(flist) == 0:
             print "ERROR: No matching input file"
-            continue            
-        doCtth(cov,flist[0],areaid,in_aid)
+        else:
+            doCtth(cov,flist[0],areaid,in_aid)
 
-        sec = sec + 3600
+        #sec = sec + 3600
+        sec = sec + DSEC_SLOTS
