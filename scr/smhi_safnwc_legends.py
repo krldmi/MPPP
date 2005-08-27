@@ -2,11 +2,11 @@
 #
 # CVS History:
 #
-# $Id: smhi_safnwc_legends.py,v 1.1 2005/08/27 19:21:13 adybbroe Exp $
+# $Id: smhi_safnwc_legends.py,v 1.2 2005/08/27 19:41:16 adybbroe Exp $
 #
 # $Log: smhi_safnwc_legends.py,v $
-# Revision 1.1  2005/08/27 19:21:13  adybbroe
-# Initial revision
+# Revision 1.2  2005/08/27 19:41:16  adybbroe
+# *** empty log message ***
 #
 #
 #
