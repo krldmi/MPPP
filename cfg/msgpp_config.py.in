@@ -1,0 +1,16 @@
+APPLDIR="@prefix@"
+
+LONFILE = "%s/cst/C0429_1999_S0700_0900.LON"%(APPLDIR)
+LATFILE = "%s/cst/C0429_1999_S0700_0900.LAT"%(APPLDIR)
+
+CTYPEDIR_OUT = "/local_disk2/data/Meteosat8/output"
+CTTHDIR_OUT = "/local_disk2/data/Meteosat8/output"
+CTYPEDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_1d/export/PGE02"
+CTTHDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_1d/export/PGE03"
+
+RGBDIR_OUT = "/local_disk2/data/Meteosat8/RGBs"
+RGBDIR_IN = "/data/arkiv/satellit/geo/ceuro"
+
+ROWS,COLS=(700,900)
+
+COMPRESS_LVL=6

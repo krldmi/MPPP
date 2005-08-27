@@ -1,0 +1,30 @@
+ACPG=@ACPG_INSTALL_ROOT@
+ACPG_FUTURE=@ACPG_FUTURE_INSTALL_ROOT@
+APPLDIR=@prefix@
+HLHDF_INSTALL_PATH=@HLHDF_ROOTDIR@
+HDF5_LD_PATH=@HDF5_LD_PATH@
+SZLIB_LD_PATH=@SZLIB_LD_PATH@
+
+# ----------------------------
+# python stuff:
+PYTHONPATH=${APPLDIR}/scr:${APPLDIR}/cfg:${APPLDIR}/cst:${ACPG_FUTURE}/lib:${ACPG}/lib:${ACPG}/scr:${ACPG}/cfg:${PYTHONPATH} ; export PYTHONPATH
+# ----------------------------
+
+SM_REGION_CONFIGURATION_FILE="${ACPG}/cfg/region_config.cfg"; export SM_REGION_CONFIGURATION_FILE
+SM_CFG_FILE="${ACPG}/cfg/pps_config_common.cfg"; export SM_CFG_FILE
+
+
+if [ "x$LD_LIBRARY_PATH"=="x" ]; then
+  LD_LIBRARY_PATH="${HDF5_LD_PATH}:${HLHDF_INSTALL_PATH}/lib:${SZLIB_LD_PATH}:${ZLIB_LD_PATH}"
+else
+  LD_LIBRARY_PATH="${HDF5_LD_PATH}:${HLHDF_INSTALL_PATH}/lib:${SZLIB_LD_PATH}:${ZLIB_LD_PATH}:${LD_LIBRARY_PATH}"
+fi
+export LD_LIBRARY_PATH
+if [ "x$LD_RUN_PATH"=="x" ]; then
+  LD_RUN_PATH="${HDF5_LD_PATH}:${HLHDF_INSTALL_PATH}/lib:${SZLIB_LD_PATH}:${ZLIB_LD_PATH}"
+else
+  LD_RUN_PATH="${HDF5_LD_PATH}:${HLHDF_INSTALL_PATH}/lib:${SZLIB_LD_PATH}:${ZLIB_LD_PATH}:${LD_RUN_PATH}"
+fi
+export LD_RUN_PATH
+
+PATH=/usr/local/bin:/bin:/usr/bin:${ACPG_FUTURE}/scr

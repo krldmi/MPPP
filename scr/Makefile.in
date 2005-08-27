@@ -1,0 +1,29 @@
+include ../def.mk
+
+INSTALL_FILES=msg_remap_all.py \
+              msg_ctype_remap.py \
+              msg_ctth_remap.py \
+              msg_rgb_remap_all.py \
+              msg_rgb_remap.py \
+              msg_remap_util.py
+
+BIN_INSTALL_FILES=msg_remap_all.ksh
+
+all: ;
+
+clean:
+	@\rm -f core *.pyc *~
+
+distclean:
+	@\rm -f core *.pyc *~
+	@\rm -f Makefile
+
+install:
+	@for i in $(INSTALL_FILES) ; \
+	do \
+		$(HLHDF_INSTALL_BIN) -f -o -m644 -C $$i $(MSGPP_INSTALL_PATH)/scr/$$i; \
+	done
+	@for i in $(BIN_INSTALL_FILES) ; \
+	do \
+		$(HLHDF_INSTALL_BIN) -f -o -m755 -C $$i $(MSGPP_INSTALL_PATH)/scr/$$i; \
+	done

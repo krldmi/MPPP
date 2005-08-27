@@ -1,0 +1,20 @@
+include ../def.mk
+
+INSTALL_FILES=.profile_msgpp \
+	msgpp_config.py
+
+all: ;
+
+clean:
+	@\rm -f core *.pyc *~
+
+distclean:
+	@\rm -f core *.pyc *~
+	@\rm -f Makefile
+	@\rm -f .profile_msgpp msgpp_config.py
+
+install:
+	@for i in $(INSTALL_FILES) ; \
+	do \
+		$(HLHDF_INSTALL_BIN) -f -o -m644 -C $$i $(MSGPP_INSTALL_PATH)/cfg/$$i; \
+	done

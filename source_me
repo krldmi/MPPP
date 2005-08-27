@@ -1,0 +1,162 @@
+setenv PPS_SOFTWARE "/local_disk/opt/ACPG"
+setenv AHAMAP_SOFTWARE "/local_disk/opt/AHAMAP"
+setenv HLHDF_SOFTWARE "/local_disk/opt/HLHDF"
+setenv DATA_DIR "/local_disk/data"
+setenv TMP_DIR "/local_disk/tmp"
+setenv AAPP_VERSION "/prog/proj/SAF/Mandrake9.1/AAPP4"
+#setenv AAPP_VERSION "/local_disk/opt/AAPP/Intel/AAPP_4"
+setenv RTTOV_DIR "/prog/proj/SAF/Mandrake9.1/RTTOV-7"
+#setenv RTTOV_DIR "/local_disk/opt/RTTOV-71"
+setenv PPS_TM_DIR "/prog/proj/SAF/PPS_TaskManager/python"
+
+setenv SM_MISSING_IR_VALUE -32000
+setenv SM_LOGGING 0
+setenv SM_LAND_PROC 1 
+setenv SM_SEA_PROC 1
+setenv SM_NEWNAMES 1
+setenv SM_OVERWRITE 0
+
+# ----------------------------
+# ---- AAPP stuff below ------
+setenv AAPP_DIR ${AAPP_VERSION}/AAPP
+
+setenv DIR_SATID ${AAPP_VERSION}/AAPP/data/navigation
+setenv DIR_NAVIGATION ${AAPP_VERSION}/AAPP/orbelems
+setenv DIR_ANA ${DIR_NAVIGATION}/ana
+#setenv DIR_SATPOS ${DIR_NAVIGATION}/satpos
+setenv DIR_SATPOS ${DATA_DIR}/import/ANC_data/source 
+#setenv DIR_EPHE ${DIR_NAVIGATION}/ephe
+setenv DIR_EPHE ${DATA_DIR}/import/ANC_data/source
+setenv PATH_NAVIGATION ${AAPP_VERSION}/AAPP/bin
+setenv PAR_NAVIGATION_DEFAULT_LISTESAT 'noaa17 noaa16 noaa15 noaa14 noaa12 noaa11'
+setenv PAR_NAVIGATION_DEFAULT_LISTEBUL 'tbus tbus tbus tbus tbus tbus'
+setenv STATION norrkoping
+#
+setenv PATH ${AAPP_VERSION}/AAPP/bin:${PATH}
+#
+# ---- AAPP stuff above ------
+# ----------------------------
+
+# Directory and file names:
+setenv RTTOV_COEFF_DIR "${RTTOV_DIR}/rtcoef"
+setenv RTTOV_DATA_DIR "${RTTOV_DIR}/data"
+setenv SM_AAPP_DATA_DIR "${DATA_DIR}/import/PPS_data/source"
+
+setenv SM_CFG_DIR "${PPS_SOFTWARE}/cst"
+setenv SM_CFG_FILE "${PPS_SOFTWARE}/cfg/pps_config_common.cfg"
+
+setenv SM_THROFFSETS_NAME "threshold_offsets.cfg"
+setenv SM_CLOUDTYPE_OFFSETS_NAME "threshold_offsets.cfg"
+
+setenv SM_AVHRR_DIR "${DATA_DIR}/import/PPS_data/remapped"
+setenv SM_SUNSATANGLES_DIR "${DATA_DIR}/import/ANC_data/remapped"
+
+setenv SM_NWPSOURCE_DIR "${DATA_DIR}/import/NWP_data/source"
+setenv SM_NWPDATA_DIR "${DATA_DIR}/import/NWP_data/remapped"
+setenv SM_CST_DIR "${PPS_SOFTWARE}/cst"
+setenv SM_AUXILIARY_DIR "${DATA_DIR}/import/AUX_data/remapped"
+setenv SM_USGS_DIR "${DATA_DIR}/import/AUX_data/source"
+
+setenv SM_THROFFSETS_NAME "threshold_offsets.cfg"
+setenv SM_CLOUDTYPE_OFFSETS_NAME "threshold_offsets.cfg"
+
+setenv SM_PSUNGLINT_NAME "sunglint_probabilities.hdf"
+setenv SM_CH3B_RADIANCE_TAB_NAME "ch3b_radiance_tab"
+
+setenv SM_LANDUSE_NAME "surface_type"
+setenv SM_LANDSEA_FRAC_NAME "landsea_frac"
+setenv SM_ELEVATION_NAME "elevation"
+
+setenv SM_THRESHOLD_TABLE_DIR "${PPS_SOFTWARE}/cst"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_DAY_TB45 "thr_sea_day_tb45"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_NIGHT_TB45 "thr_sea_night_tb45"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_NIGHT_TB35 "thr_sea_night_tb35"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_NIGHT_TB43 "thr_sea_night_tb43"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_NIGHT_TB34 "thr_sea_night_tb34"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_DAY_TB4TS "thr_sea_day_tb4tg"
+setenv SM_THRESHOLD_TABLE_PREFIX_SEA_NIGHT_TB4TS "thr_sea_night_tb4tg"
+
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_DAY_TB45 "thr_land_day_tb45"
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_NIGHT_TB45 "thr_land_night_tb45"
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_NIGHT_TB35 "thr_land_night_tb35"
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_NIGHT_TB43 "thr_land_night_tb43"
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_NIGHT_TB34 "thr_land_night_tb34"
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_DAY_TB4TS "thr_land_day_tb4tg"
+setenv SM_THRESHOLD_TABLE_PREFIX_LAND_NIGHT_TB4TS "thr_land_night_tb4tg"
+
+setenv SM_REFLECTANCE_TABLE_NAME_SEA_R06 "sea_reflectance.ch1.hdf"
+setenv SM_REFLECTANCE_TABLE_NAME_OPENLAND_R06 "open_land_reflectance.ch1.hdf"
+setenv SM_REFLECTANCE_TABLE_NAME_FOREST_R06 "forest_reflectance.ch1.hdf"
+setenv SM_REFLECTANCE_TABLE_NAME_SEA_R09 "sea_reflectance.ch2.hdf"
+
+setenv SM_TRANSMISSION_TABLE_PREFIX "gastrans_"
+
+setenv SM_THRESHOLD_IMAGE_DIR "${DATA_DIR}/import/ANC_data/remapped"
+setenv SM_PRODUCT_DIR "${DATA_DIR}/export"
+
+setenv SM_LANDUSE_URBAN 1
+setenv SM_LANDUSE_DRYLAND 2
+setenv SM_LANDUSE_IRRIGATED 3
+setenv SM_LANDUSE_MIXED_DRYLAND_IRRIGATED 4
+setenv SM_LANDUSE_CROPLAND_GRASSLAND 5
+setenv SM_LANDUSE_CROPLAND_WOODLAND 6
+setenv SM_LANDUSE_GRASSLAND 7
+setenv SM_LANDUSE_SHRUBLAND 8
+setenv SM_LANDUSE_SHRUBLAND_GRASSLAND 9
+setenv SM_LANDUSE_SAVANNA 10
+
+setenv SM_LANDUSE_FOREST_DECIDUOUS_BROADLEAF 11
+setenv SM_LANDUSE_FOREST_DECIDUOUS_NEEDLELEAF 12
+setenv SM_LANDUSE_FOREST_EVERGREEN_BROADLEAF 13
+setenv SM_LANDUSE_FOREST_EVERGREEN_NEEDLELEAF 14
+setenv SM_LANDUSE_FOREST_MIXED 15
+setenv SM_LANDUSE_WATER 16
+setenv SM_LANDUSE_WETLAND_HERBACEOUS 17
+setenv SM_LANDUSE_WETLAND_WOODED 18
+setenv SM_LANDUSE_BARREN 19
+setenv SM_LANDUSE_TUNDRA_HERBACEOUS 20
+setenv SM_LANDUSE_TUNDRA_WOODED 21
+setenv SM_LANDUSE_TUNDRA_MIXED 22
+setenv SM_LANDUSE_TUNDRA_BARE 23
+setenv SM_LANDUSE_ICE 24
+
+setenv SM_COASTALZONE_LIMIT 32
+setenv SM_LANDSEA_FRACTION_MAX 223
+
+setenv SM_PRECIPCLOUDS_CONFIG_DIR "${PPS_SOFTWARE}/cfg"
+setenv SM_PRECIPITATION_CONFIG "${PPS_SOFTWARE}/cfg/generate_precipitation.cfg"
+setenv SM_CONVOLVE_BACKGILB_COEFF "${PPS_SOFTWARE}/cfg/backgilbcoeff.hdf"
+#setenv SM_CONVOLVE_LANDSEA_MASK "${PPS_SOFTWARE}/cfg/amsu_landsea_mask.dat"
+setenv SM_CONVOLVE_LANDSEA_MASK "${PPS_SOFTWARE}/cfg/amsu_landsea_mask.hdf"
+
+setenv SM_WVP_COEFFS_FILE "${PPS_SOFTWARE}/cfg/wvpcoeffs.hdf"
+setenv SM_LWP_COEFFS_FILE "${PPS_SOFTWARE}/cfg/lwpcoeffs.hdf"
+setenv SM_T89_COEFFS_FILE "${PPS_SOFTWARE}/cfg/t89coeffs.hdf"
+setenv SM_LAND_SCAT_CLASS "${PPS_SOFTWARE}/cfg/land_scat_clas.dat"
+setenv SM_COAST_SCAT_CLASS "${PPS_SOFTWARE}/cfg/coast_scat_clas.dat"
+setenv SM_SCAT_CLASS "${PPS_SOFTWARE}/cfg/sea_scat_clas.dat"
+
+setenv SM_GRIB_CONFIGURATION_FILE "${PPS_SOFTWARE}/cfg/grib_config.cfg"
+#setenv SM_GRIB_CONFIGURATION_FILE "/prog/proj/SAF/adybbroe/NowcastingSaf/acpgInterfaces/cfg/grib_config.cfg"
+setenv SM_REGION_CONFIGURATION_FILE "${PPS_SOFTWARE}/cfg/region_config.cfg"
+#setenv SM_REGION_CONFIGURATION_FILE "/prog/proj/SAF/adybbroe/NowcastingSaf/acpgInterfaces/cfg/region_config.cfg"
+
+if ("x$PYTHONPATH" == "x") then
+	setenv PYTHONPATH "."
+endif
+setenv PYTHONPATH ${PYTHONPATH}:${PPS_SOFTWARE}/lib
+setenv PYTHONPATH ${PYTHONPATH}:${PPS_SOFTWARE}/cfg
+setenv PYTHONPATH ${PYTHONPATH}:${PPS_SOFTWARE}/scr
+setenv PYTHONPATH ${PYTHONPATH}:${AHAMAP_SOFTWARE}/lib
+setenv PYTHONPATH ${PYTHONPATH}:${PPS_TM_DIR}
+
+setenv PATH ${PATH}:.
+setenv PATH ${PATH}:${PPS_SOFTWARE}/bin
+setenv PATH ${PATH}:${PPS_SOFTWARE}/scr
+setenv PATH ${PATH}:/usr/local/bin
+setenv PATH ${PATH}:/bin
+setenv PATH ${PATH}:/usr/bin
+
+# In case you have built shared objects you might need to point to where they have been installed
+# (e.g. libproj.so.0, libhdf5.so.0, etc) using the LD_LIBRARY_PATH environment variable:
+setenv LD_LIBRARY_PATH /usr/local/lib:/usr/lib:${LD_LIBRARY_PATH}
