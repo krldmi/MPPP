@@ -31,13 +31,12 @@ def get_times(nSlots):
 # ------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) < 3:
-        print "Usage: %s <area id> <n-slots back in time>"%(sys.argv[0])
+    if len(sys.argv) < 2:
+        print "Usage: %s <n-slots back in time>"%(sys.argv[0])
         sys.exit(-9)
     else:
-        areaid = sys.argv[1]
         import string
-        nSlots = string.atoi(sys.argv[2])
+        nSlots = string.atoi(sys.argv[1])
 
     start_date,end_date = get_times(nSlots)
 
@@ -64,6 +63,10 @@ if __name__ == "__main__":
     min=string.atoi(end_date[10:12])    
     time_end = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
 
+    if time_start > time_end:
+        print "Start time is later than end time!"
+
+
     # Check for existing coverage file for the area:
     covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
     if not os.path.exists(covfilename):
@@ -86,7 +89,25 @@ if __name__ == "__main__":
         fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
         if len(fl) == 0:
             print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
-        else:
+            sec = sec + DSEC_SLOTS
+            continue
+        
+        # Loop over areas:
+        for areaid in NWCSAF_MSG_AREAS:
+            areaObj=area.area(areaid)
+
+            # Check for existing coverage file for the area:
+            covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
+            CoverageData = None
+            
+            if not CoverageData and not os.path.exists(covfilename):
+                print "Generate MSG coverage and store in file..."
+                CoverageData = _satproj.create_coverage(areaObj,lon,lat,1)
+                writeCoverage(CoverageData,covfilename,in_aid,areaid)
+            elif not CoverageData:
+                print "Read the MSG coverage from file..."
+                CoverageData,info = readCoverage(covfilename)
+
             outname_nf = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(MetSat,RGBDIR_OUT,
                                                                        year,month,day,hour,min,areaid)
             outname_f = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(MetSat,RGBDIR_OUT,
@@ -95,11 +116,9 @@ if __name__ == "__main__":
                                                                                  year,month,day,hour,min,areaid)
             #print outname_nf
             #print outname_f
-            #print outname_ctop
-            
+            #print outname_ctop            
             if os.path.exists(outname_nf+".png") and os.path.exists(outname_f+".png") and os.path.exists(outname_ctop+".png"):
                 print "All rgb's have been done previously"
-                sec = sec + DSEC_SLOTS
                 continue
             
             print "Try make RGBs for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
@@ -168,8 +187,7 @@ if __name__ == "__main__":
                 else:
                     print "File %s already there"%outname
             
-        #sec = sec + 3600
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-    os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/RGBs/ /data/proj/saftest/nwcsafmsg/RGBs")
+    #os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/RGBs/ /data/proj/saftest/nwcsafmsg/RGBs")

@@ -210,7 +210,6 @@ if __name__ == "__main__":
             if msgctth:
                 doCtth(CoverageData,msgctth,areaid,in_aid,MetSat,year,month,day,hour,min)
 
-        #sec = sec + 3600
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
