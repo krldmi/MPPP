@@ -2,9 +2,12 @@
 #
 # CVS History:
 #
-# $Id: smhi_safnwc_legends.py,v 1.2 2005/08/27 19:41:16 adybbroe Exp $
+# $Id: smhi_safnwc_legends.py,v 1.3 2005/09/07 09:38:00 adybbroe Exp $
 #
 # $Log: smhi_safnwc_legends.py,v $
+# Revision 1.3  2005/09/07 09:38:00  adybbroe
+# *** empty log message ***
+#
 # Revision 1.2  2005/08/27 19:41:16  adybbroe
 # *** empty log message ***
 #
@@ -14,7 +17,7 @@
 
 
 # --------------------------------------------------------------------
-def get_ctype_vv():
+def get_ctype_vv1():
 
     legend = []
     legend.append((100,100,100)) # NEW Unprocessed: Grey
@@ -40,6 +43,38 @@ def get_ctype_vv():
     legend.append((80,100,180)) # Semi-transparent medium
     legend.append((100,130,200)) # Semi-transparent thick
     legend.append((120,160,210)) # Semi-transparent above
+    legend.append((200,  0,200)) # Broken
+    legend.append(( 95, 60, 30)) # NEW Undefined: Brown
+    
+    return legend
+
+# --------------------------------------------------------------------
+def get_ctype_vv2():
+
+    legend = []
+    legend.append((100,100,100)) # NEW Unprocessed: Grey
+    legend.append((  0,120,  0)) # Land
+    legend.append((  0,  0,  0)) # Sea: Black
+    legend.append((  0,120,  0)) # Snow
+    legend.append((  0,  0,  0)) # Sea-ice
+    
+    legend.append((255,150,  0)) # Very low cumuliform
+    legend.append((255,100,  0)) # Very low
+    legend.append((255,220,  0)) # Low cumuliform
+    legend.append((255,180,  0)) # Low
+
+    # Medium and high level clouds grey:
+    legend.append((180,180,180)) # Medium cumuliform
+    legend.append((180,180,180)) # Medium
+    legend.append((180,180,180)) # High cumiliform
+    legend.append((180,180,180)) # High
+    legend.append((180,180,180)) # Very high cumuliform
+    legend.append((180,180,180)) # Very high
+
+    legend.append((60,80,160)) # Semi-transparent thin
+    legend.append((80,100,180)) # Semi-transparent medium
+    legend.append((180,180,180)) # Semi-transparent thick
+    legend.append((180,180,180)) # Semi-transparent above
     legend.append((200,  0,200)) # Broken
     legend.append(( 95, 60, 30)) # NEW Undefined: Brown
     

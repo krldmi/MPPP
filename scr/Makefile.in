@@ -5,7 +5,9 @@ INSTALL_FILES=msg_remap_all.py \
               msg_ctth_remap.py \
               msg_rgb_remap_all.py \
               msg_rgb_remap.py \
-              msg_remap_util.py
+              msg_remap_util.py \
+	      msg_remap_all_Oper.py msg_remap_all_Oper.ksh \
+	      smhi_safnwc_legends.py
 
 BIN_INSTALL_FILES=msg_remap_all.ksh
 

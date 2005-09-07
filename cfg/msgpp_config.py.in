@@ -5,8 +5,10 @@ LATFILE = "%s/cst/C0429_1999_S0700_0900.LAT"%(APPLDIR)
 
 CTYPEDIR_OUT = "/local_disk2/data/Meteosat8/output"
 CTTHDIR_OUT = "/local_disk2/data/Meteosat8/output"
-CTYPEDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_1d/export/PGE02"
-CTTHDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_1d/export/PGE03"
+#CTYPEDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_1d/export/PGE02"
+#CTTHDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_1d/export/PGE03"
+CTYPEDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_2/export/PGE02"
+CTTHDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_2/export/PGE03"
 
 RGBDIR_OUT = "/local_disk2/data/Meteosat8/RGBs"
 RGBDIR_IN = "/data/arkiv/satellit/geo/ceuro"
@@ -14,3 +16,32 @@ RGBDIR_IN = "/data/arkiv/satellit/geo/ceuro"
 ROWS,COLS=(700,900)
 
 COMPRESS_LVL=6
+
+DSEC_SLOTS=3600/4 # Slot-frequency considered = 15 minutes
+
+# List of areas:
+NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]
+
+
+# IMAGE_LEGENDS:
+#   FULL: "get_cms_modified" - nwcsaf/msg colouring
+#   VV:   "get_ctype_vv"     - For the Swedish road authoroties
+
+# Products on which areas, and with wich color-palettes, and in what image formats?:
+PRODUCT_IMAGES={"PGE02":{"mesanX" :{"FULL":["png","tiff"]},
+			 "sswe"   :{"FULL":["png","tiff"],
+			 	    "VV1"  :["png","tiff"],
+			 	    "VV2"  :["png","tiff"]},
+		         "scan"   :{"FULL":["png","tiff"],
+			 	    "VV1"  :["png","tiff"],
+			 	    "VV2"  :["png","tiff"]},
+		         "euro"   :{"FULL":["png","tiff"],
+			 	    "VV1"  :["png","tiff"],
+			 	    "VV2"  :["png","tiff"]}},
+		"PGE03":{"mesanX":{"HEIGHT_FULL":["png","tiff"]},
+			 "sswe"  :{"HEIGHT_FULL":["png","tiff"]},
+			 "scan"  :{"HEIGHT_FULL":["png","tiff"]}
+		}
+		}
+
+INFORMSIR_SCRIPT="/data/prod/sir2/lib/informsirnw.csh"

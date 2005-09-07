@@ -43,6 +43,7 @@ if __name__ == "__main__":
 
     import os,time
     in_aid="CEuro"
+    MetSat="met08"
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
@@ -86,12 +87,15 @@ if __name__ == "__main__":
         if len(fl) == 0:
             print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
         else:
-            outname_nf = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-            outname_f = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-            outname_ctop = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-            print outname_nf
-            print outname_f
-            print outname_ctop
+            outname_nf = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(MetSat,RGBDIR_OUT,
+                                                                       year,month,day,hour,min,areaid)
+            outname_f = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(MetSat,RGBDIR_OUT,
+                                                                 year,month,day,hour,min,areaid)
+            outname_ctop = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(MetSat,RGBDIR_OUT,
+                                                                                 year,month,day,hour,min,areaid)
+            #print outname_nf
+            #print outname_f
+            #print outname_ctop
             
             if os.path.exists(outname_nf+".png") and os.path.exists(outname_f+".png") and os.path.exists(outname_ctop+".png"):
                 print "All rgb's have been done previously"
@@ -128,19 +132,19 @@ if __name__ == "__main__":
             """
             # Daytime convection:
             if ok1 and ok3 and ok4 and ok5 and ok6 and ok9:
-                outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname)
             """
             
             # Fog and low clouds
             if ok4r and ok9 and ok10:
-                outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
                 if not os.path.exists(outname+".png"):
                     makergb_nightfog(ch4r,ch9,ch10,outname)
                 else:
                     print "File %s already there"%outname
             if ok7 and ok9 and ok10:
-                outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
                 if not os.path.exists(outname+".png"):
                     makergb_fog(ch7,ch9,ch10,outname)
                 else:
@@ -149,16 +153,16 @@ if __name__ == "__main__":
             """
             # "red snow": Low clouds and snow daytime
             if ok1 and ok3 and ok9:
-                outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_redsnow(ch1,ch3,ch9,outname)
 
             # "cloudtop": Low clouds, thin cirrus, nighttime
             if ok4 and ok9 and ok10:
-                outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_cloudtop(ch4,ch9,ch10,outname)
             """
             if ok4r and ok9 and ok10:
-                outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
                 if not os.path.exists(outname+".png"):
                     makergb_cloudtop(ch4r,ch9,ch10,outname)
                 else:

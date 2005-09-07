@@ -302,7 +302,7 @@ def msg_remap(msgctype,lon,lat,areaid):
     return msgctype
 
 # ------------------------------------------------------------------
-def msgCtype_remap_fast(cov,msgctype,areaid,a):
+def OLDmsgCtype_remap_fast(cov,msgctype,areaid,a):
     msgctype.cloudtype.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.cloudtype.data)
     msgctype.cloudphase.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.cloudphase.data)
     msgctype.processing_flags.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.processing_flags.data)    
@@ -319,6 +319,30 @@ def msgCtype_remap_fast(cov,msgctype,areaid,a):
     msgctype.processing_flags.num_of_lines = a.ysize    
 
     return msgctype
+
+# ------------------------------------------------------------------
+def msgCtype_remap_fast(cov,msgctype,areaid,a):
+    retv = msgCloudType()
+    retv.cloudtype=msgCloudTypeData()
+    retv.processing_flags=msgCloudTypeData()
+    retv.cloudphase=msgCloudTypeData()
+
+    retv.cloudtype.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.cloudtype.data)
+    retv.cloudphase.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.cloudphase.data)
+    retv.processing_flags.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.processing_flags.data)    
+
+    retv.region_name = areaid
+    retv.projection_name = a.pcs.id
+    retv.num_of_columns = a.xsize
+    retv.num_of_lines = a.ysize
+    retv.cloudtype.num_of_columns = a.xsize
+    retv.cloudtype.num_of_lines = a.ysize
+    retv.cloudphase.num_of_columns = a.xsize
+    retv.cloudphase.num_of_lines = a.ysize
+    retv.processing_flags.num_of_columns = a.xsize
+    retv.processing_flags.num_of_lines = a.ysize    
+
+    return retv
 
 # ------------------------------------------------------------------
 if __name__ == "__main__":

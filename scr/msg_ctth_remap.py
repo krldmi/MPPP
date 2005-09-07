@@ -378,7 +378,7 @@ def convert_procflags2pps(data):
     return retv.astype('s')
 
 # ------------------------------------------------------------------
-def msgCtth_remap_fast(cov,msgctth,areaid,a):
+def OLDmsgCtth_remap_fast(cov,msgctth,areaid,a):
     msgctth.temperature.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.temperature.data)
     msgctth.height.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.height.data)
     msgctth.pressure.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.pressure.data)
@@ -401,6 +401,38 @@ def msgCtth_remap_fast(cov,msgctth,areaid,a):
     msgctth.processing_flags.num_of_lines = a.ysize    
 
     return msgctth
+
+# ------------------------------------------------------------------
+def msgCtth_remap_fast(cov,msgctth,areaid,a):
+    retv = msgCTTH()
+    retv.cloudiness=msgCTTHData() # Effective cloudiness
+    retv.temperature=msgCTTHData()
+    retv.height=msgCTTHData()
+    retv.pressure=msgCTTHData()
+    retv.processing_flags=msgCTTHData()
+
+    retv.temperature.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.temperature.data)
+    retv.height.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.height.data)
+    retv.pressure.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.pressure.data)
+    retv.cloudiness.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.cloudiness.data)
+    retv.processing_flags.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.processing_flags.data)    
+
+    retv.region_name = areaid
+    retv.projection_name = a.pcs.id
+    retv.num_of_columns = a.xsize
+    retv.num_of_lines = a.ysize
+    retv.temperature.num_of_columns = a.xsize
+    retv.temperature.num_of_lines = a.ysize
+    retv.height.num_of_columns = a.xsize
+    retv.height.num_of_lines = a.ysize
+    retv.pressure.num_of_columns = a.xsize
+    retv.pressure.num_of_lines = a.ysize
+    retv.cloudiness.num_of_columns = a.xsize
+    retv.cloudiness.num_of_lines = a.ysize
+    retv.processing_flags.num_of_columns = a.xsize
+    retv.processing_flags.num_of_lines = a.ysize    
+
+    return retv
 
 # ------------------------------------------------------------------
 if __name__ == "__main__":
