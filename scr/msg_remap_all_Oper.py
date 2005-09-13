@@ -46,30 +46,31 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
         ctype = msg_ctype2ppsformat(msgctypeRem)
         epshdf.write_cloudtype(outfile,ctype,6)
 
-    print PRODUCT_IMAGES["PGE02"][areaid].keys()
-    for key in PRODUCT_IMAGES["PGE02"][areaid].keys():
-        for imformat in PRODUCT_IMAGES["PGE02"][areaid][key]:
-            imagefile = outfile.split(".hdf")[0] + "_%s.%s"%(string.lower(key),imformat)
-            thumbnail = outfile.split(".hdf")[0] + "_%s.thumbnail.%s"%(string.lower(key),imformat)
-            print "IMAGE FILE: ",imagefile 
-            if not os.path.exists(imagefile):
-                if not ctype:
-                    ctype = epshdf.read_cloudtype(outfile,1,1,0)
-                if key == "FULL":
-                    legend = get_cms_modified()
-                elif key == "VV1":
-                    legend = get_ctype_vv1()
-                elif key == "VV2":
-                    legend = get_ctype_vv2()
-                else:
-                    print "ERROR: Legend not supported!"
-                    return
+    if PRODUCT_IMAGES["PGE02"].has_key(areaid):
+        print PRODUCT_IMAGES["PGE02"][areaid].keys()
+        for key in PRODUCT_IMAGES["PGE02"][areaid].keys():
+            for imformat in PRODUCT_IMAGES["PGE02"][areaid][key]:
+                imagefile = outfile.split(".hdf")[0] + "_%s.%s"%(string.lower(key),imformat)
+                thumbnail = outfile.split(".hdf")[0] + "_%s.thumbnail.%s"%(string.lower(key),imformat)
+                print "IMAGE FILE: ",imagefile 
+                if not os.path.exists(imagefile):
+                    if not ctype:
+                        ctype = epshdf.read_cloudtype(outfile,1,1,0)
+                    if key == "FULL":
+                        legend = get_cms_modified()
+                    elif key == "VV1":
+                        legend = get_ctype_vv1()
+                    elif key == "VV2":
+                        legend = get_ctype_vv2()
+                    else:
+                        print "ERROR: Legend not supported!"
+                        return
                 
-                this = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
-                size=this.size
-                this.save(imagefile)
-                this.thumbnail((size[0]/3,size[1]/3))
-                this.save(thumbnail)
+                    this = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
+                    size=this.size
+                    this.save(imagefile)
+                    this.thumbnail((size[0]/3,size[1]/3))
+                    this.save(thumbnail)
                 
     inform_sir("MSG","PGE02",areaid)
                     
@@ -93,25 +94,26 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
         ctth = msg_ctth2ppsformat(msgctthRem)
         epshdf.write_cloudtop(outfile,ctth,6)
 
-    print PRODUCT_IMAGES["PGE03"][areaid].keys()
-    for key in PRODUCT_IMAGES["PGE03"][areaid].keys():
-        for imformat in PRODUCT_IMAGES["PGE03"][areaid][key]:
-            imagefile = outfile.split(".hdf")[0] + "_%s.%s"%(string.lower(key),imformat)
-            thumbnail = outfile.split(".hdf")[0] + "_%s.thumbnail.%s"%(string.lower(key),imformat)
-            print "IMAGE FILE: ",imagefile 
-            if not os.path.exists(imagefile):
-                if not ctth:
-                    ctth = epshdf.read_cloudtop(outfile,1,1,1,0,1)                
-                if key == "HEIGHT_FULL":
-                    this,arr = pps_array2image.ctth2image(ctth,"height")
-                else:
-                    print "ERROR: Legend not supported!"
-                    return
+    if PRODUCT_IMAGES["PGE03"].has_key(areaid):
+        print PRODUCT_IMAGES["PGE03"][areaid].keys()
+        for key in PRODUCT_IMAGES["PGE03"][areaid].keys():
+            for imformat in PRODUCT_IMAGES["PGE03"][areaid][key]:
+                imagefile = outfile.split(".hdf")[0] + "_%s.%s"%(string.lower(key),imformat)
+                thumbnail = outfile.split(".hdf")[0] + "_%s.thumbnail.%s"%(string.lower(key),imformat)
+                print "IMAGE FILE: ",imagefile 
+                if not os.path.exists(imagefile):
+                    if not ctth:
+                        ctth = epshdf.read_cloudtop(outfile,1,1,1,0,1)                
+                    if key == "HEIGHT_FULL":
+                        this,arr = pps_array2image.ctth2image(ctth,"height")
+                    else:
+                        print "ERROR: Legend not supported!"
+                        return
 
-                size=this.size
-                this.save(imagefile)
-                this.thumbnail((size[0]/3,size[1]/3))
-                this.save(thumbnail)
+                    size=this.size
+                    this.save(imagefile)
+                    this.thumbnail((size[0]/3,size[1]/3))
+                    this.save(thumbnail)
                 
     inform_sir("MSG","PGE03",areaid)
 
@@ -165,6 +167,7 @@ if __name__ == "__main__":
         match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
         print "file-match: ",match_str
         flist = glob.glob(match_str)
+	msgctype=None
         if len(flist) > 1:
             print "ERROR: More than one matching input file: N = ",len(flist)
         elif len(flist) == 0:
@@ -178,6 +181,7 @@ if __name__ == "__main__":
         match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
         print "file-match: ",match_str
         flist = glob.glob(match_str)
+	msgctth=None
         if len(flist) > 1:
             print "ERROR: More than one matching input file: N = ",len(flist)
         elif len(flist) == 0:
@@ -186,8 +190,11 @@ if __name__ == "__main__":
             # First read the original MSG file if not already done...
             print "Read MSG CTTH file: ",flist[0]
             msgctth = read_msgCtth(flist[0])
-
             
+	if not msgctype and not msgctth:
+		sec = sec + DSEC_SLOTS
+		continue
+
         # Loop over areas:
         for areaid in NWCSAF_MSG_AREAS:
             areaObj=area.area(areaid)
@@ -213,5 +220,5 @@ if __name__ == "__main__":
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-    #os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/MesanX/ /data/proj/saftest/nwcsafmsg/PGEs")
+    os.system("/usr/bin/rsync -crtzul --delete /local_disk/data/Meteosat8/MesanX/*mesanX* /data/proj/saftest/nwcsafmsg/PGEs")
     

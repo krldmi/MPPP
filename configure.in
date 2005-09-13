@@ -105,6 +105,7 @@ AC_SUBST(ACPG_FUTURE_INSTALL_MKF)
 
 AC_OUTPUT(./scr/Makefile)
 AC_OUTPUT(./scr/msg_remap_all.ksh)
+AC_OUTPUT(./scr/msg_remap_all_Oper.ksh)
 AC_OUTPUT(./cfg/Makefile)
 AC_OUTPUT(./cfg/.profile_msgpp)
 AC_OUTPUT(./cfg/msgpp_config.py)

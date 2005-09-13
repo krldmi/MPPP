@@ -47,8 +47,6 @@ if __name__ == "__main__":
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
 
-    a=area.area(areaid)
-
     year=string.atoi(start_date[0:4])
     month=string.atoi(start_date[4:6])
     day=string.atoi(start_date[6:8])
@@ -65,16 +63,6 @@ if __name__ == "__main__":
 
     if time_start > time_end:
         print "Start time is later than end time!"
-
-
-    # Check for existing coverage file for the area:
-    covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
-    if not os.path.exists(covfilename):
-        cov = _satproj.create_coverage(a,lon,lat,1)
-        writeCoverage(cov,covfilename,in_aid,areaid)
-    else:
-        cov,info = readCoverage(covfilename)
-        print info.items()
 
     sec = time_start
     while (sec < time_end + 1):
@@ -133,15 +121,15 @@ if __name__ == "__main__":
             ch10file = "%s/10_%s.BT"%(fileprfx,fname)
             ch11file = "%s/11_%s.BT"%(fileprfx,fname)
 
-            ch1,ok1=get_ch_projected(ch1file,cov)
-            ch3,ok3=get_ch_projected(ch3file,cov)
-            ch4,ok4=get_ch_projected(ch4file,cov)    
-            ch5,ok5=get_ch_projected(ch5file,cov)
-            ch6,ok6=get_ch_projected(ch6file,cov)
-            ch7,ok7=get_ch_projected(ch7file,cov)
-            ch9,ok9=get_ch_projected(ch9file,cov)
-            ch10,ok10=get_ch_projected(ch10file,cov)
-            ch11,ok11=get_ch_projected(ch11file,cov)
+            ch1,ok1=get_ch_projected(ch1file,CoverageData)
+            ch3,ok3=get_ch_projected(ch3file,CoverageData)
+            ch4,ok4=get_ch_projected(ch4file,CoverageData)    
+            ch5,ok5=get_ch_projected(ch5file,CoverageData)
+            ch6,ok6=get_ch_projected(ch6file,CoverageData)
+            ch7,ok7=get_ch_projected(ch7file,CoverageData)
+            ch9,ok9=get_ch_projected(ch9file,CoverageData)
+            ch10,ok10=get_ch_projected(ch10file,CoverageData)
+            ch11,ok11=get_ch_projected(ch11file,CoverageData)
 
             ok4r=0
             if ok4 and ok9 and ok11:
@@ -151,19 +139,19 @@ if __name__ == "__main__":
             """
             # Daytime convection:
             if ok1 and ok3 and ok4 and ok5 and ok6 and ok9:
-                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(RGBDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                 makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname)
             """
             
             # Fog and low clouds
             if ok4r and ok9 and ok10:
-                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                 if not os.path.exists(outname+".png"):
                     makergb_nightfog(ch4r,ch9,ch10,outname)
                 else:
                     print "File %s already there"%outname
             if ok7 and ok9 and ok10:
-                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                 if not os.path.exists(outname+".png"):
                     makergb_fog(ch7,ch9,ch10,outname)
                 else:
@@ -172,16 +160,16 @@ if __name__ == "__main__":
             """
             # "red snow": Low clouds and snow daytime
             if ok1 and ok3 and ok9:
-                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(RGBDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                 makergb_redsnow(ch1,ch3,ch9,outname)
 
             # "cloudtop": Low clouds, thin cirrus, nighttime
             if ok4 and ok9 and ok10:
-                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop"%(RGBDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                 makergb_cloudtop(ch4,ch9,ch10,outname)
             """
             if ok4r and ok9 and ok10:
-                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(MetSat,RGBDIR_OUT,year,month,day,hour,min,areaid)
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                 if not os.path.exists(outname+".png"):
                     makergb_cloudtop(ch4r,ch9,ch10,outname)
                 else:
@@ -190,4 +178,4 @@ if __name__ == "__main__":
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-    #os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/RGBs/ /data/proj/saftest/nwcsafmsg/RGBs")
+    os.system("/usr/bin/rsync -crtzul --delete /local_disk/data/Meteosat8/RGBs/*mesanX* /data/proj/saftest/nwcsafmsg/RGBs")
