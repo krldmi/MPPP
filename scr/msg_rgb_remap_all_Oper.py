@@ -21,7 +21,7 @@ def get_times(nSlots):
     time_tup = gmt_time[0],gmt_time[1],gmt_time[2],0,0,0,0,0,0
     end_slot_sec1970 = time.mktime(time_tup) - time.timezone + ((hour_mm+8)/15) * 15 * 60 + day_hh * 3600
     end_time = time.gmtime(end_slot_sec1970)
-    start_time = time.gmtime(end_slot_sec1970 - 3600*15*nSlots)
+    start_time = time.gmtime(end_slot_sec1970 - 60*15*nSlots)
 
     end_date = "%.4d%.2d%.2d%.2d%.2d"%(end_time[0],end_time[1],end_time[2],end_time[3],end_time[4])
     start_date = "%.4d%.2d%.2d%.2d%.2d"%(start_time[0],start_time[1],start_time[2],start_time[3],start_time[4])
@@ -39,7 +39,8 @@ if __name__ == "__main__":
         nSlots = string.atoi(sys.argv[1])
 
     start_date,end_date = get_times(nSlots)
-
+    print "Start and End times: ",start_date,end_date
+    
     import os,time
     in_aid="CEuro"
     MetSat="met08"
@@ -178,4 +179,4 @@ if __name__ == "__main__":
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-    os.system("/usr/bin/rsync -crtzul --delete /local_disk/data/Meteosat8/RGBs/*mesanX* /data/proj/saftest/nwcsafmsg/RGBs")
+    os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/RGBs/*mesanX* /data/proj/saftest/nwcsafmsg/RGBs")

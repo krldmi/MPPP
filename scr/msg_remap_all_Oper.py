@@ -132,6 +132,7 @@ if __name__ == "__main__":
     import msg_rgb_remap_all_Oper
     
     start_date,end_date = msg_rgb_remap_all_Oper.get_times(nSlots)
+    print "Start and End times: ",start_date,end_date
 
     import string,time
     in_aid="CEuro"
@@ -190,10 +191,10 @@ if __name__ == "__main__":
             # First read the original MSG file if not already done...
             print "Read MSG CTTH file: ",flist[0]
             msgctth = read_msgCtth(flist[0])
-            
+
 	if not msgctype and not msgctth:
-		sec = sec + DSEC_SLOTS
-		continue
+            sec = sec + DSEC_SLOTS
+            continue
 
         # Loop over areas:
         for areaid in NWCSAF_MSG_AREAS:
@@ -220,5 +221,5 @@ if __name__ == "__main__":
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-    os.system("/usr/bin/rsync -crtzul --delete /local_disk/data/Meteosat8/MesanX/*mesanX* /data/proj/saftest/nwcsafmsg/PGEs")
+    os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/MesanX/*mesanX* /data/proj/saftest/nwcsafmsg/PGEs")
     
