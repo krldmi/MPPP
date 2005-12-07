@@ -17,3 +17,4 @@ fi
 
 python ${APPLDIR}/scr/msg_remap_all_Oper.py $1
 python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py $1
+python ${APPLDIR}/scr/smhiPutProducts2ftpserver.py

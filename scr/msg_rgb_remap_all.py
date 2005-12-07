@@ -3,10 +3,6 @@ from msgpp_config import *
 from msg_remap_util import *
 from msg_rgb_remap import *
 #
-import _satproj
-import area
-import glob,os
-
 
 # ------------------------------------------------------------------
 if __name__ == "__main__":
@@ -19,6 +15,10 @@ if __name__ == "__main__":
         end_date = sys.argv[2]
 
     import string,time
+    import _satproj
+    import area
+    import glob,os
+
     in_aid="CEuro"
     
     lon = read_msg_lonlat(LONFILE)
@@ -74,6 +74,7 @@ if __name__ == "__main__":
                 print "Try make RGBs for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
 
                 ch1file = "%s/1_%s.REF"%(fileprfx,fname)
+                ch2file = "%s/2_%s.REF"%(fileprfx,fname)
                 ch3file = "%s/3_%s.REF"%(fileprfx,fname)
                 ch4file = "%s/4_%s.BT"%(fileprfx,fname)    
                 ch5file = "%s/5_%s.BT"%(fileprfx,fname)
@@ -84,6 +85,7 @@ if __name__ == "__main__":
                 ch11file = "%s/11_%s.BT"%(fileprfx,fname)
 
                 ch1,ok1=get_ch_projected(ch1file,cov)
+                ch2,ok2=get_ch_projected(ch2file,cov)
                 ch3,ok3=get_ch_projected(ch3file,cov)
                 ch4,ok4=get_ch_projected(ch4file,cov)    
                 ch5,ok5=get_ch_projected(ch5file,cov)
@@ -97,32 +99,54 @@ if __name__ == "__main__":
                 if ok4 and ok9 and ok11:
                     ch4r = co2corr_bt39(ch4,ch9,ch11)
                     ok4r = 1
+                    
+                # IR - channel 9:
+                if ok9:
+                    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                    make_bw(ch9,outname,inverse=1,gamma=1.6)
+
+                # Water vapour - channel 5:
+                if ok5:
+                    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch5"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                    make_bw(ch5,outname,inverse=1,gamma=1.6)
+
+                # Daytime overview:
+                if ok1 and ok2 and ok9:
+                    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                    makergb_visvisir(ch1,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
+
+                # Daytime "grön snö":
+                if ok3 and ok2 and ok9:
+                    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_greensnow"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                    makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
+                    #makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.0,1.0,1.0))
 
                 # Daytime convection:
                 if ok1 and ok3 and ok4 and ok5 and ok6 and ok9:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname)
+                    #makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,0.5,1.0),rgbrange=[(-30,0),(0,50.0),(-70.0,20.0)])
+                    makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
 
                 # Fog and low clouds
                 if ok4r and ok9 and ok10:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_nightfog(ch4r,ch9,ch10,outname)
+                    makergb_nightfog(ch4r,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,293)])
                 if ok7 and ok9 and ok10:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_fog(ch7,ch9,ch10,outname)
+                    makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
 
                 # "red snow": Low clouds and snow daytime
-                if ok1 and ok3 and ok9:
-                    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_redsnow(ch1,ch3,ch9,outname)
+                #if ok1 and ok3 and ok9:
+                #    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                #    makergb_redsnow(ch1,ch3,ch9,outname)
 
                 # "cloudtop": Low clouds, thin cirrus, nighttime
-                if ok4 and ok9 and ok10:
-                    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_cloudtop(ch4,ch9,ch10,outname)
+                #if ok4 and ok9 and ok10:
+                #    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
+                #    makergb_cloudtop(ch4,ch9,ch10,outname)
                 if ok4r and ok9 and ok10:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_cloudtop(ch4r,ch9,ch10,outname)
+                    makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.6,1.6,1.4))
         
             sec = sec + DSEC_SLOTS
 

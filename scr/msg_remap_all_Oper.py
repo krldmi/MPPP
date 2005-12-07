@@ -14,18 +14,16 @@ from pps_array2image import get_cms_modified
 from smhi_safnwc_legends import *
 
 # -----------------------------------------------------------------------
-def inform_sir(saf_name,pge_name,areaid):
-    import time,string
+def inform_sir(saf_name,pge_name,aidstr,status,datestr):
+    import string
 
-    informsir_params = (string.upper("%s_%s"%(saf_name[0:3],pge_name)),
-                        string.upper(areaid))
-    now = time.time()
-    ttup = time.localtime(now)
-    year_in_century = ttup[0]-(ttup[0]/100)*100
-    datestr = "%.2d%.2d%.2d%.2d%.2d"%(year_in_century,ttup[1],ttup[2],ttup[3],ttup[4])
-    cmdstr = "%s %s %s %s 0"%(INFORMSIR_SCRIPT,informsir_params[0],informsir_params[1],datestr)
+    print "INFO","inside inform_sir..."
+    print "INFO","aidstr=%s"%aidstr
+    informsir_params = (string.upper("%s_%s"%(saf_name[0:3],pge_name)),string.upper(aidstr))
+    print "INFO","informsir_params: ",informsir_params
+    cmdstr = "%s %s %s %s %d"%(INFORMSIR_SCRIPT,informsir_params[0],informsir_params[1],datestr,status)
     print "INFO","Inform SIR command: %s"%(cmdstr)
-    #os.system(cmdstr)
+    os.system(cmdstr)
 
     return
     
@@ -36,7 +34,10 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
     print "Area = ",areaid
     ctype=None
     areaObj = area.area(areaid)
-        
+
+    yystr = ("%.4d"%year)[2:4]
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
+    
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
     outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
@@ -46,6 +47,48 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
         ctype = msg_ctype2ppsformat(msgctypeRem)
         epshdf.write_cloudtype(outfile,ctype,6)
 
+    imagelist = glob.glob("%s*.png"%string.split(outfile,".hdf")[0])
+    nrgbs = len(imagelist)
+    print "INFO","Number of images already there: ",nrgbs
+    if nrgbs >= 2:
+        return
+
+    # Make images to distribute via SIR for forecasters and others:
+    if EXTRA_IMAGE_FORMATS.has_key(areaid) and "PGE02" in EXTRA_IMAGE_FORMATS[areaid].keys() and \
+           len(EXTRA_IMAGE_FORMATS[areaid]["PGE02"]) > 0 and os.path.exists(outfile):
+        # Make (extra) image(s) of the result:        
+        print "INFO","Make (extra) Cloud Type images for SMHI from the hdf5"
+        for legend_name in PGE02_LEGEND_NAMES[areaid]:
+            print "INFO","Call cloudtype2image"
+            print "INFO","Pallete type: %s"%(legend_name)
+            legend = PGE02_LEGENDS[legend_name]
+            if not ctype:
+                ctype = epshdf.read_cloudtype(outfile,1,0,0)
+                
+            im = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
+            print "INFO","image instance created..."
+            
+            for imformat in EXTRA_IMAGE_FORMATS[areaid]["PGE02"]:
+                print "INFO","File time stamp = %s"%timestamp
+                aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+                prodid=string.ljust(PGE02_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
+                outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+                print "INFO","Image file name to SIR = %s"%outname
+                if PGE02_SIR_NAMES.has_key(legend_name):
+                    sir_stat=0
+                    try:
+                        im.save(outname,FORMAT=imformat,quality=100)
+                    except:
+                        print "INFO","Couldn't make image of specified format: ",imformat                        
+                        sir_stat=-1
+                        pass
+                    if os.path.exists(outname):
+                        os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                    inform_sir("MSG",PGE02_SIR_NAMES[legend_name],areaid,sir_stat,timestamp)
+                else:
+                    print "INFO","No product to SIR for this legend: %s"%(legend_name)
+    
+    # Make standard images:
     if PRODUCT_IMAGES["PGE02"].has_key(areaid):
         print PRODUCT_IMAGES["PGE02"][areaid].keys()
         for key in PRODUCT_IMAGES["PGE02"][areaid].keys():
@@ -56,24 +99,19 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
                 if not os.path.exists(imagefile):
                     if not ctype:
                         ctype = epshdf.read_cloudtype(outfile,1,1,0)
-                    if key == "FULL":
-                        legend = get_cms_modified()
-                    elif key == "VV1":
-                        legend = get_ctype_vv1()
-                    elif key == "VV2":
-                        legend = get_ctype_vv2()
+                    if PGE02_LEGENDS.has_key(key):
+                        this = pps_array2image.cloudtype2image(ctype.cloudtype,PGE02_LEGENDS[key])
+                        size=this.size
+                        this.save(imagefile)
+                        this.thumbnail((size[0]/3,size[1]/3))
+                        this.save(thumbnail)
                     else:
-                        print "ERROR: Legend not supported!"
-                        return
-                
-                    this = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
-                    size=this.size
-                    this.save(imagefile)
-                    this.thumbnail((size[0]/3,size[1]/3))
-                    this.save(thumbnail)
-                
-    inform_sir("MSG","PGE02",areaid)
+                        print "ERROR","Failed generating image file"
+                        print "INFO: Legend not supported!"
                     
+    # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
+    os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/MesanX/%s* /data/proj/saftest/nwcsafmsg/PGEs/."%(os.path.basename(outfile).split(".hdf")[0]))
+
     return
 
 # -----------------------------------------------------------------------
@@ -83,7 +121,8 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
     print "Area = ",areaid
     ctth=None
     areaObj = area.area(areaid)
-
+    yystr = ("%.4d"%year)[2:4]
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
 
@@ -94,6 +133,46 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
         ctth = msg_ctth2ppsformat(msgctthRem)
         epshdf.write_cloudtop(outfile,ctth,6)
 
+    imagelist = glob.glob("%s*.png"%string.split(outfile,".hdf")[0])
+    nrgbs = len(imagelist)
+    print "INFO","Number of images already there: ",nrgbs
+    if nrgbs >= 2:
+        return
+    
+    # Make images to distribute via SIR for forecasters and others:
+    if EXTRA_IMAGE_FORMATS.has_key(areaid) and "PGE03" in EXTRA_IMAGE_FORMATS[areaid].keys() and \
+           len(EXTRA_IMAGE_FORMATS[areaid]["PGE03"]) > 0 and os.path.exists(outfile):
+        # Make (extra) image(s) of the result:        
+        print "INFO","Make (extra) CTTH images for SMHI from the hdf5"
+        for legend_name in PGE03_LEGEND_NAMES[areaid]:
+            print "INFO","Pallete type: %s"%(legend_name)
+            if not ctth:
+                ctth=epshdf.read_cloudtop(outfile,1,1,1,0,1)
+
+            this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[legend_name])
+            print "INFO","image instance created..."
+            
+            for imformat in EXTRA_IMAGE_FORMATS[areaid]["PGE03"]:
+                print "INFO","File time stamp = %s"%timestamp
+                aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+                prodid=string.ljust(PGE03_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
+                outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+                print "INFO","Image file name to SIR = %s"%outname
+                if PGE03_SIR_NAMES.has_key(legend_name):
+                    sir_stat=0
+                    try:
+                        this.save(outname,FORMAT=imformat,quality=100)
+                    except:
+                        print "INFO","Couldn't make image of specified format: ",imformat                        
+                        sir_stat=-1
+                        pass
+                    if os.path.exists(outname):
+                        os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                    inform_sir("MSG",PGE03_SIR_NAMES[legend_name],areaid,sir_stat,timestamp)
+                else:
+                    print "INFO","No product to SIR for this legend: %s"%(legend_name)
+    
+    # Make standard images:
     if PRODUCT_IMAGES["PGE03"].has_key(areaid):
         print PRODUCT_IMAGES["PGE03"][areaid].keys()
         for key in PRODUCT_IMAGES["PGE03"][areaid].keys():
@@ -104,18 +183,18 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
                 if not os.path.exists(imagefile):
                     if not ctth:
                         ctth = epshdf.read_cloudtop(outfile,1,1,1,0,1)                
-                    if key == "HEIGHT_FULL":
-                        this,arr = pps_array2image.ctth2image(ctth,"height")
+                    if PGE03_LEGENDS.has_key(key):
+                        this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[key])
+                        size=this.size
+                        this.save(imagefile)
+                        this.thumbnail((size[0]/3,size[1]/3))
+                        this.save(thumbnail)
                     else:
-                        print "ERROR: Legend not supported!"
-                        return
+                        print "ERROR","Failed generating image file"
+                        print "INFO: Legend not supported!"
 
-                    size=this.size
-                    this.save(imagefile)
-                    this.thumbnail((size[0]/3,size[1]/3))
-                    this.save(thumbnail)
-                
-    inform_sir("MSG","PGE03",areaid)
+    # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
+    os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/MesanX/%s* /data/proj/saftest/nwcsafmsg/PGEs/."%(os.path.basename(outfile).split(".hdf")[0]))
 
     return
 
@@ -221,5 +300,5 @@ if __name__ == "__main__":
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-    os.system("/usr/bin/rsync -crtzulv --delete /local_disk/data/Meteosat8/MesanX/*mesanX* /data/proj/saftest/nwcsafmsg/PGEs")
+    #os.system("/usr/bin/rsync -crzulv --delete /local_disk/data/Meteosat8/MesanX/ /data/proj/saftest/nwcsafmsg/PGEs")
     

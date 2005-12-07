@@ -10,6 +10,9 @@ APPLDIR=/local_disk/opt/MSG_PostProc
 if [ -n "`ps -edalf | grep "msg_remap_all_Oper.py" | grep -v grep`" ]; then 
   { echo "***msg_remap_all_Oper already active, abort****"; exit ; } 
 fi
+if [ -n "`ps -edalf | grep "msg_rgb_remap_all_Oper.py" | grep -v grep`" ]; then 
+  { echo "***msg_remap_all_Oper already active, abort****"; exit ; } 
+fi
 # otherwise continue
 
 python ${APPLDIR}/scr/msg_remap_all_Oper.py $1

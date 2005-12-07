@@ -27,28 +27,58 @@ DSEC_SLOTS=3600/4 # Slot-frequency considered = 15 minutes
 
 # List of areas:
 NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]
+NWCSAF_MSG_AREAS_IMPROD = ["scan","euro","sswe"]
 
+#
+EXTRA_IMAGE_FORMATS = {}
 
-# IMAGE_LEGENDS:
+for aid in NWCSAF_MSG_AREAS:
+    EXTRA_IMAGE_FORMATS[aid] = {}
+
+for aid in NWCSAF_MSG_AREAS_IMPROD:
+    EXTRA_IMAGE_FORMATS[aid]={"PGE01":[],"PGE02":["tif"],"PGE03":["tif"],
+    	                      "PGE04":[],"RGB_DAY":[],"RGB_NIGHT":[]}
+
+# PGE02 IMAGE_LEGENDS:
 #   FULL: "get_cms_modified" - nwcsaf/msg colouring
 #   VV:   "get_ctype_vv"     - For the Swedish road authoroties
 
+# PGE03 IMAGE_LEGENDS:
+
+
 # Products on which areas, and with which colour-palettes, and in what image formats?:
-PRODUCT_IMAGES={"PGE02":{"mesanX" :{"FULL":["png"]},
-			 "sswe"   :{"FULL":["png","tiff"],
-			 	    "VV1"  :[],
-			 	    "VV2"  :["png","tiff"]},
-		         "scan"   :{"FULL":["png","tiff"],
-			 	    "VV1"  :["png"],
-			 	    "VV2"  :["png","tiff"]},
-		         "euro"   :{"FULL":["png","tiff"],
-			 	    "VV1"  :[],
-			 	    "VV2"  :["png","tiff"]}},
-		"PGE03":{"mesanX":{"HEIGHT_FULL":["png"]},
-			 "sswe"  :{"HEIGHT_FULL":["png","tiff"]},
-			 "scan"  :{"HEIGHT_FULL":["png","tiff"]},
-			 "euro"  :{"HEIGHT_FULL":["png"]}
+PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
+			 "sswe"   :{"standard":["png"],
+			 	    "vv2"  :["png"]},
+		         "scan"   :{"standard":["png"],
+			 	    "vv2"  :["png"]},
+		         "euro"   :{"standard":["png"],
+			 	    "vv2"  :["png"]}},
+		"PGE03":{"mesanX":{"standard":["png"]},
+			 "sswe"  :{"standard":["png"]},
+			 "scan"  :{"standard":["png"]},
+			 "euro"  :{"standard":["png"]}
 		}
 		}
 
-INFORMSIR_SCRIPT="/data/prod/sir2/lib/informsirnw.csh"
+# Which LEGENDS/PALETTES to which products and region:
+from smhi_safnwc_legends import *
+from pps_array2image import get_cms_modified
+
+PGE02_LEGENDS = {"standard":get_cms_modified(),"vv2":get_ctype_vv2()}
+PGE02_LEGEND_NAMES = {}
+
+for aid in NWCSAF_MSG_AREAS:
+    PGE02_LEGEND_NAMES[aid] = ("standard",)
+for aid in NWCSAF_MSG_AREAS_IMPROD:
+    PGE02_LEGEND_NAMES[aid] = ("standard","vv2")
+
+PGE03_LEGENDS = {"standard":"height"}
+PGE03_LEGEND_NAMES = {}
+for aid in NWCSAF_MSG_AREAS:
+    PGE03_LEGEND_NAMES[aid] = ("standard",)
+
+INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
+SIR_DIR="/data/prod/sirexp/sir2/data"
+PGE02_SIR_NAMES={"standard":"02a","vv2":"02b"}
+PGE03_SIR_NAMES={"standard":"03a"}

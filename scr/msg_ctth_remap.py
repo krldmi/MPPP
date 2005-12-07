@@ -125,7 +125,7 @@ def read_msgCtth(filename):
     retv.temperature.data=aNode.data()
     aNode=aNodeList.getNode("/CTTH_TEMPER/SCALING_FACTOR")
     retv.temperature.scaling_factor=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/OFFSET")
+    aNode=aNodeList.getNode("/CTTH_TEMPER/OFFSET") 
     retv.temperature.offset=aNode.data()
     aNode=aNodeList.getNode("/CTTH_TEMPER/N_LINES")
     retv.temperature.num_of_lines=aNode.data()
@@ -216,6 +216,7 @@ def msg_ctth2ppsformat(msgctth,satid="Meteosat 8"):
     retv.t_gain=1.0
     retv.t_intercept=100.0
     retv.t_nodata=255
+    #print "Temp offset & scaling factor: ",msgctth.temperature.scaling_factor,msgctth.temperature.offset
     arr = (((msgctth.temperature.data * msgctth.temperature.scaling_factor + msgctth.temperature.offset)\
             - retv.t_intercept)/retv.t_gain).astype('b')
     retv.temperature = Numeric.where(Numeric.equal(msgctth.temperature.data,0),retv.t_nodata,arr).astype('b')
@@ -226,6 +227,7 @@ def msg_ctth2ppsformat(msgctth,satid="Meteosat 8"):
     retv.h_gain=200.0
     retv.h_intercept=0.0
     retv.h_nodata=255
+    #print "Height offset & scaling factor: ",msgctth.height.scaling_factor,msgctth.height.offset
     arr = (((msgctth.height.data * msgctth.height.scaling_factor + msgctth.height.offset)\
             - retv.h_intercept)/retv.h_gain).astype('b')
     retv.height = Numeric.where(Numeric.equal(msgctth.height.data,0),retv.h_nodata,arr).astype('b')
@@ -236,6 +238,7 @@ def msg_ctth2ppsformat(msgctth,satid="Meteosat 8"):
     retv.p_gain=25.0
     retv.p_intercept=0.0
     retv.p_nodata=255
+    #print "Pressure offset & scaling factor: ",msgctth.pressure.scaling_factor,msgctth.pressure.offset
     arr = (((msgctth.pressure.data * msgctth.pressure.scaling_factor + msgctth.pressure.offset)\
             - retv.p_intercept)/retv.p_gain).astype('b')
     retv.pressure = Numeric.where(Numeric.equal(msgctth.pressure.data,0),retv.p_nodata,arr).astype('b')
@@ -266,7 +269,7 @@ def convert_procflags2pps(data):
     #print Numeric.minimum.reduce(is_bit1_set.flat),Numeric.maximum.reduce(is_bit1_set.flat)
     del is_bit0_set
     del is_bit1_set
-    print "Processing status flags: min,max=",Numeric.minimum.reduce(proc.flat),Numeric.maximum.reduce(proc.flat)
+    #print "Processing status flags: min,max=",Numeric.minimum.reduce(proc.flat),Numeric.maximum.reduce(proc.flat)
     # Non-processed?
     # If non-processed in msg (0) then set pps bit 0 and nothing else.
     # If non-processed in msg due to FOV is cloud free (1) then do not set any pps bits.
@@ -278,14 +281,14 @@ def convert_procflags2pps(data):
     arr = Numeric.where(Numeric.equal(proc,3),Numeric.left_shift(ones,1),0)
     retv = Numeric.array(arr)
     del proc
-    print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
 
     # 1 bit to define if RTTOV-simulations are available?
     # (maps to pps bit 3:)
     is_bit2_set = get_bit_from_flags(data,2)    
     proc = is_bit2_set
     #print Numeric.minimum.reduce(is_bit2_set.flat),Numeric.maximum.reduce(is_bit2_set.flat)
-    print "Processing flags - rttov: min,max=",Numeric.minimum.reduce(proc.flat),Numeric.maximum.reduce(proc.flat)
+    #print "Processing flags - rttov: min,max=",Numeric.minimum.reduce(proc.flat),Numeric.maximum.reduce(proc.flat)
     # RTTOV-simulations available?
     #
     arr = Numeric.where(Numeric.equal(proc,1),Numeric.left_shift(ones,3),0)
@@ -305,7 +308,7 @@ def convert_procflags2pps(data):
                         Numeric.left_shift(ones,4),0)
     arr = Numeric.add(arr,Numeric.where(Numeric.logical_or(Numeric.equal(nwp_bits,2),Numeric.equal(nwp_bits,4)),
                                         Numeric.left_shift(ones,5),0))
-    print "Processing flags - nwp: min,max=",Numeric.minimum.reduce(nwp_bits.flat),Numeric.maximum.reduce(nwp_bits.flat)
+    #print "Processing flags - nwp: min,max=",Numeric.minimum.reduce(nwp_bits.flat),Numeric.maximum.reduce(nwp_bits.flat)
     retv = Numeric.add(retv,arr)
     del is_bit3_set
     del is_bit4_set
@@ -319,8 +322,8 @@ def convert_procflags2pps(data):
     seviri_bits = is_bit6_set * Numeric.left_shift(ones,0) + \
                   is_bit7_set * Numeric.left_shift(ones,1)
     arr = Numeric.where(Numeric.greater_equal(seviri_bits,2),Numeric.left_shift(ones,6),0)
-    print "Processing flags - seviri: min,max=",Numeric.minimum.reduce(seviri_bits.flat),\
-          Numeric.maximum.reduce(seviri_bits.flat)
+    #print "Processing flags - seviri: min,max=",Numeric.minimum.reduce(seviri_bits.flat),\
+    #      Numeric.maximum.reduce(seviri_bits.flat)
     retv = Numeric.add(retv,arr)
     del is_bit6_set
     del is_bit7_set
@@ -344,8 +347,8 @@ def convert_procflags2pps(data):
                       Numeric.where(Numeric.logical_and(Numeric.greater_equal(method_bits,3),
                                                         Numeric.less_equal(method_bits,12)),
                                     Numeric.left_shift(ones,8),0))
-    print "Processing flags - method: min,max=",Numeric.minimum.reduce(method_bits.flat),\
-          Numeric.maximum.reduce(method_bits.flat)
+    #print "Processing flags - method: min,max=",Numeric.minimum.reduce(method_bits.flat),\
+    #      Numeric.maximum.reduce(method_bits.flat)
     # (Maps directly - as well - to the spare bits 9-12) 
     arr = Numeric.add(arr,Numeric.where(is_bit8_set,Numeric.left_shift(ones,9),0))
     arr = Numeric.add(arr,Numeric.where(is_bit9_set,Numeric.left_shift(ones,10),0))
@@ -369,8 +372,8 @@ def convert_procflags2pps(data):
                         Numeric.left_shift(ones,14),0)
     arr = Numeric.add(arr,
                       Numeric.where(Numeric.equal(qual_bits,2),Numeric.left_shift(ones,15),0))
-    print "Processing flags - quality: min,max=",Numeric.minimum.reduce(qual_bits.flat),\
-          Numeric.maximum.reduce(qual_bits.flat)
+    #print "Processing flags - quality: min,max=",Numeric.minimum.reduce(qual_bits.flat),\
+    #      Numeric.maximum.reduce(qual_bits.flat)
     retv = Numeric.add(retv,arr)
     del is_bit12_set
     del is_bit13_set    
@@ -421,14 +424,29 @@ def msgCtth_remap_fast(cov,msgctth,areaid,a):
     retv.projection_name = a.pcs.id
     retv.num_of_columns = a.xsize
     retv.num_of_lines = a.ysize
+
+    retv.temperature.offset=msgctth.temperature.offset
+    retv.temperature.scaling_factor=msgctth.temperature.scaling_factor
     retv.temperature.num_of_columns = a.xsize
     retv.temperature.num_of_lines = a.ysize
+
+    retv.height.offset=msgctth.height.offset
+    retv.height.scaling_factor=msgctth.height.scaling_factor
     retv.height.num_of_columns = a.xsize
     retv.height.num_of_lines = a.ysize
+
+    retv.pressure.offset=msgctth.pressure.offset
+    retv.pressure.scaling_factor=msgctth.pressure.scaling_factor
     retv.pressure.num_of_columns = a.xsize
     retv.pressure.num_of_lines = a.ysize
+
+    retv.cloudiness.offset=msgctth.cloudiness.offset
+    retv.cloudiness.scaling_factor=msgctth.cloudiness.scaling_factor
     retv.cloudiness.num_of_columns = a.xsize
     retv.cloudiness.num_of_lines = a.ysize
+
+    retv.processing_flags.offset=msgctth.processing_flags.offset
+    retv.processing_flags.scaling_factor=msgctth.processing_flags.scaling_factor
     retv.processing_flags.num_of_columns = a.xsize
     retv.processing_flags.num_of_lines = a.ysize    
 
@@ -486,10 +504,22 @@ if __name__ == "__main__":
         this = pps_array2image.ctthimage(that,fileprefix+".temp",
                                          (3,),"temperature",coastlines=1)
 
+        import Numeric
+        print " -------- Temperature ---------"
+        print ctth.temperature[1000:1005,1000:1005]
+        maxt = Numeric.where(Numeric.not_equal(ctth.temperature.flat,ctth.t_nodata),ctth.temperature.flat,0)
+        print "Max & Min: ",Numeric.maximum.reduce(maxt),\
+              Numeric.minimum.reduce(ctth.temperature.flat)
         print that.temperature[1000:1005,1000:1005]
+        maxt = Numeric.where(Numeric.not_equal(that.temperature.flat,ctth.t_nodata),that.temperature.flat,0)
+        print "Max & Min: ",Numeric.maximum.reduce(maxt),\
+              Numeric.minimum.reduce(that.temperature.flat)
         print msgctth.temperature.data[1000:1005,1000:1005]
-        print msgctth.processing_flags.data[1000:1005,1000:1005]
-        print ctth.processingflag[1000:1005,1000:1005]
-
-        print msgctth.processing_flags.data[0:5,0:5]
-        print ctth.processingflag[0:5,0:5]
+        print "Max & Min: ",Numeric.maximum.reduce(msgctth.temperature.data.flat),\
+              Numeric.minimum.reduce(msgctth.temperature.data.flat)
+        #print " ------ Processing flags ------"
+        #print msgctth.processing_flags.data[1000:1005,1000:1005]
+        #print ctth.processingflag[1000:1005,1000:1005]
+        #print " ------ Processing flags ------"
+        #print msgctth.processing_flags.data[0:5,0:5]
+        #print ctth.processingflag[0:5,0:5]
