@@ -124,8 +124,7 @@ if __name__ == "__main__":
                 # Daytime convection:
                 if ok1 and ok3 and ok4 and ok5 and ok6 and ok9:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    #makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,0.5,1.0),rgbrange=[(-30,0),(0,50.0),(-70.0,20.0)])
-                    makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
+                    makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,0.5,1.0),rgbrange=[(-30,0),(0,50.0),(-70.0,20.0)])
 
                 # Fog and low clouds
                 if ok4r and ok9 and ok10:

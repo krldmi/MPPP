@@ -1,8 +1,8 @@
-include ./def.mk
+include ../def.mk
 
 SHELL=/bin/sh
 
-SOURCE_DIRS=scr cfg cst etc
+SOURCE_DIRS=init.d
 
 all:
 	@for i in $(SOURCE_DIRS) ; \
@@ -47,8 +47,3 @@ install:
 		$(MAKE) install; \
 		cd $$TDIR; \
 	done
-	@$(HLHDF_INSTALL_BIN) -f -o -m620 -C def.mk $(MSGPP_INSTALL_PATH)/mkf/def.mk
-	@\touch marker.tmp
-	@$(HLHDF_INSTALL_BIN) -c -o -m644 -C marker.tmp $(MSGPP_INSTALL_PATH)/log/marker.tmp
-	@\rm -f $(MSGPP_INSTALL_PATH)/log/marker.tmp
-	@\rm -f marker.tmp

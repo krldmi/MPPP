@@ -6,7 +6,8 @@ INSTALL_FILES=msg_remap_all.py msg_remap_all_Oper.py \
               msg_rgb_remap_all.py msg_rgb_remap_all_Oper.py \
               msg_rgb_remap.py \
               msg_remap_util.py \
-	      smhi_safnwc_legends.py
+	      smhi_safnwc_legends.py \
+	      msg_PutProducts2ftpserver.py
 
 BIN_INSTALL_FILES=msg_remap_all.ksh msg_remap_all_Oper.ksh
 
