@@ -2,9 +2,12 @@
 #
 # CVS History:
 #
-# $Id: smhi_safnwc_legends.py,v 1.3 2005/09/07 09:38:00 adybbroe Exp $
+# $Id: smhi_safnwc_legends.py,v 1.4 2005/12/13 13:01:02 adybbroe Exp $
 #
 # $Log: smhi_safnwc_legends.py,v $
+# Revision 1.4  2005/12/13 13:01:02  adybbroe
+# *** empty log message ***
+#
 # Revision 1.3  2005/09/07 09:38:00  adybbroe
 # *** empty log message ***
 #
@@ -15,6 +18,35 @@
 #
 # ****************************************************************************
 
+
+# ------------------------------------------------------------------
+def get_tv_legend():
+    legend = []
+    legend.append((  0,  0,  0)) # Unprocessed: Black
+    legend.append((  0,120,  0)) # Land
+    legend.append((  0,  0,215)) # Sea: Blue
+
+    for i in range(3,256):
+        legend.append((i,i,i)) # All other pixel values are grey according to IR temp.        
+    
+    return legend
+
+# ------------------------------------------------------------------
+def get_vv_legend():
+    legend = []
+    legend.append((  0,  0,  0)) # Unprocessed: Black
+    legend.append((  0,120,  0)) # Land
+    legend.append((  0,  0,215)) # Sea: Blue
+    # Cloud type values 5 to 8:
+    legend.append((255,150,  0)) # Very low cumuliform
+    legend.append((255,100,  0)) # Very low
+    legend.append((255,220,  0)) # Low cumuliform
+    legend.append((255,180,  0)) # Low
+
+    for i in range(7,256):
+        legend.append((i,i,i)) # All other pixel values are grey according to IR temp.        
+    
+    return legend
 
 # --------------------------------------------------------------------
 def get_ctype_vv1():

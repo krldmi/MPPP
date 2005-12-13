@@ -3,7 +3,10 @@ include ../def.mk
 INSTALL_FILES=C0429_1999_S0700_0900.LAT \
 	C0429_1999_S0700_0900.LON \
 	C0429_1999_S0700_0900.SAT_AZI \
-	C0429_1999_S0700_0900.SAT_ZEN
+	C0429_1999_S0700_0900.SAT_ZEN \
+	msg_coverage_CEuro.euro.hdf msg_coverage_CEuro.mesanX.hdf \
+	msg_coverage_CEuro.nswe.hdf msg_coverage_CEuro.scan.hdf msg_coverage_CEuro.sswe.hdf
+
 
 all: ;
 

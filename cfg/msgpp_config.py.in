@@ -1,3 +1,17 @@
+import os
+
+# -----------------------------------------------------
+def setenvpath(env):
+    try:
+	return os.environ[env] + "/"
+    except:
+	print "Environment variable %s not set!"%(env)
+	pass
+	
+    return "." 
+
+# -----------------------------------------------------
+
 APPLDIR="@prefix@"
 
 LONFILE = "%s/cst/C0429_1999_S0700_0900.LON"%(APPLDIR)
@@ -13,17 +27,25 @@ LATFILE = "%s/cst/C0429_1999_S0700_0900.LAT"%(APPLDIR)
 
 CTYPEDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
 CTTHDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
-CTYPEDIR_IN = "/local_disk/test/msg_1.1/export/PGE02"
-CTTHDIR_IN = "/local_disk/test/msg_1.1/export/PGE03"
+CTYPEDIR_IN = "/opt/MSG/current/export/PGE02"
+CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
 
 RGBDIR_OUT = "/local_disk/data/Meteosat8/RGBs"
-RGBDIR_IN = "/local_disk/test/msg_1.1/tmp"
+RGBDIR_IN = "/opt/MSG/current/tmp"
 
+MSG_SATELLITE = "met08"
+MSG_AREA = "CEuro"
 ROWS,COLS=(700,900)
 
 COMPRESS_LVL=6
 
 DSEC_SLOTS=3600/4 # Slot-frequency considered = 15 minutes
+
+
+USGS_DIR = setenvpath("SM_USGS_DIR") 
+AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
+COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
+
 
 # List of areas:
 NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]

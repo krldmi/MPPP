@@ -42,8 +42,8 @@ if __name__ == "__main__":
     print "Start and End times: ",start_date,end_date
     
     import os,time
-    in_aid="CEuro"
-    MetSat="met08"
+    in_aid=MSG_AREA
+    MetSat=MSG_SATELLITE
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)

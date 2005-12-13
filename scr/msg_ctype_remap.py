@@ -358,15 +358,19 @@ if __name__ == "__main__":
         slotn = string.atoi(sys.argv[4])
         areaid = sys.argv[5]
 
+    MetSat=MSG_SATELLITE
+
     import time
     timetup = time.localtime(time.mktime((year,month,day,0,0,0,0,0,0)))    
     jday=timetup[7]
     print "year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday)
+    hour = slotn/4
+    min = (slotn%4)*15
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
     
-    in_aid="CEuro"
+    in_aid=MSG_AREA
     prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)    
     a=area.area(areaid)
 
@@ -380,9 +384,10 @@ if __name__ == "__main__":
         print info.items()
 
     for infile in glob.glob("%s/%s*h5"%(CTYPEDIR_IN,prefix)):
-        outfile = "%s/%s%s%s"%(CTYPEDIR_OUT,os.path.basename(infile).split("CEuro")[0],
-                               areaid,os.path.basename(infile).split("CEuro")[1])
-        print outfile
+        s=string.ljust(areaid,12)
+        ext=string.replace(s," ","_")
+        outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,min,areaid)
+        print "Output file: ",outfile
         if not os.path.exists(outfile):
             msgctype = read_msgCtype(infile)
             msgctype = msgCtype_remap_fast(cov,msgctype,areaid,a)
@@ -394,9 +399,9 @@ if __name__ == "__main__":
         legend = pps_array2image.get_cms_modified()
         this = pps_array2image.cloudtype2image(that.cloudtype,legend)
         size=this.size
-        imagefile = outfile.split(".h5")[0] + ".png"
+        imagefile = outfile.split(".hdf")[0] + ".png"
         this.save(imagefile)
         this.thumbnail((size[0]/3,size[1]/3))
-        thumbnail = outfile.split(".h5")[0] + ".thumbnail.png"
+        thumbnail = outfile.split(".hdf")[0] + ".thumbnail.png"
         this.save(thumbnail)
 

@@ -25,26 +25,13 @@ def gamma_corr(g,arr):
     return retv.astype('b')
 
 # ------------------------------------------------------------------
-def make_bw(ch,outprfx,**options):
-    import sm_display_util
+def get_bw_array(ch,gamma,inverse,**options):
     import Numeric
-    import Image
     
-    if options.has_key("gamma"):
-        gamma=options["gamma"]
-    else:
-        gamma = 1.0
-    if options.has_key("inverse"):
-        inverse=options["inverse"]
-    else:
-        inverse = 0
-
     not_missing_data = Numeric.greater(ch,0.0).astype('b')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
-
     if inverse:
         ch=-ch
-        
+    
     if options.has_key("bwrange"):
         ch_range = options["bwrange"]
         min_ch,max_ch = ch_range[0],ch_range[1]
@@ -63,7 +50,28 @@ def make_bw(ch,outprfx,**options):
     # Gamma correction:
     layer=(gamma_corr(gamma,layer) * not_missing_data).astype('b')
     
+    return layer
+
+# ------------------------------------------------------------------
+def make_bw(ch,outprfx,**options):
+    import Image
+    
+    if options.has_key("gamma"):
+        gamma=options["gamma"]
+    else:
+        gamma = 1.0
+    if options.has_key("inverse"):
+        inverse=options["inverse"]
+    else:
+        inverse = 0
+    if options.has_key("bwrange"):
+        layer = get_bw_array(ch,gamma,inverse,bwrange=options["bwrange"])
+    else:
+        layer = get_bw_array(ch,gamma,inverse)
+
+    imsize = ch.shape[1],ch.shape[0]
     that=Image.fromstring("P", imsize, layer.tostring())    
+        
     that.save(outprfx+".png","png")
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")

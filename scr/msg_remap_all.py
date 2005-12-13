@@ -23,8 +23,8 @@ if __name__ == "__main__":
         end_date = sys.argv[2]
 
     import string,time
-    in_aid="CEuro"
-    MetSat="met08"
+    in_aid=MSG_AREA
+    MetSat=MSG_SATELLITE
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
@@ -101,8 +101,8 @@ if __name__ == "__main__":
 
                 if msgctype:
                     doCloudType(CoverageData,msgctype,areaid,in_aid,MetSat,year,month,day,hour,min)
-                if msgctth:
-                    doCtth(CoverageData,msgctth,areaid,in_aid,MetSat,year,month,day,hour,min)
+                #if msgctth:
+                #    doCtth(CoverageData,msgctth,areaid,in_aid,MetSat,year,month,day,hour,min)
 
         sec = sec + DSEC_SLOTS
 

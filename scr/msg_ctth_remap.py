@@ -474,7 +474,8 @@ if __name__ == "__main__":
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
     
-    in_aid="CEuro"
+    #in_aid="CEuro"
+    in_aid=MSG_AREA
     prefix="SAFNWC_MSG1_CTTH_%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)    
     a=area.area(areaid)
 
@@ -488,8 +489,8 @@ if __name__ == "__main__":
         print info.items()
     
     for infile in glob.glob("%s/%s*h5"%(CTTHDIR_IN,prefix)):
-        outfile = "%s/%s%s%s"%(CTTHDIR_OUT,os.path.basename(infile).split("CEuro")[0],
-                               areaid,os.path.basename(infile).split("CEuro")[1])
+        outfile = "%s/%s%s%s"%(CTTHDIR_OUT,os.path.basename(infile).split(in_aid)[0],
+                               areaid,os.path.basename(infile).split(in_aid)[1])
         print outfile
         if not os.path.exists(outfile):
             msgctth = read_msgCtth(infile)

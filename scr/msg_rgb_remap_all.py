@@ -18,8 +18,10 @@ if __name__ == "__main__":
     import _satproj
     import area
     import glob,os
+    import msg_ctype_products
 
-    in_aid="CEuro"
+    MetSat=MSG_SATELLITE
+    in_aid=MSG_AREA
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
@@ -37,7 +39,6 @@ if __name__ == "__main__":
     hour=string.atoi(end_date[8:10])
     min=string.atoi(end_date[10:12])    
     time_end = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
-
 
     CoverageData = {}
 
@@ -62,9 +63,11 @@ if __name__ == "__main__":
         sec = time_start
         while (sec < time_end + 1):
             ttup = time.gmtime(sec)
-            year,month,day,hour,min,dummy,dummy,dummy,dummy = ttup
+            year,month,day,hour,min,dummy,dummy,jday,dummy = ttup
+            slotn = hour*4+int((min+7.5)/15)
             
             fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
+            #fileprfx="%s"%(RGBDIR_IN)
             fname = "%.4d%.2d%.2d%.2d%.2d_C0429_1999_S0700_0900"%(year,month,day,hour,min)
 
             fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
@@ -99,7 +102,18 @@ if __name__ == "__main__":
                 if ok4 and ok9 and ok11:
                     ch4r = co2corr_bt39(ch4,ch9,ch11)
                     ok4r = 1
-                    
+
+                if ok9:
+                    s=string.ljust(areaid,12)
+                    ext=string.replace(s," ","_")
+                    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,min,areaid)
+                    print "Output file: ",ctypefile
+                    # Two products to vägverket and tv:
+                    msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+                    msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    
+                
+                """
                 # IR - channel 9:
                 if ok9:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
@@ -134,6 +148,7 @@ if __name__ == "__main__":
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                     makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
 
+                """
                 # "red snow": Low clouds and snow daytime
                 #if ok1 and ok3 and ok9:
                 #    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
@@ -145,7 +160,9 @@ if __name__ == "__main__":
                 #    makergb_cloudtop(ch4,ch9,ch10,outname)
                 if ok4r and ok9 and ok10:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.6,1.6,1.4))
+                    #makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.6,1.6,1.4))
+                    makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.8,1.8,1.8),
+                                     rgbrange=[(-290,-223),(-290,-223),(-290,-223)])
         
             sec = sec + DSEC_SLOTS
 
