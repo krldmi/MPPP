@@ -9,6 +9,7 @@ import pps_array2image
 
 from msg_ctype_remap import *
 from msg_ctth_remap import *
+from msg_rgb_remap import *
 
 from pps_array2image import get_cms_modified
 from smhi_safnwc_legends import *
@@ -199,6 +200,36 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
     return
 
 # -----------------------------------------------------------------------
+def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
+    import string
+    import make_ctype_products
+
+    fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COL)
+
+    fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
+    if len(fl) == 0:
+        print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+    else:
+        print "Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+
+    ch9file = "%s/9_%s.BT"%(fileprfx,fname)
+    ch9,ok9=get_ch_projected(ch9file,cov)
+
+    if not ok9:
+        print "ERROR: Failed extracting SEVIRI channel 9 data"
+        sys.exit(-9)
+
+    s=string.ljust(areaid,12)
+    ext=string.replace(s," ","_")
+    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    print "Output file: ",ctypefile
+
+    make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    
+    return
+
+# -----------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 2:
@@ -293,7 +324,8 @@ if __name__ == "__main__":
 
             if msgctype:
                 doCloudType(CoverageData,msgctype,areaid,in_aid,MetSat,year,month,day,hour,min)
-            
+                doCprod01(CoverageData,areaid,in_aid,MetSat,year,month,day,hour,min)
+                
             if msgctth:
                 doCtth(CoverageData,msgctth,areaid,in_aid,MetSat,year,month,day,hour,min)
 

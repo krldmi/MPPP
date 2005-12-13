@@ -14,9 +14,6 @@ def setenvpath(env):
 
 APPLDIR="@prefix@"
 
-LONFILE = "%s/cst/C0429_1999_S0700_0900.LON"%(APPLDIR)
-LATFILE = "%s/cst/C0429_1999_S0700_0900.LAT"%(APPLDIR)
-
 #CTYPEDIR_OUT = "/local_disk2/data/Meteosat8/output"
 #CTTHDIR_OUT = "/local_disk2/data/Meteosat8/output"
 #CTYPEDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_2/export/PGE02"
@@ -35,7 +32,14 @@ RGBDIR_IN = "/opt/MSG/current/tmp"
 
 MSG_SATELLITE = "met08"
 MSG_AREA = "CEuro"
+MSG_AREA_CENTER=(429,1999)
 ROWS,COLS=(700,900)
+
+
+#LONFILE = "%s/cst/C0429_1999_S0700_0900.LON"%(APPLDIR)
+#LATFILE = "%s/cst/C0429_1999_S0700_0900.LAT"%(APPLDIR)
+LONFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LON"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
+LATFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LAT"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
 COMPRESS_LVL=6
 
