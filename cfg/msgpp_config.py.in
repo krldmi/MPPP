@@ -50,10 +50,11 @@ USGS_DIR = setenvpath("SM_USGS_DIR")
 AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
-
 # List of areas:
-NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]
-NWCSAF_MSG_AREAS_IMPROD = ["scan","euro","sswe"]
+#NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]
+#NWCSAF_MSG_AREAS_IMPROD = ["scan","euro","sswe"]
+NWCSAF_MSG_AREAS = ["mesanX","scan","euro4","radar_euro_msg","sswe"]
+NWCSAF_MSG_AREAS_IMPROD = ["scan","euro4","sswe"]
 
 #
 EXTRA_IMAGE_FORMATS = {}

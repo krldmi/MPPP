@@ -580,7 +580,7 @@ if __name__ == "__main__":
     cov = _satproj.create_coverage(a,lon,lat,1)
 
     fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,mon,day)
-    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,mon,day,hhmm,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COL)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,mon,day,hhmm,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     ch1file = "%s/1_%s.REF"%(fileprfx,fname)
     ch3file = "%s/3_%s.REF"%(fileprfx,fname)

@@ -202,10 +202,10 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
 # -----------------------------------------------------------------------
 def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
     import string
-    import make_ctype_products
+    import msg_ctype_products
 
     fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
-    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COL)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
     if len(fl) == 0:
@@ -225,7 +225,7 @@ def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
     ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
     print "Output file: ",ctypefile
 
-    make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
     
     return
 

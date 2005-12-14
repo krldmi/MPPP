@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     #fileprfx="%s"%(RGBDIR_IN)
     fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
-    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COL)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
     if len(fl) == 0:

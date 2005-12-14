@@ -5,6 +5,8 @@ HLHDF_INSTALL_PATH=@HLHDF_ROOTDIR@
 HDF5_LD_PATH=@HDF5_LD_PATH@
 SZLIB_LD_PATH=@SZLIB_LD_PATH@
 
+ACPG_DATA_DIR=/local_disk/data/pps ; export ACPG_DATA_DIR
+
 # ----------------------------
 # python stuff:
 PYTHONPATH=${APPLDIR}/scr:${APPLDIR}/cfg:${APPLDIR}/cst:${ACPG_FUTURE}/lib:${ACPG}/lib:${ACPG}/scr:${ACPG}/cfg:${PYTHONPATH} ; export PYTHONPATH
@@ -12,6 +14,9 @@ PYTHONPATH=${APPLDIR}/scr:${APPLDIR}/cfg:${APPLDIR}/cst:${ACPG_FUTURE}/lib:${ACP
 
 SM_REGION_CONFIGURATION_FILE="${ACPG}/cfg/region_config.cfg"; export SM_REGION_CONFIGURATION_FILE
 SM_CFG_FILE="${ACPG}/cfg/pps_config_common.cfg"; export SM_CFG_FILE
+
+SM_USGS_DIR=${ACPG_DATA_DIR}/import/AUX_data/source;export SM_USGS_DIR
+SM_AUXILIARY_DIR=${ACPG_DATA_DIR}/import/AUX_data/remapped;export SM_AUXILIARY_DIR
 
 
 if [ "x$LD_LIBRARY_PATH"=="x" ]; then
