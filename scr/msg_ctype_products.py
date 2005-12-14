@@ -39,7 +39,7 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     
     shape = that.cloudtype.shape    
     size=shape[1],shape[0]
-    this = Image.fromstring("P",shape,arr.tostring())
+    this = Image.fromstring("P",size,arr.tostring())
     newleg=[]
     for i in legend:    
 	newleg = newleg + list(i)

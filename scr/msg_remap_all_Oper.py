@@ -204,7 +204,8 @@ def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
     import string
     import msg_ctype_products
 
-    fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
+    #fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
+    fileprfx="%s"%(RGBDIR_IN)
     fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
