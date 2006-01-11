@@ -1,7 +1,11 @@
 #
 #
+from msg_communications import *
+
 from msgpp_config import *
 from msg_remap_util import *
+
+MODULE_ID = "MSG_CTYPE_REMAP"
 
 import _satproj
 import epshdf
@@ -196,13 +200,13 @@ def convert_procflags2pps(data):
     illum = is_bit0_set * Numeric.left_shift(ones,0) + \
             is_bit1_set * Numeric.left_shift(ones,1) + \
             is_bit2_set * Numeric.left_shift(ones,2)
-    print Numeric.minimum.reduce(is_bit0_set.flat),Numeric.maximum.reduce(is_bit0_set.flat)
-    print Numeric.minimum.reduce(is_bit1_set.flat),Numeric.maximum.reduce(is_bit1_set.flat)
-    print Numeric.minimum.reduce(is_bit2_set.flat),Numeric.maximum.reduce(is_bit2_set.flat)
+    #print Numeric.minimum.reduce(is_bit0_set.flat),Numeric.maximum.reduce(is_bit0_set.flat)
+    #print Numeric.minimum.reduce(is_bit1_set.flat),Numeric.maximum.reduce(is_bit1_set.flat)
+    #print Numeric.minimum.reduce(is_bit2_set.flat),Numeric.maximum.reduce(is_bit2_set.flat)
     del is_bit0_set
     del is_bit1_set
     del is_bit2_set
-    print "Illumination flags: min,max=",Numeric.minimum.reduce(illum.flat),Numeric.maximum.reduce(illum.flat)
+    #print "Illumination flags: min,max=",Numeric.minimum.reduce(illum.flat),Numeric.maximum.reduce(illum.flat)
     # Night?
     # If night in msg then set pps night bit and nothing else.
     # If twilight in msg then set pps twilight bit and nothing else.
@@ -214,7 +218,7 @@ def convert_procflags2pps(data):
     arr = Numeric.where(Numeric.equal(illum,4),Numeric.left_shift(ones,4),arr)
     retv = Numeric.array(arr)
     del illum
-    print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg nwp-input bit 3 (nwp present?) maps to pps bit 7:
     # msg nwp-input bit 4 (low level inversion?) maps to pps bit 6:
@@ -222,9 +226,9 @@ def convert_procflags2pps(data):
     is_bit4_set = get_bit_from_flags(data,4)
     nwp = is_bit3_set * Numeric.left_shift(ones,0) + \
           is_bit4_set * Numeric.left_shift(ones,1)
-    print Numeric.minimum.reduce(is_bit3_set.flat),Numeric.maximum.reduce(is_bit3_set.flat)
-    print Numeric.minimum.reduce(is_bit4_set.flat),Numeric.maximum.reduce(is_bit4_set.flat)
-    print "Nwp flags: min,max=",Numeric.minimum.reduce(nwp.flat),Numeric.maximum.reduce(nwp.flat)
+    #print Numeric.minimum.reduce(is_bit3_set.flat),Numeric.maximum.reduce(is_bit3_set.flat)
+    #print Numeric.minimum.reduce(is_bit4_set.flat),Numeric.maximum.reduce(is_bit4_set.flat)
+    #print "Nwp flags: min,max=",Numeric.minimum.reduce(nwp.flat),Numeric.maximum.reduce(nwp.flat)
     del is_bit3_set
     del is_bit4_set
     arr = Numeric.where(Numeric.equal(nwp,1),Numeric.left_shift(ones,7),0)
@@ -232,41 +236,41 @@ def convert_procflags2pps(data):
     arr = Numeric.where(Numeric.equal(nwp,3),0,arr)
     retv = Numeric.add(arr,retv)
     del nwp
-    print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg seviri-input bits 5&6 maps to pps bit 8:
     is_bit5_set = get_bit_from_flags(data,5)
     is_bit6_set = get_bit_from_flags(data,6)
     seviri = is_bit5_set * Numeric.left_shift(ones,0) + \
              is_bit6_set * Numeric.left_shift(ones,1)
-    print "Seviri flags: min,max=",Numeric.minimum.reduce(seviri.flat),Numeric.maximum.reduce(seviri.flat)
+    #print "Seviri flags: min,max=",Numeric.minimum.reduce(seviri.flat),Numeric.maximum.reduce(seviri.flat)
     del is_bit5_set
     del is_bit6_set
     retv = Numeric.add(retv,
                        Numeric.where(Numeric.logical_or(Numeric.equal(seviri,2),
                                                         Numeric.equal(seviri,3)),Numeric.left_shift(ones,8),0))
     del seviri
-    print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg quality bits 7&8 maps to pps bit 9&10:
     is_bit7_set = get_bit_from_flags(data,7)
     is_bit8_set = get_bit_from_flags(data,8)
     quality = is_bit7_set * Numeric.left_shift(ones,0) + \
               is_bit8_set * Numeric.left_shift(ones,1)
-    print "Quality flags: min,max=",Numeric.minimum.reduce(quality.flat),Numeric.maximum.reduce(quality.flat)   
+    #print "Quality flags: min,max=",Numeric.minimum.reduce(quality.flat),Numeric.maximum.reduce(quality.flat)   
     del is_bit7_set
     del is_bit8_set
     arr = Numeric.where(Numeric.equal(quality,2),Numeric.left_shift(ones,9),0)
     arr = Numeric.where(Numeric.equal(quality,3),Numeric.left_shift(ones,10),arr)
     retv = Numeric.add(arr,retv)
     del quality
-    print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg bit 9 (stratiform-cumuliform distinction?) maps to pps bit 11:
     is_bit9_set = get_bit_from_flags(data,9)
     retv = Numeric.add(retv,Numeric.where(is_bit9_set,Numeric.left_shift(ones,11),0))
     del is_bit9_set
-    print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     return retv.astype('s')
 
@@ -363,7 +367,7 @@ if __name__ == "__main__":
     import time
     timetup = time.localtime(time.mktime((year,month,day,0,0,0,0,0,0)))    
     jday=timetup[7]
-    print "year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday)
+    msgwrite_log("INFO","year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday),moduleid=MODULE_ID)
     hour = slotn/4
     min = (slotn%4)*15
     
@@ -381,13 +385,13 @@ if __name__ == "__main__":
         writeCoverage(cov,covfilename,in_aid,areaid)
     else:
         cov,info = readCoverage(covfilename)
-        print info.items()
+        #print info.items()
 
     for infile in glob.glob("%s/%s*h5"%(CTYPEDIR_IN,prefix)):
         s=string.ljust(areaid,12)
         ext=string.replace(s," ","_")
         outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,min,areaid)
-        print "Output file: ",outfile
+        msgwrite_log("INFO","Output file: ",outfile,moduleid=MODULE_ID)
         if not os.path.exists(outfile):
             msgctype = read_msgCtype(infile)
             msgctype = msgCtype_remap_fast(cov,msgctype,areaid,a)

@@ -10,8 +10,8 @@ APPLDIR=/local_disk/opt/NWCSAF_MSG_PP/0_10
 if test -f ${MSG_PP_OPER_MODE_FILE}; then
     . ${APPLDIR}/cfg/.profile_msgpp
     # Check that no AAPP-session already active 
-    if [ -n "`ps -edalf | grep "msg_remap_all_Oper.py" | grep -v grep`" ]; then 
-	{ echo "***msg_remap_all_Oper already active, abort****"; exit ; } 
+    if [ -n "`ps -edalf | grep "msg_PutProducts2ftpserver.py" | grep -v grep`" ]; then 
+	{ echo "***msg_PutProducts2ftpserver already active, abort****"; exit ; } 
     fi
     # otherwise continue
 else
@@ -20,6 +20,4 @@ else
     exit
 fi
 
-python ${APPLDIR}/scr/msg_remap_all_Oper.py $1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1
-#python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py $1
-#python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py
+python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_PutProducts2ftpserver.log 2>&1

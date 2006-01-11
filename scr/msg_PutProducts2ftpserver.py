@@ -1,8 +1,8 @@
-from ftp_distlib import *
+from msg_communications import *
 
 # ---------------------------------------------------------
 if __name__ == "__main__":
-
+    import ftplib
     import glob
     import time
 
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     time_thr = time_thr - 6*3600
     
     # Open and login on ftp site
-    ftp = FTP(ftp_site)
+    ftp = ftplib.FTP(ftp_site)
     ftp.login(user,psw)
 
     local_dir = "/local_disk/data/Meteosat8/RGBs"

@@ -1,5 +1,7 @@
 #
 #
+from msg_communications import *
+
 from msgpp_config import *
 from msg_remap_util import *
 
@@ -9,6 +11,8 @@ import area
 import glob,os
 import pps_array2image
 import Numeric
+
+MODULE_ID = "MSG_CTTH_REMAP"
 
 # ----------------------------------------
 class msgCTTHData:
@@ -469,7 +473,7 @@ if __name__ == "__main__":
     import time
     timetup = time.localtime(time.mktime((year,month,day,0,0,0,0,0,0)))    
     jday=timetup[7]
-    print "year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday)
+    msgwrite_log("INFO","year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday),moduleid=MODULE_ID)
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
@@ -486,12 +490,12 @@ if __name__ == "__main__":
         writeCoverage(cov,covfilename,in_aid,areaid)
     else:
         cov,info = readCoverage(covfilename)
-        print info.items()
+        #print info.items()
     
     for infile in glob.glob("%s/%s*h5"%(CTTHDIR_IN,prefix)):
         outfile = "%s/%s%s%s"%(CTTHDIR_OUT,os.path.basename(infile).split(in_aid)[0],
                                areaid,os.path.basename(infile).split(in_aid)[1])
-        print outfile
+        msgwrite_log("INFO","Output file: ",outfile,moduleid=MODULE_ID)
         if not os.path.exists(outfile):
             msgctth = read_msgCtth(infile)
             msgctth = msgCtth_remap_fast(cov,msgctth,areaid,a)
@@ -505,6 +509,7 @@ if __name__ == "__main__":
         this = pps_array2image.ctthimage(that,fileprefix+".temp",
                                          (3,),"temperature",coastlines=1)
 
+        """
         import Numeric
         print " -------- Temperature ---------"
         print ctth.temperature[1000:1005,1000:1005]
@@ -524,3 +529,4 @@ if __name__ == "__main__":
         #print " ------ Processing flags ------"
         #print msgctth.processing_flags.data[0:5,0:5]
         #print ctth.processingflag[0:5,0:5]
+        """

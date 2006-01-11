@@ -1,7 +1,10 @@
 #
 #
+from msg_communications import *
 from msgpp_config import *
 from msg_remap_util import *
+
+MODULE_ID = "MSG_RGB_REMAP"
 
 nodata=0.
 missingdata=0.
@@ -16,13 +19,14 @@ def gamma_corr(g,arr):
     retv=Numeric.exp(1./g*Numeric.log(arr))
     maxarr= Numeric.maximum.reduce(retv.flat)
     minarr= Numeric.minimum.reduce(retv.flat)
+    msgwrite_log("INFO","minarr,maxarr = ",minarr,maxarr,moduleid=MODULE_ID)
     if maxarr-minarr > 0.001:
-        retv = 255*(retv-minarr)/(maxarr-minarr)
+        retv = (255*(retv-minarr)/(maxarr-minarr)).astype('b')
     else:
-        print "WARNING!!! maxarr-minarr <=0.001",maxarr-minarr
-    print "minarr,maxarr = ",minarr,maxarr
+        msgwrite_log("WARNING","maxarr-minarr <=0.001",maxarr-minarr,moduleid=MODULE_ID)
+        retv = Numeric.zeros(retv.shape,'b')
     
-    return retv.astype('b')
+    return retv
 
 # ------------------------------------------------------------------
 def get_bw_array(ch,gamma,inverse,**options):
@@ -43,7 +47,7 @@ def get_bw_array(ch,gamma,inverse,**options):
         min_ch,max_ch = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,ch.flat,99999)),\
                         Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,ch.flat,-99999))
         
-    print "min & max: ",min_ch,max_ch
+    msgwrite_log("INFO","min & max: ",min_ch,max_ch,moduleid=MODULE_ID)
 
     newch = (ch-min_ch) * 255.0/(max_ch-min_ch)
     layer = Numeric.where(Numeric.greater(newch,255),255,Numeric.where(Numeric.less(newch,0),0,newch)).astype('b')
@@ -105,9 +109,6 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
         min_red,max_red = range_red[0],range_red[1]
         min_green,max_green = range_green[0],range_green[1]
         min_blue,max_blue = range_blue[0],range_blue[1]
-        print "Ch10-Ch9 min & max: ",min_red,max_red
-        print "Ch9-Ch4r min & max: ",min_green,max_green
-        print "Ch9 min & max: ",min_blue,max_blue
     else:
         min_red,max_red = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,red.flat,99999)),\
                           Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,red.flat,-99999))
@@ -115,9 +116,10 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
                               Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,green.flat,-99999))
         min_blue,max_blue = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,blue.flat,99999)),\
                             Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,blue.flat,-99999))
-        print "Ch10-Ch9 min & max: ",min_red,max_red
-        print "Ch9-Ch4r min & max: ",min_green,max_green
-        print "Ch9 min & max: ",min_blue,max_blue
+
+    msgwrite_log("INFO","Ch10-Ch9 min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch9-Ch4r min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch9 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     rgb=[None,None,None]
     newred = (red-min_red) * 255.0/(max_red-min_red)
@@ -170,9 +172,9 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
                           Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,green.flat,-99999))
     min_blue,max_blue = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,blue.flat,99999)),\
                         Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,blue.flat,-99999))
-    print "Ch10-Ch9 min & max: ",min_red,max_red
-    print "Ch9-Ch7 min & max: ",min_green,max_green
-    print "Ch9 min & max: ",min_blue,max_blue
+    msgwrite_log("INFO","Ch10-Ch9 min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch9-Ch7 min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch9 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     if options.has_key("rgbrange"):
         range_red = options["rgbrange"][0]
@@ -182,9 +184,9 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
         min_green,max_green = range_green[0],range_green[1]
         min_blue,max_blue = range_blue[0],range_blue[1]
 
-    print "Ch10-Ch9 min & max: ",min_red,max_red
-    print "Ch9-Ch7 min & max: ",min_green,max_green
-    print "Ch9 min & max: ",min_blue,max_blue
+    msgwrite_log("INFO","Ch10-Ch9 min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch9-Ch7 min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch9 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
         
     rgb=[None,None,None]
     newred = (red-min_red) * 255.0/(max_red-min_red)
@@ -295,23 +297,23 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
         # Be sure to have the values inside the range [0,255]:
         red_gain=255.0/(max_red-min_red)
         red_icept=-1.*min_red*red_gain
-        print "Red channel: Gain,Intercept = %f,%f"%(red_gain,red_icept)
+        msgwrite_log("INFO","Red channel: Gain,Intercept = %f,%f"%(red_gain,red_icept),moduleid=MODULE_ID)
+        
         green_gain=255.0/(max_green-min_green)
         green_icept=-1.*min_green*green_gain
         print "Green channel: Gain,Intercept = %f,%f"%(green_gain,green_icept)
         blue_gain=255.0/(max_blue-min_blue)
         blue_icept=-1.*min_blue*blue_gain
-        print "Blue channel: Gain,Intercept = %f,%f"%(blue_gain,blue_icept)
+        msgwrite_log("INFO","Blue channel: Gain,Intercept = %f,%f"%(blue_gain,blue_icept),moduleid=MODULE_ID)
 
         gl=[red_gain,green_gain,blue_gain]
         il=[red_icept,green_icept,blue_icept]
         
         that = sm_display_util.make_rgb([red,green,blue],gl,il,not_missing_data)
 
-
-    print "Ch5-Ch6 min & max: ",min_red,max_red
-    print "Ch4-Ch9 min & max: ",min_green,max_green
-    print "Ch3-Ch1 min & max: ",min_blue,max_blue
+    msgwrite_log("INFO","Ch5-Ch6 min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch4-Ch9 min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch3-Ch1 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
     
     that.save(outprfx+".png","png")
     that.thumbnail((imsize[0]/2,imsize[1]/2))
@@ -353,9 +355,9 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
         min_green,max_green = range_green[0],range_green[1]
         min_blue,max_blue = range_blue[0],range_blue[1]
 
-    print "R: min & max: ",min_red,max_red
-    print "G: min & max: ",min_green,max_green
-    print "B: min & max: ",min_blue,max_blue
+    msgwrite_log("INFO","R: min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","G: min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     rgb=[None,None,None]
     newred = (red-min_red) * 255.0/(max_red-min_red)
@@ -462,9 +464,9 @@ def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
         min_green,max_green = range_green[0],range_green[1]
         min_blue,max_blue = range_blue[0],range_blue[1]
 
-    print "R: min & max: ",min_red,max_red
-    print "G: min & max: ",min_green,max_green
-    print "B: min & max: ",min_blue,max_blue
+    msgwrite_log("INFO","R: min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","G: min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     rgb=[None,None,None]
     newred = (red-min_red) * 255.0/(max_red-min_red)

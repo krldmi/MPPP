@@ -70,7 +70,7 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     thumbnail = ctypefile.split(".hdf")[0] + "_ir.thumbnail.png"
     thumb.save(thumbnail)
 
-    return
+    return this
 
 # ------------------------------------------------------------------
 def make_ctype_prod02(irch,ctypefile,areaid,**options):

@@ -1,3 +1,4 @@
+from msg_communications import *
 
 from msgpp_config import *
 from msg_remap_util import *
@@ -7,6 +8,7 @@ import _satproj
 import area
 import glob,os
 
+MODULE_ID="MSG_RGB_REMAP"
 
 # ------------------------------------------------------------------
 def get_times(nSlots):
@@ -39,8 +41,8 @@ if __name__ == "__main__":
         nSlots = string.atoi(sys.argv[1])
 
     start_date,end_date = get_times(nSlots)
-    print "Start and End times: ",start_date,end_date
-    
+    msgwrite_log("INFO","Start and End times: ",start_date,end_date,moduleid=MODULE_ID)
+
     import os,time
     in_aid=MSG_AREA
     MetSat=MSG_SATELLITE
@@ -63,8 +65,8 @@ if __name__ == "__main__":
     time_end = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
 
     if time_start > time_end:
-        print "Start time is later than end time!"
-
+        msgwrite_log("INFO","Start time is later than end time!",moduleid=MODULE_ID)
+        
     sec = time_start
     while (sec < time_end + 1):
         ttup = time.gmtime(sec)
@@ -73,11 +75,11 @@ if __name__ == "__main__":
         #fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
         fileprfx=RGBDIR_IN
         fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
-        print "%s/*_%s*"%(fileprfx,fname)
+        msgwrite_log("INFO","%s/*_%s*"%(fileprfx,fname),moduleid=MODULE_ID)
         
         fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
         if len(fl) == 0:
-            print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+            msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
             sec = sec + DSEC_SLOTS
             continue
         
@@ -90,11 +92,11 @@ if __name__ == "__main__":
             CoverageData = None
             
             if not CoverageData and not os.path.exists(covfilename):
-                print "Generate MSG coverage and store in file..."
+                msgwrite_log("INFO","Generate MSG coverage and store in file...",moduleid=MODULE_ID)
                 CoverageData = _satproj.create_coverage(areaObj,lon,lat,1)
                 writeCoverage(CoverageData,covfilename,in_aid,areaid)
             elif not CoverageData:
-                print "Read the MSG coverage from file..."
+                msgwrite_log("INFO","Read the MSG coverage from file...",moduleid=MODULE_ID)
                 CoverageData,info = readCoverage(covfilename)
 
             outname_nf = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,MetSat,
@@ -103,14 +105,14 @@ if __name__ == "__main__":
                                                                  year,month,day,hour,min,areaid)
             outname_ctop = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MetSat,
                                                                                  year,month,day,hour,min,areaid)
-            print outname_nf
-            print outname_f
-            print outname_ctop            
+            #print outname_nf
+            #print outname_f
+            #print outname_ctop            
             if os.path.exists(outname_nf+".png") and os.path.exists(outname_f+".png") and os.path.exists(outname_ctop+".png"):
-                print "All rgb's have been done previously"
+                msgwrite_log("INFO","All rgb's have been done previously",moduleid=MODULE_ID)
                 continue
             
-            print "Try make RGBs for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+            msgwrite_log("INFO","Try make RGBs for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
 
             ch1file = "%s/1_%s.REF"%(fileprfx,fname)
             ch2file = "%s/2_%s.REF"%(fileprfx,fname)
@@ -144,60 +146,70 @@ if __name__ == "__main__":
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 make_bw(ch9,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                #os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
 
             # Water vapour - channel 5:
             if ok5:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch5"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 make_bw(ch5,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
 
             # Water vapour - channel 6:
             if ok6:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch6"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 make_bw(ch5,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
 
             # Daytime overview:
             if ok1 and ok2 and ok9:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_visvisir(ch1,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
 
             # Daytime "green snow":
             if ok3 and ok2 and ok9:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_greensnow"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
                 #makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.0,1.0,1.0))
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
 
             # Daytime convection:
             if ok1 and ok3 and ok4 and ok5 and ok6 and ok9:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 #makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,0.5,1.0),rgbrange=[(-30,0),(0,50.0),(-70.0,20.0)])
                 makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
 
             # Fog and low clouds
             if ok4r and ok9 and ok10:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_nightfog(ch4r,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,293)])
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
                 
             if ok7 and ok9 and ok10:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
                 
             # "cloudtop": Low clouds, thin cirrus, nighttime
             if ok4r and ok9 and ok10:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 #makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.6,1.6,1.4))
                 makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.2,1.2,1.2))
-                os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname))
-)
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+
         sec = sec + DSEC_SLOTS
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
