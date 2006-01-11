@@ -30,6 +30,12 @@ CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
 RGBDIR_OUT = "/local_disk/data/Meteosat8/RGBs"
 RGBDIR_IN = "/opt/MSG/current/tmp"
 
+FSERVER_CTYPEDIR_OUT = "/data/proj/saftest/nwcsafmsg/PGEs"
+FSERVER_CTTHDIR_OUT = "/data/proj/saftest/nwcsafmsg/PGEs"
+FSERVER_RGBDIR_OUT = "/data/proj/saftest/nwcsafmsg/RGBs"
+FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
+SYNC = "/usr/bin/sync -crzul"
+
 MSG_SATELLITE = "met08"
 MSG_AREA = "CEuro"
 MSG_AREA_CENTER=(429,1999)
@@ -53,7 +59,7 @@ COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 # List of areas:
 #NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]
 #NWCSAF_MSG_AREAS_IMPROD = ["scan","euro","sswe"]
-NWCSAF_MSG_AREAS = ["mesanX","scan","euro4","radar_euro_msg","sswe"]
+NWCSAF_MSG_AREAS = ["scan","mesanX","euro4","radar_euro_msg","sswe"]
 NWCSAF_MSG_AREAS_IMPROD = ["scan","euro4","sswe"]
 
 #
@@ -75,12 +81,9 @@ for aid in NWCSAF_MSG_AREAS_IMPROD:
 
 # Products on which areas, and with which colour-palettes, and in what image formats?:
 PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
-			 "sswe"   :{"standard":["png"],
-			 	    "vv2"  :["png"]},
-		         "scan"   :{"standard":["png"],
-			 	    "vv2"  :["png"]},
-		         "euro"   :{"standard":["png"],
-			 	    "vv2"  :["png"]}},
+			 "sswe"   :{"standard":["png"]},#,"vv2"  :["png"]},
+		         "scan"   :{"standard":["png"]},#,"vv2"  :["png"]},
+		         "euro"   :{"standard":["png"]}},#,"vv2"  :["png"]}},
 		"PGE03":{"mesanX":{"standard":["png"]},
 			 "sswe"  :{"standard":["png"]},
 			 "scan"  :{"standard":["png"]},
@@ -92,13 +95,14 @@ PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
 from smhi_safnwc_legends import *
 from pps_array2image import get_cms_modified
 
-PGE02_LEGENDS = {"standard":get_cms_modified(),"vv2":get_ctype_vv2()}
+PGE02_LEGENDS = {"standard":get_cms_modified()}#,"vv2":get_ctype_vv2()}
 PGE02_LEGEND_NAMES = {}
 
 for aid in NWCSAF_MSG_AREAS:
     PGE02_LEGEND_NAMES[aid] = ("standard",)
 for aid in NWCSAF_MSG_AREAS_IMPROD:
-    PGE02_LEGEND_NAMES[aid] = ("standard","vv2")
+    PGE02_LEGEND_NAMES[aid] = ("standard",)
+    #PGE02_LEGEND_NAMES[aid] = ("standard","vv2")
 
 PGE03_LEGENDS = {"standard":"height"}
 PGE03_LEGEND_NAMES = {}
@@ -107,5 +111,5 @@ for aid in NWCSAF_MSG_AREAS:
 
 INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
 SIR_DIR="/data/prod/sirexp/sir2/data"
-PGE02_SIR_NAMES={"standard":"02a","vv2":"02b"}
+PGE02_SIR_NAMES={"standard":"02a"}
 PGE03_SIR_NAMES={"standard":"03a"}
