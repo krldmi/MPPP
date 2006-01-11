@@ -116,7 +116,7 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
                     
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
-        os.system("%s %s/%s* %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0]),FSERVER_CTYPEDIR_OUT)
+        os.system("%s %s/%s* %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
 
     return
 
@@ -201,7 +201,7 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
-        os.system("%s %s/%s* %s/."%(SYNC,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0]),FSERVER_CTTHDIR_OUT)
+        os.system("%s %s/%s* %s/."%(SYNC,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTTHDIR_OUT))
     #os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/MesanX/%s* /data/proj/saftest/nwcsafmsg/PGEs/."%(os.path.basename(outfile).split(".hdf")[0]))
 
     return
@@ -260,7 +260,7 @@ def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
     
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
-        os.system("%s %s/%s_ir*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0]),FSERVER_CTYPEDIR_OUT)
+        os.system("%s %s/%s_ir*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
     #os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/MesanX/%s_ir*png /data/proj/saftest/nwcsafmsg/PGEs/."%(os.path.basename(ctypefile).split(".hdf")[0]))
 
     return

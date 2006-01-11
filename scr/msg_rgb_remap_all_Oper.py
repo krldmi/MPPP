@@ -147,7 +147,7 @@ if __name__ == "__main__":
                 make_bw(ch9,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
                 #os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/RGBs/%s* /data/proj/saftest/nwcsafmsg/RGBs/."%(os.path.basename(outname)))
 
             # Water vapour - channel 5:
@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 make_bw(ch5,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
             # Water vapour - channel 6:
             if ok6:
@@ -164,14 +164,14 @@ if __name__ == "__main__":
                 make_bw(ch6,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
             # Daytime overview:
             if ok1 and ok2 and ok9:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_visvisir(ch1,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
             # Daytime "green snow":
             if ok3 and ok2 and ok9:
@@ -179,7 +179,7 @@ if __name__ == "__main__":
                 makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
                 #makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.0,1.0,1.0))
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
             # Daytime convection:
             if ok1 and ok3 and ok4 and ok5 and ok6 and ok9:
@@ -187,20 +187,20 @@ if __name__ == "__main__":
                 #makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,0.5,1.0),rgbrange=[(-30,0),(0,50.0),(-70.0,20.0)])
                 makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
             # Fog and low clouds
             if ok4r and ok9 and ok10:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_nightfog(ch4r,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,293)])
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
                 
             if ok7 and ok9 and ok10:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                 makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
                 
             # "cloudtop": Low clouds, thin cirrus, nighttime
             if ok4r and ok9 and ok10:
@@ -208,7 +208,7 @@ if __name__ == "__main__":
                 #makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.6,1.6,1.4))
                 makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.2,1.2,1.2))
                 if FSERVER_SYNC:
-                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
         sec = sec + DSEC_SLOTS
 
