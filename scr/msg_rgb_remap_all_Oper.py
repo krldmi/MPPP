@@ -161,7 +161,7 @@ if __name__ == "__main__":
             # Water vapour - channel 6:
             if ok6:
                 outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch6"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                make_bw(ch5,outname,inverse=1,gamma=1.6)
+                make_bw(ch6,outname,inverse=1,gamma=1.6)
                 # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
                 if FSERVER_SYNC:
                     os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname)),FSERVER_RGBDIR_OUT)

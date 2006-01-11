@@ -76,10 +76,10 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
             for imformat in EXTRA_IMAGE_FORMATS[areaid]["PGE02"]:
                 msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
                 aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-                prodid=string.ljust(PGE02_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
-                outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-                msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
                 if PGE02_SIR_NAMES.has_key(legend_name):
+                    prodid=string.ljust(PGE02_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
+                    outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+                    msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
                     sir_stat=0
                     try:
                         im.save(outname,FORMAT=imformat,quality=100)
