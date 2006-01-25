@@ -1,6 +1,6 @@
 #!/bin/ksh
 
-APPLDIR=/local_disk/opt/NWCSAF_MSG_PP/0_10
+APPLDIR=/local_disk/opt/MSG_PostProc
 
 # Set some basic environment:
 . ${HOME}/.profile_msg_oper
@@ -13,6 +13,9 @@ if test -f ${MSG_PP_OPER_MODE_FILE}; then
     if [ -n "`ps -edalf | grep "msg_remap_all_Oper.py" | grep -v grep`" ]; then 
 	{ echo "***msg_remap_all_Oper already active, abort****"; exit ; } 
     fi
+    if [ -n "`ps -edalf | grep "msg_rgb_remap_all_Oper.py" | grep -v grep`" ]; then 
+	{ echo "***msg_remap_all_Oper already active, abort****"; exit ; } 
+    fi
     # otherwise continue
 else
     echo "host `uname -n` is not the current operational node..."
@@ -20,6 +23,7 @@ else
     exit
 fi
 
-python ${APPLDIR}/scr/msg_remap_all_Oper.py $1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1
-#python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py $1
-#python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py
+python ${APPLDIR}/scr/msg_remap_all_Oper.py $1
+python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py $1
+#python ${APPLDIR}/scr/smhiPutProducts2ftpserver.py
+python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py

@@ -5,13 +5,15 @@ from msg_communications import *
 from msgpp_config import *
 from msg_remap_util import *
 
+import pps_gisdata # From NWCSAF/PPS - ACPG
+
 MODULE_ID = "MSG_CTYPE_REMAP"
 
-import _satproj
-import epshdf
+import _satproj # From NWCSAF/PPS - ACPG-FUTURE
+import epshdf # From NWCSAF/PPS - ACPG
 import area
 import glob,os
-import pps_array2image
+import pps_array2image # From NWCSAF/PPS - ACPG
 
 # ----------------------------------------
 class msgCloudTypeData:
@@ -32,6 +34,13 @@ class msgCloudType:
         self.num_of_columns=0
         self.num_of_lines=0
         self.projection_name=""
+        self.pcs_def=""
+        self.xscale=0
+        self.yscale=0
+        self.LL_lon=0.0
+        self.LL_lat=0.0
+        self.UR_lon=0.0
+        self.UR_lat=0.0
         self.region_name=""
         self.cfac=0
         self.lfac=0
@@ -326,7 +335,30 @@ def OLDmsgCtype_remap_fast(cov,msgctype,areaid,a):
 
 # ------------------------------------------------------------------
 def msgCtype_remap_fast(cov,msgctype,areaid,a):
+    import string
+    
     retv = msgCloudType()
+    
+    retv.package = msgctype.package
+    retv.saf = msgctype.saf
+    retv.product_name = msgctype.product_name
+    #retv.num_of_columns = msgctype.num_of_columns
+    #retv.num_of_lines = msgctype.num_of_lines
+    #retv.projection_name = msgctype.projection_name
+    #retv.region_name = msgctype.region_name
+    retv.cfac = msgctype.cfac
+    retv.lfac = msgctype.lfac
+    retv.coff = msgctype.coff
+    retv.loff = msgctype.loff
+    retv.nb_param = msgctype.nb_param
+    retv.gp_sc_id = msgctype.gp_sc_id
+    retv.image_acquisition_time = msgctype.image_acquisition_time
+    retv.spectral_channel_id = msgctype.spectral_channel_id
+    retv.nominal_product_time = msgctype.nominal_product_time
+    retv.sgs_product_quality = msgctype.sgs_product_quality
+    retv.sgs_product_completeness = msgctype.sgs_product_completeness
+    retv.product_algorithm_version = msgctype.product_algorithm_version
+    
     retv.cloudtype=msgCloudTypeData()
     retv.processing_flags=msgCloudTypeData()
     retv.cloudphase=msgCloudTypeData()
@@ -337,12 +369,39 @@ def msgCtype_remap_fast(cov,msgctype,areaid,a):
 
     retv.region_name = areaid
     retv.projection_name = a.pcs.id
+    pcsdef=string.join(a.pcs.definition)
+    retv.pcs_def=pcsdef
+
     retv.num_of_columns = a.xsize
     retv.num_of_lines = a.ysize
+    retv.xscale = abs(a.extent[2]-a.extent[0])/a.xsize
+    retv.yscale = abs(a.extent[3]-a.extent[1])/a.ysize
+    ll_lonlat = pps_gisdata.xy2lonlat(areaid,0,a.ysize)
+    ur_lonlat = pps_gisdata.xy2lonlat(areaid,a.xsize,0)
+    retv.LL_lon = ll_lonlat[0]
+    retv.LL_lat = ll_lonlat[1]
+    retv.UR_lon = ur_lonlat[0]
+    retv.UR_lat = ur_lonlat[1]
+
+    
+    retv.cloudtype.offset = msgctype.cloudtype.offset    
+    retv.cloudtype.scaling_factor = msgctype.cloudtype.scaling_factor    
+    retv.cloudtype.id = msgctype.cloudtype.id
+    retv.cloudtype.product = msgctype.cloudtype.product
     retv.cloudtype.num_of_columns = a.xsize
     retv.cloudtype.num_of_lines = a.ysize
+
+    retv.cloudphase.offset = msgctype.cloudphase.offset    
+    retv.cloudphase.scaling_factor = msgctype.cloudphase.scaling_factor    
+    retv.cloudphase.id = msgctype.cloudphase.id
+    retv.cloudphase.product = msgctype.cloudphase.product
     retv.cloudphase.num_of_columns = a.xsize
     retv.cloudphase.num_of_lines = a.ysize
+
+    retv.cloudtype.offset = msgctype.cloudtype.offset    
+    retv.cloudtype.scaling_factor = msgctype.cloudtype.scaling_factor    
+    retv.cloudtype.id = msgctype.cloudtype.id
+    retv.cloudtype.product = msgctype.cloudtype.product
     retv.processing_flags.num_of_columns = a.xsize
     retv.processing_flags.num_of_lines = a.ysize    
 

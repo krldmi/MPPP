@@ -14,20 +14,23 @@ def setenvpath(env):
 
 APPLDIR="@prefix@"
 
-#CTYPEDIR_OUT = "/local_disk2/data/Meteosat8/output"
-#CTTHDIR_OUT = "/local_disk2/data/Meteosat8/output"
+CTYPEDIR_OUT = "/local_disk2/data/Meteosat8/output"
+CTTHDIR_OUT = "/local_disk2/data/Meteosat8/output"
+CTYPEDIR_IN = "/local_disk2/data/Meteosat8/PGE02"
+CTTHDIR_IN = "/local_disk2/data/Meteosat8/PGE03"
 #CTYPEDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_2/export/PGE02"
 #CTTHDIR_IN = "/data/prod/Preop_MSG_NWCSAF/v1_2/export/PGE03"
 
-#RGBDIR_OUT = "/local_disk2/data/Meteosat8/RGBs"
+RGBDIR_OUT = "/local_disk2/data/Meteosat8/RGBs"
+RGBDIR_OUT = "/local_disk2/data/Meteosat8/SeviriChannels"
 #RGBDIR_IN = "/data/arkiv/satellit/geo/ceuro"
 
-CTYPEDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
-CTTHDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
-CTYPEDIR_IN = "/opt/MSG/current/export/PGE02"
-CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
+#CTYPEDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
+#CTTHDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
+#CTYPEDIR_IN = "/opt/MSG/current/export/PGE02"
+#CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
 
-RGBDIR_OUT = "/local_disk/data/Meteosat8/RGBs"
+#RGBDIR_OUT = "/local_disk/data/Meteosat8/RGBs"
 RGBDIR_IN = "/opt/MSG/current/tmp"
 
 FSERVER_CTYPEDIR_OUT = "/data/proj/saftest/nwcsafmsg/PGEs"
@@ -41,9 +44,6 @@ MSG_AREA = "CEuro"
 MSG_AREA_CENTER=(429,1999)
 ROWS,COLS=(700,900)
 
-
-#LONFILE = "%s/cst/C0429_1999_S0700_0900.LON"%(APPLDIR)
-#LATFILE = "%s/cst/C0429_1999_S0700_0900.LAT"%(APPLDIR)
 LONFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LON"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 LATFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LAT"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
@@ -57,9 +57,7 @@ AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
-#NWCSAF_MSG_AREAS = ["mesanX","scan","euro","sswe"]
-#NWCSAF_MSG_AREAS_IMPROD = ["scan","euro","sswe"]
-NWCSAF_MSG_AREAS = ["scan","mesanX","euro4","radar_euro_msg","sswe"]
+NWCSAF_MSG_AREAS = ["scan","mesanX","euro4","sswe"]
 NWCSAF_MSG_AREAS_IMPROD = ["scan","euro4","sswe"]
 
 #
@@ -111,5 +109,5 @@ for aid in NWCSAF_MSG_AREAS:
 
 INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
 SIR_DIR="/data/prod/sirexp/sir2/data"
-PGE02_SIR_NAMES={"standard":"02a"}
-PGE03_SIR_NAMES={"standard":"03a"}
+PGE02_SIR_NAMES={}#{"standard":"02a"}
+PGE03_SIR_NAMES={}#{"standard":"03a"}
