@@ -56,6 +56,7 @@ COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 # List of areas:
 NWCSAF_MSG_AREAS = ["scan","mesanX","euro4","sswe"]
 NWCSAF_MSG_AREAS_IMPROD = ["scan","euro4","sswe"]
+NORDRAD_AREAS = ["euro4"]
 
 #
 EXTRA_IMAGE_FORMATS = {}
@@ -106,5 +107,5 @@ for aid in NWCSAF_MSG_AREAS:
 
 INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
 SIR_DIR="/data/prod/sirexp/sir2/data"
-PGE02_SIR_NAMES={}#{"standard":"02a"}
-PGE03_SIR_NAMES={}#{"standard":"03a"}
+PGE02_SIR_NAMES={"standard":"02a"}
+PGE03_SIR_NAMES={"standard":"03a"}

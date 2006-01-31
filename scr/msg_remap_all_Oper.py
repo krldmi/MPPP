@@ -33,7 +33,7 @@ def inform_sir(saf_name,pge_name,aidstr,status,datestr):
     return
     
 # -----------------------------------------------------------------------
-def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min):
+def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min):
     import string
 
     msgwrite_log("INFO","Area = ",areaid,moduleid=MODULE_ID)
@@ -121,7 +121,7 @@ def doCloudType(covData,msgctype,areaid,in_aid,satellite,year,month,day,hour,min
     return
 
 # -----------------------------------------------------------------------
-def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
+def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
     import string
 
     print "Area = ",areaid
@@ -202,12 +202,11 @@ def doCtth(covData,msgctth,areaid,in_aid,satellite,year,month,day,hour,min):
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
         os.system("%s %s/%s* %s/."%(SYNC,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTTHDIR_OUT))
-    #os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/MesanX/%s* /data/proj/saftest/nwcsafmsg/PGEs/."%(os.path.basename(outfile).split(".hdf")[0]))
 
     return
 
 # -----------------------------------------------------------------------
-def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
+def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
     import string
     import msg_ctype_products
 
@@ -261,7 +260,23 @@ def doCprod01(cov,areaid,in_aid,satellite,year,month,day,hour,min):
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
         os.system("%s %s/%s_ir*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
-    #os.system("/usr/bin/rsync -crzulv /local_disk/data/Meteosat8/MesanX/%s_ir*png /data/proj/saftest/nwcsafmsg/PGEs/."%(os.path.basename(ctypefile).split(".hdf")[0]))
+
+    return
+
+# -----------------------------------------------------------------------
+def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,min):
+    import string
+    import area
+    import msg_ctype2radar
+
+    areaObj = area.area(areaid)
+    datestr = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+
+    outfile = "%s/%s_nordrad_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    msgwrite_log("INFO","Output file: ",outfile,moduleid=MODULE_ID)
+    if not os.path.exists(outfile):
+        msgctype = msgCtype_remap_fast(covData,msgctype,areaid,areaObj)            
+        status = msg_ctype2radar.msg_writectype2nordradformat(msgctype,outfile,datestr)
 
     return
 
@@ -359,12 +374,14 @@ if __name__ == "__main__":
                 CoverageData,info = readCoverage(covfilename)
 
             if msgctype:
-                doCloudType(CoverageData,msgctype,areaid,in_aid,MetSat,year,month,day,hour,min)
+                doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                if areaid in NORDRAD_AREAS:
+                    doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
                 if areaid in ["scan"]:
-                    doCprod01(CoverageData,areaid,in_aid,MetSat,year,month,day,hour,min)
+                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 
             if msgctth:
-                doCtth(CoverageData,msgctth,areaid,in_aid,MetSat,year,month,day,hour,min)
+                doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
 
         sec = sec + DSEC_SLOTS
 

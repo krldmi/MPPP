@@ -116,8 +116,7 @@ def msg_writectype2nordradformat(msgctype,filename,datestr,satid="Meteosat 8"):
     b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/undetect")
     b.setScalarValue(-1,20.0,"float",-1)
     a.addNode(b)    
-    
-    
+        
     a.write(filename,COMPRESS_LVL)    
     return status
 
@@ -173,4 +172,3 @@ if __name__ == "__main__":
             msgctype = read_msgCtype(infile)
             msgctype = msgCtype_remap_fast(cov,msgctype,areaid,a)            
             status = msg_writectype2nordradformat(msgctype,outfile,datestr)
-
