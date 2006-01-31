@@ -62,6 +62,7 @@ def linecol2lonlat(line,col):
     aux=42164*cosx*cosy
     aux2=cosy*cosy+1.006803*siny*siny
     #sd=math.sqrt(aux*aux-aux2*1737121856)
+    #print "aux*aux-aux2*1737121856: ",aux*aux-aux2*1737121856
     sd=math.sqrt(abs(aux*aux-aux2*1737121856))
     sn=(aux-sd)/aux2
     s1=42164 - sn*cosx*cosy
@@ -155,6 +156,19 @@ def do_test():
     print "lon,lat -> line,col: ",lon,lat,line,col
     lon,lat = linecol2lonlat(line,col)
     print "line,col -> lon,lat: ",line,col,lon,lat
+
+    lon,lat = 20.0,67.0
+    line,col=lonlat2linecol(lon,lat)
+    print "lon,lat -> line,col: ",lon,lat,line,col
+    lon,lat = linecol2lonlat(line,col)
+    print "line,col -> lon,lat: ",line,col,lon,lat
+
+    
+    line,col=0,1856
+    lon,lat = linecol2lonlat(line,col)
+    print "line,col -> lon,lat: ",line,col,lon,lat
+    line,col=lonlat2linecol(lon,lat)
+    print "lon,lat -> line,col: ",lon,lat,line,col
 
     return
 
