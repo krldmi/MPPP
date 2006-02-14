@@ -33,7 +33,7 @@ case $witval in
 esac
 
 if [[ "x$ACPG_INSTALL_OK" != "xyes" ]]; then
-  AC_MSG_ERROR("You must run configure with --with-acpg_future=<acpg-future install root dir>")
+  AC_MSG_ERROR("You must run configure with --with-acpg=<acpg install root dir>")
 fi
 
 AC_ARG_WITH(acpg_future,[ --with-acpg_future=INSTALLROOT Need to specify the root of the acpg-future installation to be able to configure],
@@ -63,6 +63,33 @@ esac
 if [[ "x$ACPG_FUTURE_INSTALL_OK" != "xyes" ]]; then
   AC_MSG_ERROR("You must run configure with --with-acpg_future=<acpg-future install root dir>")
 fi
+
+
+AC_ARG_WITH(n2,[ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure],
+	,withval=no)
+
+N2_INSTALL_OK=no
+N2_INSTALL_ROOT=
+case $witval in
+  no)
+    N2_INSTALL_OK=no
+    ;;
+  *)
+    tm_root="`echo $withval`"
+    if test "X" != "$tm_root"; then
+      THIS_CWD=`pwd`
+      cd $tm_root
+      N2_INSTALL_ROOT=`pwd`
+      N2_INSTALL_OK=yes
+      cd $THIS_CWD
+    fi
+    ;;
+esac
+
+if [[ "x$N2_INSTALL_OK" != "xyes" ]]; then
+  AC_MSG_ERROR("You must run configure with --with-n2=<n2 install root dir>")
+fi
+
 
 dnl Time to extract a lot of information from the training manager installation
 
@@ -94,14 +121,20 @@ ZLIB_LD_PATH=`echo $ZLIB_LIBDIR | sed -e "s/^\-L//g"`
 SZLIB_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^SZLIB_LIBDIR/p" | sed -e "s/SZLIB_LIBDIR=//g" | awk '{print $1}'`
 SZLIB_LD_PATH=`echo $SZLIB_LIBDIR | sed -e "s/^\-L//g"`
 
+# Python root:
+PYLIB_SITEPACK=`cat $HLHDF_MK_FILE | sed -n "/^SITEPACK_PYTHON/p" | sed -e "s/SITEPACK_PYTHON=//g" | awk '{print $1}'`
+PYLIBROOT=`echo $PYLIB_SITEPACK | sed -e "s/\/site-packages//g"`
+
 
 AC_SUBST(ACPG_INSTALL_ROOT)
 AC_SUBST(ACPG_FUTURE_INSTALL_ROOT)
+AC_SUBST(N2_INSTALL_ROOT)
 AC_SUBST(ZLIB_LD_PATH)
 AC_SUBST(SZLIB_LD_PATH)
 AC_SUBST(HDF5_LD_PATH)
 AC_SUBST(HLHDF_ROOTDIR)
 AC_SUBST(ACPG_FUTURE_INSTALL_MKF)
+AC_SUBST(PYLIBROOT)
 
 AC_OUTPUT(./scr/Makefile)
 AC_OUTPUT(./scr/msg_remap_all.ksh)

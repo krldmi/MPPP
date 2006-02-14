@@ -272,7 +272,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="Makefile"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ACPG_INSTALL_ROOT ACPG_FUTURE_INSTALL_ROOT ZLIB_LD_PATH SZLIB_LD_PATH HDF5_LD_PATH HLHDF_ROOTDIR ACPG_FUTURE_INSTALL_MKF LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ACPG_INSTALL_ROOT ACPG_FUTURE_INSTALL_ROOT N2_INSTALL_ROOT ZLIB_LD_PATH SZLIB_LD_PATH HDF5_LD_PATH HLHDF_ROOTDIR ACPG_FUTURE_INSTALL_MKF PYLIBROOT LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -785,6 +785,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
  --with-acpg=INSTALLROOT Need to specify the root of the acpg installation to be able to configure
  --with-acpg_future=INSTALLROOT Need to specify the root of the acpg-future installation to be able to configure
+ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure
 
 _ACEOF
 fi
@@ -1259,8 +1260,8 @@ echo "$as_me: error: \"Could not successfully find the def.mk file\"" >&2;}
 esac
 
 if [ "x$ACPG_INSTALL_OK" != "xyes" ]; then
-  { { echo "$as_me:$LINENO: error: \"You must run configure with --with-acpg_future=<acpg-future install root dir>\"" >&5
-echo "$as_me: error: \"You must run configure with --with-acpg_future=<acpg-future install root dir>\"" >&2;}
+  { { echo "$as_me:$LINENO: error: \"You must run configure with --with-acpg=<acpg install root dir>\"" >&5
+echo "$as_me: error: \"You must run configure with --with-acpg=<acpg install root dir>\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -1303,6 +1304,41 @@ echo "$as_me: error: \"You must run configure with --with-acpg_future=<acpg-futu
 fi
 
 
+
+# Check whether --with-n2 or --without-n2 was given.
+if test "${with_n2+set}" = set; then
+  withval="$with_n2"
+
+else
+  withval=no
+fi;
+
+N2_INSTALL_OK=no
+N2_INSTALL_ROOT=
+case $witval in
+  no)
+    N2_INSTALL_OK=no
+    ;;
+  *)
+    tm_root="`echo $withval`"
+    if test "X" != "$tm_root"; then
+      THIS_CWD=`pwd`
+      cd $tm_root
+      N2_INSTALL_ROOT=`pwd`
+      N2_INSTALL_OK=yes
+      cd $THIS_CWD
+    fi
+    ;;
+esac
+
+if [ "x$N2_INSTALL_OK" != "xyes" ]; then
+  { { echo "$as_me:$LINENO: error: \"You must run configure with --with-n2=<n2 install root dir>\"" >&5
+echo "$as_me: error: \"You must run configure with --with-n2=<n2 install root dir>\"" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+
 ACPG_FUTURE_INSTALL_MKF=$ACPG_FUTURE_INSTALL_ROOT/mkf/def.mk
 if [ "x$ACPG_FUTURE_INSTALL_MKF" == "x" ]; then
   { { echo "$as_me:$LINENO: error: \"Could not identify ACPG installation mk file\"" >&5
@@ -1332,6 +1368,12 @@ ZLIB_LD_PATH=`echo $ZLIB_LIBDIR | sed -e "s/^\-L//g"`
 
 SZLIB_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^SZLIB_LIBDIR/p" | sed -e "s/SZLIB_LIBDIR=//g" | awk '{print $1}'`
 SZLIB_LD_PATH=`echo $SZLIB_LIBDIR | sed -e "s/^\-L//g"`
+
+# Python root:
+PYLIB_SITEPACK=`cat $HLHDF_MK_FILE | sed -n "/^SITEPACK_PYTHON/p" | sed -e "s/SITEPACK_PYTHON=//g" | awk '{print $1}'`
+PYLIBROOT=`echo $PYLIB_SITEPACK | sed -e "s/\/site-packages//g"`
+
+
 
 
 
@@ -1979,11 +2021,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -2887,11 +2931,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -3796,11 +3842,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -4706,11 +4754,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -5617,11 +5667,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -6529,11 +6581,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -7442,11 +7496,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -8357,11 +8413,13 @@ s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
 s,@ACPG_INSTALL_ROOT@,$ACPG_INSTALL_ROOT,;t t
 s,@ACPG_FUTURE_INSTALL_ROOT@,$ACPG_FUTURE_INSTALL_ROOT,;t t
+s,@N2_INSTALL_ROOT@,$N2_INSTALL_ROOT,;t t
 s,@ZLIB_LD_PATH@,$ZLIB_LD_PATH,;t t
 s,@SZLIB_LD_PATH@,$SZLIB_LD_PATH,;t t
 s,@HDF5_LD_PATH@,$HDF5_LD_PATH,;t t
 s,@HLHDF_ROOTDIR@,$HLHDF_ROOTDIR,;t t
 s,@ACPG_FUTURE_INSTALL_MKF@,$ACPG_FUTURE_INSTALL_MKF,;t t
+s,@PYLIBROOT@,$PYLIBROOT,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
