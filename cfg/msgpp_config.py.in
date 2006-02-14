@@ -58,6 +58,11 @@ NWCSAF_MSG_AREAS = ["scan","mesanX","euro4","sswe"]
 NWCSAF_MSG_AREAS_IMPROD = ["scan","euro4","sswe"]
 NORDRAD_AREAS = ["euro4"]
 
+# Nordrad product injection:
+N2INJECT = "n2inject"
+N2SERVERS_AND_PORTS = [("brdc",8822),("brdc",8823)]
+
+
 #
 EXTRA_IMAGE_FORMATS = {}
 
@@ -79,11 +84,11 @@ for aid in NWCSAF_MSG_AREAS_IMPROD:
 PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
 			 "sswe"   :{"standard":["png"]},#,"vv2"  :["png"]},
 		         "scan"   :{"standard":["png"]},#,"vv2"  :["png"]},
-		         "euro"   :{"standard":["png"]}},#,"vv2"  :["png"]}},
+		         "euro4"   :{"standard":["png"]}},#,"vv2"  :["png"]}},
 		"PGE03":{"mesanX":{"standard":["png"]},
 			 "sswe"  :{"standard":["png"]},
 			 "scan"  :{"standard":["png"]},
-			 "euro"  :{"standard":["png"]}
+			 "euro4"  :{"standard":["png"]}
 		}
 		}
 
