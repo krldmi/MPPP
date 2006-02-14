@@ -343,7 +343,9 @@ def convert_procflags2pps(data):
                   is_bit9_set * Numeric.left_shift(ones,1) + \
                   is_bit10_set * Numeric.left_shift(ones,2) + \
                   is_bit11_set * Numeric.left_shift(ones,3)
-    arr = Numeric.where(Numeric.logical_and(Numeric.greater_equal(method_bits,1),Numeric.less_equal(method_bits,2)),
+    arr = Numeric.where(Numeric.logical_or(
+        Numeric.logical_and(Numeric.greater_equal(method_bits,1),Numeric.less_equal(method_bits,2)),
+        Numeric.equal(method_bits,13)),
                         Numeric.left_shift(ones,2),0)
     arr = Numeric.add(arr,
                       Numeric.where(Numeric.equal(method_bits,1),Numeric.left_shift(ones,7),0))

@@ -83,13 +83,13 @@ def msg_writectype2nordradformat(msgctype,filename,datestr,satid="Meteosat 8"):
     a.addNode(b)
     b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/product")
     # We should eventually try to use the msg-parameters "package", "product_algorithm_version", and "product_name":
-    b.setScalarValue(1,'NWCSAF_MSG_CT',"string",-1)
+    b.setScalarValue(1,'MSGCT',"string",-1)
     a.addNode(b)
     b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/prodpar")
     b.setScalarValue(1,0.0,"float",-1)
     a.addNode(b)
     b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/quantity")
-    b.setScalarValue(1,"cloudtype","string",-1)
+    b.setScalarValue(1,"ct","string",-1)
     a.addNode(b)
     b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/startdate")
     b.setScalarValue(-1,yyyymmdd,"string",-1)
@@ -172,3 +172,10 @@ if __name__ == "__main__":
             msgctype = read_msgCtype(infile)
             msgctype = msgCtype_remap_fast(cov,msgctype,areaid,a)            
             status = msg_writectype2nordradformat(msgctype,outfile,datestr)
+            if status:
+                # Send the product to the nordrad servers:
+                for tup in N2SERVERS_AND_PORTS:
+                    cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],outfile)
+                    print cmdstr
+                    os.system(cmdstr)
+
