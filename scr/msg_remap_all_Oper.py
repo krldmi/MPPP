@@ -124,7 +124,7 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min):
 def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
     import string
 
-    print "Area = ",areaid
+    msgwrite_log("INFO","Area id: %s"%(areaid),moduleid=MODULE_ID)
     ctth=None
     areaObj = area.area(areaid)
     yystr = ("%.4d"%year)[2:4]
@@ -133,7 +133,7 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
     ext=string.replace(s," ","_")
 
     outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.ctth.hdf"%(CTTHDIR_OUT,satellite,year,month,day,hour,min,areaid)
-    print "Output file: ",outfile
+    msgwrite_log("INFO","Output file: %s"%(outfile),moduleid=MODULE_ID)
     if not os.path.exists(outfile):
         msgctthRem = msgCtth_remap_fast(covData,msgctth,areaid,areaObj)
         ctth = msg_ctth2ppsformat(msgctthRem)
@@ -141,7 +141,7 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
 
     imagelist = glob.glob("%s*.png"%string.split(outfile,".hdf")[0])
     nrgbs = len(imagelist)
-    print "INFO","Number of images already there: ",nrgbs
+    msgwrite_log("INFO","Number of images already there: %d"%nrgbs,moduleid=MODULE_ID)
     if nrgbs >= 2:
         return
     
@@ -149,43 +149,43 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
     if EXTRA_IMAGE_FORMATS.has_key(areaid) and "PGE03" in EXTRA_IMAGE_FORMATS[areaid].keys() and \
            len(EXTRA_IMAGE_FORMATS[areaid]["PGE03"]) > 0 and os.path.exists(outfile):
         # Make (extra) image(s) of the result:        
-        print "INFO","Make (extra) CTTH images for SMHI from the hdf5"
+        msgwrite_log("INFO","Make (extra) CTTH images for SMHI from the hdf5",moduleid=MODULE_ID)
         for legend_name in PGE03_LEGEND_NAMES[areaid]:
-            print "INFO","Pallete type: %s"%(legend_name)
+            msgwrite_log("INFO","Pallete type: %s"%(legend_name),moduleid=MODULE_ID)
             if not ctth:
                 ctth=epshdf.read_cloudtop(outfile,1,1,1,0,1)
 
             this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[legend_name])
-            print "INFO","image instance created..."
+            msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
             
             for imformat in EXTRA_IMAGE_FORMATS[areaid]["PGE03"]:
-                print "INFO","File time stamp = %s"%timestamp
+                msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
                 aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
                 prodid=string.ljust(PGE03_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
                 outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-                print "INFO","Image file name to SIR = %s"%outname
+                msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
                 if PGE03_SIR_NAMES.has_key(legend_name):
                     sir_stat=0
                     try:
                         this.save(outname,FORMAT=imformat,quality=100)
                     except:
-                        print "INFO","Couldn't make image of specified format: ",imformat                        
+                        msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
                         sir_stat=-1
                         pass
                     if os.path.exists(outname):
                         os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
                     inform_sir("MSG",PGE03_SIR_NAMES[legend_name],areaid,sir_stat,timestamp)
                 else:
-                    print "INFO","No product to SIR for this legend: %s"%(legend_name)
+                    msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
     
     # Make standard images:
     if PRODUCT_IMAGES["PGE03"].has_key(areaid):
-        print PRODUCT_IMAGES["PGE03"][areaid].keys()
+        msgwrite_log("INFO",PRODUCT_IMAGES["PGE03"][areaid].keys(),moduleid=MODULE_ID)
         for key in PRODUCT_IMAGES["PGE03"][areaid].keys():
             for imformat in PRODUCT_IMAGES["PGE03"][areaid][key]:
                 imagefile = outfile.split(".hdf")[0] + "_%s.%s"%(string.lower(key),imformat)
                 thumbnail = outfile.split(".hdf")[0] + "_%s.thumbnail.%s"%(string.lower(key),imformat)
-                print "IMAGE FILE: ",imagefile 
+                msgwrite_log("INFO","IMAGE FILE: %s"%imagefile,moduleid=MODULE_ID)
                 if not os.path.exists(imagefile):
                     if not ctth:
                         ctth = epshdf.read_cloudtop(outfile,1,1,1,0,1)                
@@ -196,8 +196,8 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
                         this.thumbnail((size[0]/3,size[1]/3))
                         this.save(thumbnail)
                     else:
-                        print "ERROR","Failed generating image file"
-                        print "INFO: Legend not supported!"
+                        msgwrite_log("ERROR","Failed generating image file",moduleid=MODULE_ID)
+                        msgwrite_log("INFO: Legend not supported!",moduleid=MODULE_ID)
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
@@ -219,45 +219,45 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
     if len(fl) == 0:
-        print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+        msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
     else:
-        print "Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+        msgwrite_log("INFO","Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
 
     ch9file = "%s/9_%s.BT"%(fileprfx,fname)
     ch9,ok9=get_ch_projected(ch9file,cov)
 
     if not ok9:
-        print "ERROR: Failed extracting SEVIRI channel 9 data"
+        msgwrite_log("INFO","ERROR: Failed extracting SEVIRI channel 9 data",moduleid=MODULE_ID)
         sys.exit(-9)
 
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
     ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
-    print "Output file: ",ctypefile
+    msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
     this = msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
 
-    imformat="tif"
-    print "INFO","File time stamp = %s"%timestamp
+    imformat="png"
+    msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
     aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
     prodid=string.ljust("02b",4).replace(" ","_") # Pad with "_" up to 4 characters
     outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-    print "INFO","Image file name to SIR = %s"%outname
+    msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
 
     sir_stat=0
     try:
         this.save(outname,FORMAT=imformat,quality=100)
     except:
-        print "INFO","Couldn't make image of specified format: ",imformat
+        msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
         sir_stat=-1
         pass
     if os.path.exists(outname):
         os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
         inform_sir("MSG","02b",areaid,sir_stat,timestamp)
     else:
-        print "INFO","No product to SIR"
+        msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
-    # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
+    # Sync the output with fileserver:
     if FSERVER_SYNC:
         os.system("%s %s/%s_ir*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
 
@@ -277,6 +277,16 @@ def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,min):
     if not os.path.exists(outfile):
         msgctype = msgCtype_remap_fast(covData,msgctype,areaid,areaObj)            
         status = msg_ctype2radar.msg_writectype2nordradformat(msgctype,outfile,datestr)
+        if status:
+            # Send the product to the nordrad servers:
+            for tup in N2SERVERS_AND_PORTS:
+                cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],outfile)
+                msgwrite_log("INFO","Command: %s"%(cmdstr),moduleid=MODULE_ID)
+                os.system(cmdstr)
+        else:
+            msgwrite_log("ERROR","Failed writing cloudtype product for Nordrad!",moduleid=MODULE_ID)
+            msgwrite_log("INFO","Filename = %s"%(outfile),moduleid=MODULE_ID)
+
 
     return
 
