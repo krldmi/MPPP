@@ -1,0 +1,16 @@
+#!/bin/ksh
+
+APPLDIR=@prefix@
+
+# Set some basic environment:
+#. ${HOME}/.profile_msg_oper
+. ${APPLDIR}/cfg/.profile_msgpp
+
+# $1: n2inject program name
+# $2: server adress
+# $3: port number
+# $4: cloud type file name
+
+#echo "Usage: $0 executable server:port filename"
+
+`echo "$1 $2:$3 $4"`
