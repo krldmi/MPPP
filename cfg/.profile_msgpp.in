@@ -21,8 +21,7 @@ SM_USGS_DIR=${ACPG_DATA_DIR}/import/AUX_data/source;export SM_USGS_DIR
 SM_AUXILIARY_DIR=${ACPG_DATA_DIR}/import/AUX_data/remapped;export SM_AUXILIARY_DIR
 
 # For Daniels products to nordrad:
-setenv N2ROOT PYLIBROOT
-
+N2ROOT=${PYLIBROOT}; export N2ROOT
 
 if [ "x$LD_LIBRARY_PATH"=="x" ]; then
   LD_LIBRARY_PATH="${HDF5_LD_PATH}:${HLHDF_INSTALL_PATH}/lib:${SZLIB_LD_PATH}:${ZLIB_LD_PATH}"
@@ -37,4 +36,6 @@ else
 fi
 export LD_RUN_PATH
 
-PATH=/usr/local/bin:/bin:/usr/bin:${ACPG_FUTURE}/scr:${N2}/n2lib:${PATH}
+PATH=/usr/local/bin:/bin:/usr/bin:${ACPG_FUTURE}/scr:${N2}/n2lib:${PATH}; export PATH
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${N2}/Lib"; export LD_LIBRARY_PATH
+LD_RUN_PATH="${LD_RUN_PATH}:${N2}/Lib"; export LD_RUN_PATH
