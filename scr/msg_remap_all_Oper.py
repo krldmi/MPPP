@@ -387,7 +387,7 @@ if __name__ == "__main__":
                 doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NORDRAD_AREAS:
                     doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
-                if areaid in ["scan"]:
+                if areaid in NWCSAF_PRODUCTS["PGE02b"]:
                     doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 
             if msgctth:

@@ -77,10 +77,11 @@ def make_bw(ch,outprfx,**options):
     that=Image.fromstring("P", imsize, layer.tostring())    
         
     that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
 
-    return
+    return imcopy
 
 # ------------------------------------------------------------------
 def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
@@ -142,10 +143,11 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
     
     that=Image.merge("RGB",(red,green,blue))
     that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
 
-    return
+    return imcopy
 
 # ------------------------------------------------------------------
 def makergb_fog(ch7,ch9,ch10,outprfx,**options):
@@ -209,33 +211,11 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
     
     that=Image.merge("RGB",(red,green,blue))
     that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
-
-
-    """
-    # Be sure to have the values inside the range [0,255]:
-    red_gain=255.0/(max_red-min_red)
-    red_icept=-1.*min_red*red_gain
-    print "Red channel: Gain,Intercept = %f,%f"%(red_gain,red_icept)
-    green_gain=255.0/(max_green-min_green)
-    green_icept=-1.*min_green*green_gain
-    print "Green channel: Gain,Intercept = %f,%f"%(green_gain,green_icept)
-    blue_gain=255.0/(max_blue-min_blue)
-    blue_icept=-1.*min_blue*blue_gain
-    print "Blue channel: Gain,Intercept = %f,%f"%(blue_gain,blue_icept)
-
-    gl=[red_gain,green_gain,blue_gain]
-    il=[red_icept,green_icept,blue_icept]
-
-    that = sm_display_util.make_rgb([red,green,blue],gl,il,not_missing_data)
-
-    that.save(outprfx+".png","png")
-    that.thumbnail((size[0]/2,size[1]/2))
-    that.save(outprfx+"_thumbnail.png","png")
-    """
     
-    return
+    return imcopy
 
 # ------------------------------------------------------------------
 def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
@@ -316,10 +296,11 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     msgwrite_log("INFO","Ch3-Ch1 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
     
     that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
 
-    return
+    return imcopy
 
 # ------------------------------------------------------------------
 def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
@@ -380,30 +361,11 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     
     that=Image.merge("RGB",(red,green,blue))
     that.save(outprfx+".png","png")
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.png","png")
-
-    return
-
-
-    """
-    ir_gain=1.0
-    ir_intercept=0.0
-    vis_gain=1.0
-    vis_intercept=0.0
-    irgain = -2.0 * ir_gain
-    iricept = 2.0 * (330.66 - ir_intercept)
-    visgain = 2.55 * vis_gain
-    visicept = 2.55 * vis_intercept
-    gl=[visgain,visgain,irgain]
-    il=[visicept,visicept,iricept]
-    that = sm_display_util.make_rgb([vis1,vis2,ch9],gl,il,not_missing_data)
-    that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
     
-    return
-    """    
+    return imcopy
 
 # ------------------------------------------------------------------
 def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
@@ -425,10 +387,11 @@ def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
     il=[visicept,visicept,iricept]
     that = sm_display_util.make_rgb([ch1,ch3,ch9],gl,il,not_missing_data)
     that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((size[0]/2,size[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
 
-    return
+    return imcopy
 
 # ------------------------------------------------------------------
 def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
@@ -489,29 +452,12 @@ def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
     
     that=Image.merge("RGB",(red,green,blue))
     that.save(outprfx+".png","png")
+    imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     that.save(outprfx+"_thumbnail.png","png")
 
-    return
+    return imcopy
 
-
-    """
-    not_missing_data = Numeric.greater(ch9,0.0).astype('b')
-    size = not_missing_data.shape[1],not_missing_data.shape[0]
-
-    ir_gain=1.0
-    ir_intercept=0.0
-    irgain = -2.0 * ir_gain
-    iricept = 2.0 * (330.66 - ir_intercept)
-    gl=[irgain,irgain,irgain]
-    il=[iricept,iricept,iricept]
-    that = sm_display_util.make_rgb([ch4,ch9,ch10],gl,il,not_missing_data)
-    that.save(outprfx+".png","png")
-    that.thumbnail((size[0]/2,size[1]/2))
-    that.save(outprfx+"_thumbnail.png","png")
-
-    return
-    """
 # ------------------------------------------------------------------
 def get_ch_projected(ch_file,cov):
     import msg_ctype_remap
