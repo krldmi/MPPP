@@ -38,9 +38,12 @@ FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, oth
 SYNC = "/usr/bin/rsync -crzul"
 
 MSG_SATELLITE = "met08"
-MSG_AREA = "CEuro"
-MSG_AREA_CENTER=(429,1999)
-ROWS,COLS=(700,900)
+#MSG_AREA = "CEuro"
+#MSG_AREA_CENTER=(429,1999)
+#ROWS,COLS=(700,900)
+MSG_AREA = "Europe"
+MSG_AREA_CENTER=(450,2099)
+ROWS,COLS=(900,2300)
 
 LONFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LON"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 LATFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LAT"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
@@ -54,14 +57,18 @@ AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
-NWCSAF_MSG_AREAS = ["scan","mesanX","euro4","sswe"]
-NWCSAF_MSG_AREAS_IMPROD = ["scan","euro4","sswe"]
+NWCSAF_MSG_AREAS = ["mesanX","euro4"]
+NWCSAF_MSG_AREAS_IMPROD = ["euro4"]
 NORDRAD_AREAS = ["euro4"]
 
 # Nordrad product injection:
 N2INJECT = "n2inject"
 N2SERVERS_AND_PORTS = [("brdc",8822),("brdc",8823)]
 N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
+
+# Standard and derived products:
+NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],
+		   "PGE03":["euro4"]}
 
 #
 EXTRA_IMAGE_FORMATS = {}
@@ -82,12 +89,8 @@ for aid in NWCSAF_MSG_AREAS_IMPROD:
 
 # Products on which areas, and with which colour-palettes, and in what image formats?:
 PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
-			 "sswe"   :{"standard":["png"]},#,"vv2"  :["png"]},
-		         "scan"   :{"standard":["png"]},#,"vv2"  :["png"]},
-		         "euro4"   :{"standard":["png"]}},#,"vv2"  :["png"]}},
+		         "euro4"   :{"standard":["png"]}}
 		"PGE03":{"mesanX":{"standard":["png"]},
-			 "sswe"  :{"standard":["png"]},
-			 "scan"  :{"standard":["png"]},
 			 "euro4"  :{"standard":["png"]}
 		}
 		}
@@ -114,3 +117,19 @@ INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
 SIR_DIR="/data/prod/sirexp/sir2/data"
 PGE02_SIR_NAMES={"standard":"02a"}
 PGE03_SIR_NAMES={"standard":"03a"}
+IMAGEPROD_SIR_NAMES_AND_FORMATS={"ir9":[("ir9","tif"),],
+				 "watervapour_low":[("ir6","tif"),],
+				 "watervapour_high":[("ir5","tif"),],
+				 "overview":[("ovw","tif"),],
+				 "cloudtop":[("clt","tif"),],
+				 "nightfog":[("nfog","tif"),],
+				 "fog":[("fog","tif"),],
+				 "convection":[("conv","tif"),],
+				 "greensnow":[("snow","tif"),]
+				}
+
+SIR_SIGNALLING = {"pge02":0,"pge03":0,"pge02b":0,
+		  "ir9":0,"watervapour_low":0,"watervapour_high":0,
+		  "overview":0,"cloudtop":0,"nightfog":0,
+		  "fog":0,"convection":0,"green_snow":0}
+				
