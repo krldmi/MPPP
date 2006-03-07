@@ -63,7 +63,7 @@ NORDRAD_AREAS = ["euro4"]
 
 # Nordrad product injection:
 N2INJECT = "n2inject"
-N2SERVERS_AND_PORTS = [("brdc",8822),("brdc",8823)]
+N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
 N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
 
 # Standard and derived products:
