@@ -58,27 +58,19 @@ COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
 NWCSAF_MSG_AREAS = ["mesanX","euro4"]
-NWCSAF_MSG_AREAS_IMPROD = ["euro4"]
+NWCSAF_MSG_AREAS_SIRPROD = ["euro4"]
 NORDRAD_AREAS = ["euro4"]
 
 # Nordrad product injection:
 N2INJECT = "n2inject"
-N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
-N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
+#N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
+N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
+#N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
+N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
 
 # Standard and derived products:
-NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],
-		   "PGE03":["euro4"]}
+NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],"PGE03":["euro4"]}
 
-#
-EXTRA_IMAGE_FORMATS = {}
-
-for aid in NWCSAF_MSG_AREAS:
-    EXTRA_IMAGE_FORMATS[aid] = {}
-
-for aid in NWCSAF_MSG_AREAS_IMPROD:
-    EXTRA_IMAGE_FORMATS[aid]={"PGE01":[],"PGE02":["tif"],"PGE03":["tif"],
-    	                      "PGE04":[],"RGB_DAY":[],"RGB_NIGHT":[]}
 
 # PGE02 IMAGE_LEGENDS:
 #   FULL: "get_cms_modified" - nwcsaf/msg colouring
@@ -89,7 +81,7 @@ for aid in NWCSAF_MSG_AREAS_IMPROD:
 
 # Products on which areas, and with which colour-palettes, and in what image formats?:
 PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
-		         "euro4"   :{"standard":["png"]}}
+		         "euro4"   :{"standard":["png"]}},
 		"PGE03":{"mesanX":{"standard":["png"]},
 			 "euro4"  :{"standard":["png"]}
 		}
@@ -104,7 +96,7 @@ PGE02_LEGEND_NAMES = {}
 
 for aid in NWCSAF_MSG_AREAS:
     PGE02_LEGEND_NAMES[aid] = ("standard",)
-for aid in NWCSAF_MSG_AREAS_IMPROD:
+for aid in NWCSAF_MSG_AREAS_SIRPROD:
     PGE02_LEGEND_NAMES[aid] = ("standard",)
     #PGE02_LEGEND_NAMES[aid] = ("standard","vv2")
 
@@ -113,23 +105,37 @@ PGE03_LEGEND_NAMES = {}
 for aid in NWCSAF_MSG_AREAS:
     PGE03_LEGEND_NAMES[aid] = ("standard",)
 
-INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
-SIR_DIR="/data/prod/sirexp/sir2/data"
+#INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
+INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnwBROKEN.csh"
+#SIR_DIR="/data/prod/sirexp/sir2/data"
+SIR_DIR="/local_disk/data/sir"
 PGE02_SIR_NAMES={"standard":"02a"}
 PGE03_SIR_NAMES={"standard":"03a"}
-IMAGEPROD_SIR_NAMES_AND_FORMATS={"ir9":[("ir9","tif"),],
-				 "watervapour_low":[("ir6","tif"),],
-				 "watervapour_high":[("ir5","tif"),],
-				 "overview":[("ovw","tif"),],
-				 "cloudtop":[("clt","tif"),],
-				 "nightfog":[("nfog","tif"),],
-				 "fog":[("fog","tif"),],
-				 "convection":[("conv","tif"),],
-				 "greensnow":[("snow","tif"),]
-				}
 
-SIR_SIGNALLING = {"pge02":0,"pge03":0,"pge02b":0,
-		  "ir9":0,"watervapour_low":0,"watervapour_high":0,
-		  "overview":0,"cloudtop":0,"nightfog":0,
-		  "fog":0,"convection":0,"green_snow":0}
-				
+#
+SIR_PRODUCTS = {}
+SIR_SIGNAL = {}
+    
+for aid in NWCSAF_MSG_AREAS:
+    SIR_PRODUCTS[aid] = {}
+    SIR_SIGNAL[aid] = {}
+        
+for aid in NWCSAF_MSG_AREAS_SIRPROD:
+    SIR_PRODUCTS[aid] = {"PGE01":[],"PGE02":[("02a","tif"),],"PGE02b":[("02b","png"),],
+			 "PGE03":[("03a","tif"),],"PGE04":[("04a","tif"),],
+			 "ir9":[("ir9","tif"),],
+			 "watervapour_low":[("ir6","tif"),],
+			 "watervapour_high":[("ir5","tif"),],
+			 "overview":[("ovw","tif"),],
+			 "cloudtop":[("clt","tif"),],
+			 "nightfog":[("nfog","tif"),],
+			 "fog":[("fog","tif"),],
+			 "convection":[("conv","tif"),],
+			 "greensnow":[("snow","tif"),]
+			}
+
+    SIR_SIGNAL[aid] = {"PGE02":0,"PGE03":0,"PGE02b":0,
+			   "ir9":0,"watervapour_low":0,"watervapour_high":0,
+			   "overview":0,"cloudtop":0,"nightfog":0,
+			   "fog":0,"convection":0,"greensnow":0
+			  }
