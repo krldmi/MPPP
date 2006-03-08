@@ -33,11 +33,10 @@ def inform_sir(saf_name,pge_name,aidstr,status,datestr):
     return
     
 # -----------------------------------------------------------------------
-def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min):
+def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=None):
     import string
 
     msgwrite_log("INFO","Area = ",areaid,moduleid=MODULE_ID)
-    ctype=None
     areaObj = area.area(areaid)
 
     yystr = ("%.4d"%year)[2:4]
@@ -55,43 +54,49 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min):
     imagelist = glob.glob("%s*.png"%string.split(outfile,".hdf")[0])
     nrgbs = len(imagelist)
     msgwrite_log("INFO","Number of images already there: ",nrgbs,outfile,moduleid=MODULE_ID)
+    # Is this okay? Ad, 2006-03-08
     if nrgbs >= 2:
         return
 
     # Make images to distribute via SIR for forecasters and others:
-    if EXTRA_IMAGE_FORMATS.has_key(areaid) and "PGE02" in EXTRA_IMAGE_FORMATS[areaid].keys() and \
-           len(EXTRA_IMAGE_FORMATS[areaid]["PGE02"]) > 0 and os.path.exists(outfile):
+    if SIR_PRODUCTS.has_key(areaid) and "PGE02" in SIR_PRODUCTS[areaid].keys() and \
+           len(SIR_PRODUCTS[areaid]["PGE02"]) > 0 and os.path.exists(outfile) and SIR_SIGNALLING[areaid]["PGE02"]:
         # Make (extra) image(s) of the result:        
         msgwrite_log("INFO","Make (extra) Cloud Type images for SMHI from the hdf5",moduleid=MODULE_ID)
-        for legend_name in PGE02_LEGEND_NAMES[areaid]:
-            msgwrite_log("INFO","Call cloudtype2image",moduleid=MODULE_ID)
-            msgwrite_log("INFO","Pallete type: %s"%(legend_name),moduleid=MODULE_ID)
+        legend_name = "standard"
+        msgwrite_log("INFO","Call cloudtype2image",moduleid=MODULE_ID)
+        msgwrite_log("INFO","Pallete type: %s"%(legend_name),moduleid=MODULE_ID)
+        if PGE02_SIR_NAMES.has_key(legend_name):
             legend = PGE02_LEGENDS[legend_name]
-            if not ctype:
-                ctype = epshdf.read_cloudtype(outfile,1,0,0)
+        else:
+             msgwrite_log("ERROR","legend not registered! Stop...",moduleid=MODULE_ID)
+             return
+         
+        if not ctype:
+            ctype = epshdf.read_cloudtype(outfile,1,0,0)
                 
-            im = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
-            msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
+        im = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
+        msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
             
-            for imformat in EXTRA_IMAGE_FORMATS[areaid]["PGE02"]:
-                msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-                aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-                if PGE02_SIR_NAMES.has_key(legend_name):
-                    prodid=string.ljust(PGE02_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
-                    outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-                    msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-                    sir_stat=0
-                    try:
-                        im.save(outname,FORMAT=imformat,quality=100)
-                    except:
-                        msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-                        sir_stat=-1
-                        pass
-                    if os.path.exists(outname):
-                        os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir("MSG",PGE02_SIR_NAMES[legend_name],areaid,sir_stat,timestamp)
-                else:
-                    msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
+        for tup in SIR_PRODUCTS[areaid]["PGE02"]:
+            sirname,imformat=tup
+            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+            sir_stat=0
+            try:
+                im.save(outname,FORMAT=imformat,quality=100)
+            except:
+                msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+                sir_stat=-1
+                pass
+            if os.path.exists(outname):
+                os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+            else:
+                msgwrite_log("INFO","No product to SIR for this area: %s"%(areaid),moduleid=MODULE_ID)
     
     # Make standard images:
     if PRODUCT_IMAGES["PGE02"].has_key(areaid):
@@ -121,11 +126,10 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min):
     return
 
 # -----------------------------------------------------------------------
-def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
+def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
     import string
 
     msgwrite_log("INFO","Area id: %s"%(areaid),moduleid=MODULE_ID)
-    ctth=None
     areaObj = area.area(areaid)
     yystr = ("%.4d"%year)[2:4]
     timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
@@ -146,37 +150,37 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min):
         return
     
     # Make images to distribute via SIR for forecasters and others:
-    if EXTRA_IMAGE_FORMATS.has_key(areaid) and "PGE03" in EXTRA_IMAGE_FORMATS[areaid].keys() and \
-           len(EXTRA_IMAGE_FORMATS[areaid]["PGE03"]) > 0 and os.path.exists(outfile):
+    if SIR_PRODUCTS.has_key(areaid) and "PGE03" in SIR_PRODUCTS[areaid].keys() and \
+           len(SIR_PRODUCTS[areaid]["PGE03"]) > 0 and os.path.exists(outfile) and SIR_SIGNALLING[areaid]["PGE03"]:
         # Make (extra) image(s) of the result:        
         msgwrite_log("INFO","Make (extra) CTTH images for SMHI from the hdf5",moduleid=MODULE_ID)
-        for legend_name in PGE03_LEGEND_NAMES[areaid]:
-            msgwrite_log("INFO","Pallete type: %s"%(legend_name),moduleid=MODULE_ID)
-            if not ctth:
-                ctth=epshdf.read_cloudtop(outfile,1,1,1,0,1)
+        legend_name = "standard"
+        msgwrite_log("INFO","Pallete type: %s"%(legend_name),moduleid=MODULE_ID)
+        if not ctth:
+            ctth=epshdf.read_cloudtop(outfile,1,1,1,0,1)
 
-            this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[legend_name])
-            msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
+        this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[legend_name])
+        msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
             
-            for imformat in EXTRA_IMAGE_FORMATS[areaid]["PGE03"]:
-                msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-                aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-                prodid=string.ljust(PGE03_SIR_NAMES[legend_name],4).replace(" ","_") # Pad with "_" up to 4 characters
-                outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-                msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-                if PGE03_SIR_NAMES.has_key(legend_name):
-                    sir_stat=0
-                    try:
-                        this.save(outname,FORMAT=imformat,quality=100)
-                    except:
-                        msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-                        sir_stat=-1
-                        pass
-                    if os.path.exists(outname):
-                        os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir("MSG",PGE03_SIR_NAMES[legend_name],areaid,sir_stat,timestamp)
-                else:
-                    msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
+        for tup in SIR_PRODUCTS[areaid]["PGE03"]:
+            sirname,imformat = tup
+            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+            sir_stat=0
+            try:
+                this.save(outname,FORMAT=imformat,quality=100)
+            except:
+                msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+                sir_stat=-1
+                pass
+            if os.path.exists(outname):
+                os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+            else:
+                msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
     
     # Make standard images:
     if PRODUCT_IMAGES["PGE03"].has_key(areaid):
