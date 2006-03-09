@@ -60,7 +60,7 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
 
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02" in SIR_PRODUCTS[areaid].keys() and \
-           len(SIR_PRODUCTS[areaid]["PGE02"]) > 0 and os.path.exists(outfile) and SIR_SIGNALLING[areaid]["PGE02"]:
+           len(SIR_PRODUCTS[areaid]["PGE02"]) > 0 and os.path.exists(outfile) and SIR_SIGNAL[areaid]["PGE02"]:
         # Make (extra) image(s) of the result:        
         msgwrite_log("INFO","Make (extra) Cloud Type images for SMHI from the hdf5",moduleid=MODULE_ID)
         legend_name = "standard"
@@ -151,7 +151,7 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
     
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE03" in SIR_PRODUCTS[areaid].keys() and \
-           len(SIR_PRODUCTS[areaid]["PGE03"]) > 0 and os.path.exists(outfile) and SIR_SIGNALLING[areaid]["PGE03"]:
+           len(SIR_PRODUCTS[areaid]["PGE03"]) > 0 and os.path.exists(outfile) and SIR_SIGNAL[areaid]["PGE03"]:
         # Make (extra) image(s) of the result:        
         msgwrite_log("INFO","Make (extra) CTTH images for SMHI from the hdf5",moduleid=MODULE_ID)
         legend_name = "standard"
