@@ -45,7 +45,8 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
 	newleg = newleg + list(i)
     this.putpalette(newleg)
     this = this.convert("RGB")
-
+    retv = ctype.copy()
+    
     if withCoast:
         print "INFO: Add coastlines and political borders to image. Area = %s"%(areaid)
         rimg = acpgimage.image(areaid)
@@ -70,7 +71,7 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     thumbnail = ctypefile.split(".hdf")[0] + "_ir.thumbnail.png"
     thumb.save(thumbnail)
 
-    return this
+    return retv
 
 # ------------------------------------------------------------------
 def make_ctype_prod02(irch,ctypefile,areaid,**options):
@@ -110,7 +111,8 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
 	newleg = newleg + list(i)
     this.putpalette(newleg)
     this = this.convert("RGB")
-
+    retv = this.copy()
+    
     if withCoast:
         print "INFO: Add coastlines and political borders to image. Area = %s"%(areaid)
         rimg = acpgimage.image(areaid)
@@ -135,7 +137,7 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     thumbnail = ctypefile.split(".hdf")[0] + "_irtv.thumbnail.png"
     thumb.save(thumbnail)
 
-    return
+    return retv
 
 # ------------------------------------------------------------------
 if __name__ == "__main__":

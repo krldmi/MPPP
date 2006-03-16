@@ -241,29 +241,84 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
 
     this = msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
 
-    imformat="png"
-    msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-    aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-    prodid=string.ljust("02b",4).replace(" ","_") # Pad with "_" up to 4 characters
-    outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-    msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-
-    sir_stat=0
-    try:
-        this.save(outname,FORMAT=imformat,quality=100)
-    except:
-        msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-        sir_stat=-1
-        pass
-    if os.path.exists(outname):
-        os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-        inform_sir("MSG","02b",areaid,sir_stat,timestamp)
-    else:
-        msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+    for tup in SIR_PRODUCTS[areaid]["PGE02b"]:
+        sirname,imformat=tup
+        msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+        aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+        prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+        outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+        msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+        sir_stat=0
+        try:
+            this.save(outname,FORMAT=imformat,quality=100)
+        except:
+            msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+            sir_stat=-1
+            pass
+        if os.path.exists(outname):
+            os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+            inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+        else:
+            msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
     # Sync the output with fileserver:
     if FSERVER_SYNC:
-        os.system("%s %s/%s_ir*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
+        os.system("%s %s/%s_ir.*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
+
+    return
+
+# -----------------------------------------------------------------------
+def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
+    import string
+    import msg_ctype_products
+
+    yystr = ("%.4d"%year)[2:4]
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
+    fileprfx="%s"%(RGBDIR_IN)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
+
+    fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
+    if len(fl) == 0:
+        msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
+    else:
+        msgwrite_log("INFO","Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
+
+    ch9file = "%s/9_%s.BT"%(fileprfx,fname)
+    ch9,ok9=get_ch_projected(ch9file,cov)
+    if not ok9:
+        msgwrite_log("INFO","ERROR: Failed extracting SEVIRI channel 9 data",moduleid=MODULE_ID)
+        sys.exit(-9)
+
+    s=string.ljust(areaid,12)
+    ext=string.replace(s," ","_")
+    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
+
+    this = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+
+    for tup in SIR_PRODUCTS[areaid]["PGE02c"]:
+        sirname,imformat=tup
+        msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+        aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+        prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+        outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+        msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+        sir_stat=0
+        try:
+            this.save(outname,FORMAT=imformat,quality=100)
+        except:
+            msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+            sir_stat=-1
+            pass
+        if os.path.exists(outname):
+            os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+            inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+        else:
+            msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+    
+    # Sync the output with fileserver:
+    if FSERVER_SYNC:
+        os.system("%s %s/%s_irtv.*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
 
     return
 
@@ -393,6 +448,8 @@ if __name__ == "__main__":
                     doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NWCSAF_PRODUCTS["PGE02b"]:
                     doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                if areaid in NWCSAF_PRODUCTS["PGE02c"]:
+                    doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 
             if msgctth:
                 doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)

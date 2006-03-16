@@ -69,7 +69,7 @@ N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
 N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
 
 # Standard and derived products:
-NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],"PGE03":["euro4"]}
+NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],"PGE02c":["euro4"],"PGE03":["euro4"]}
 
 
 # PGE02 IMAGE_LEGENDS:
@@ -121,7 +121,7 @@ for aid in NWCSAF_MSG_AREAS:
     SIR_SIGNAL[aid] = {}
         
 for aid in NWCSAF_MSG_AREAS_SIRPROD:
-    SIR_PRODUCTS[aid] = {"PGE01":[],"PGE02":[("02a","tif"),],"PGE02b":[("02b","png"),],
+    SIR_PRODUCTS[aid] = {"PGE01":[],"PGE02":[("02a","tif"),],"PGE02b":[("02b","png"),],"PGE02c":[("02c","png"),],
 			 "PGE03":[("03a","tif"),],"PGE04":[("04a","tif"),],
 			 "ir9":[("ir9","tif"),],
 			 "watervapour_low":[("ir6","tif"),],
@@ -134,7 +134,7 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
 			 "greensnow":[("snow","tif"),]
 			}
 
-    SIR_SIGNAL[aid] = {"PGE02":0,"PGE03":0,"PGE02b":0,
+    SIR_SIGNAL[aid] = {"PGE02":0,"PGE03":0,"PGE02b":0,"PGE02c":0,
 			   "ir9":0,"watervapour_low":0,"watervapour_high":0,
 			   "overview":0,"cloudtop":0,"nightfog":0,
 			   "fog":0,"convection":0,"greensnow":0
