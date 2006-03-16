@@ -446,8 +446,10 @@ if __name__ == "__main__":
                 doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NORDRAD_AREAS:
                     doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                msgwrite_log("INFO","Product areas: PGE02b = ",NWCSAF_PRODUCTS["PGE02b"],moduleid=MODULE_ID)
                 if areaid in NWCSAF_PRODUCTS["PGE02b"]:
-                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)                    
+                msgwrite_log("INFO","Product areas: PGE02c = ",NWCSAF_PRODUCTS["PGE02c"],moduleid=MODULE_ID)
                 if areaid in NWCSAF_PRODUCTS["PGE02c"]:
                     doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 
