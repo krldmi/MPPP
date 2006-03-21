@@ -241,25 +241,29 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
 
     this = msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
 
-    for tup in SIR_PRODUCTS[areaid]["PGE02b"]:
-        sirname,imformat=tup
-        msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-        aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-        prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-        outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-        msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-        sir_stat=0
-        try:
-            this.save(outname,FORMAT=imformat,quality=100)
-        except:
-            msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-            sir_stat=-1
-            pass
-        if os.path.exists(outname):
-            os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-            inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
-        else:
-            msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+    # Make images to distribute via SIR for forecasters and others:
+    if SIR_PRODUCTS.has_key(areaid) and "PGE02b" in SIR_PRODUCTS[areaid].keys() and \
+           len(SIR_PRODUCTS[areaid]["PGE02b"]) > 0:
+        for tup in SIR_PRODUCTS[areaid]["PGE02b"]:
+            sirname,imformat=tup
+            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+            if SIR_SIGNAL[areaid]["PGE02b"]:
+                sir_stat = 0
+                try:
+                    this.save(outname,FORMAT=imformat,quality=100)
+                except:
+                    msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+                    sir_stat=-1
+                    pass
+                if os.path.exists(outname):
+                    os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                    inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+                else:
+                    msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
     # Sync the output with fileserver:
     if FSERVER_SYNC:
@@ -296,25 +300,29 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
 
     this = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
 
-    for tup in SIR_PRODUCTS[areaid]["PGE02c"]:
-        sirname,imformat=tup
-        msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-        aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-        prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-        outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-        msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-        sir_stat=0
-        try:
-            this.save(outname,FORMAT=imformat,quality=100)
-        except:
-            msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-            sir_stat=-1
-            pass
-        if os.path.exists(outname):
-            os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-            inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
-        else:
-            msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+    # Make images to distribute via SIR for forecasters and others:
+    if SIR_PRODUCTS.has_key(areaid) and "PGE02c" in SIR_PRODUCTS[areaid].keys() and \
+           len(SIR_PRODUCTS[areaid]["PGE02c"]) > 0:
+        for tup in SIR_PRODUCTS[areaid]["PGE02c"]:
+            sirname,imformat=tup
+            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+            if SIR_SIGNAL[areaid]["PGE02c"]:
+                sir_stat = 0
+                try:
+                    this.save(outname,FORMAT=imformat,quality=100)
+                except:
+                    msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+                    sir_stat=-1
+                    pass
+                if os.path.exists(outname):
+                    os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                    inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+            else:
+                msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
     # Sync the output with fileserver:
     if FSERVER_SYNC:
@@ -446,10 +454,8 @@ if __name__ == "__main__":
                 doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NORDRAD_AREAS:
                     doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
-                msgwrite_log("INFO","Product areas: PGE02b = ",NWCSAF_PRODUCTS["PGE02b"],moduleid=MODULE_ID)
                 if areaid in NWCSAF_PRODUCTS["PGE02b"]:
-                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)                    
-                msgwrite_log("INFO","Product areas: PGE02c = ",NWCSAF_PRODUCTS["PGE02c"],moduleid=MODULE_ID)
+                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NWCSAF_PRODUCTS["PGE02c"]:
                     doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 

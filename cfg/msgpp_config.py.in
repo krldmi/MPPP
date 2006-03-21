@@ -34,8 +34,9 @@ RGBDIR_IN = "/opt/MSG/current/tmp"
 FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
-FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
-SYNC = "/usr/bin/rsync -crzul"
+FSERVER_SYNC = 0 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
+#SYNC = "/usr/bin/rsync -crzul"
+SYNC = "/usr/bin/rsync -crzuln"
 
 MSG_SATELLITE = "met08"
 #MSG_AREA = "CEuro"
@@ -57,19 +58,20 @@ AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
-NWCSAF_MSG_AREAS = ["mesanX","euro4"]
-NWCSAF_MSG_AREAS_SIRPROD = ["euro4"]
+NWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv"]
+NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv"]
 NORDRAD_AREAS = ["euro4"]
 
 # Nordrad product injection:
-N2INJECT = "n2inject"
+#N2INJECT = "n2inject"
+N2INJECT = "n2injectBROKEN"
 #N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
 N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
 #N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
 N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
 
 # Standard and derived products:
-NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],"PGE02c":["euro4"],"PGE03":["euro4"]}
+NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],"PGE02c":["euro4","eurotv"],"PGE03":["euro4"]}
 
 
 # PGE02 IMAGE_LEGENDS:
@@ -135,7 +137,7 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
 			}
 
     SIR_SIGNAL[aid] = {"PGE02":0,"PGE03":0,"PGE02b":0,"PGE02c":0,
-			   "ir9":0,"watervapour_low":0,"watervapour_high":0,
-			   "overview":0,"cloudtop":0,"nightfog":0,
-			   "fog":0,"convection":0,"greensnow":0
-			  }
+		       "ir9":0,"watervapour_low":0,"watervapour_high":0,
+		       "overview":0,"cloudtop":0,"nightfog":0,
+		       "fog":0,"convection":0,"greensnow":0
+		      }

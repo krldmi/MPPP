@@ -45,7 +45,7 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
 	newleg = newleg + list(i)
     this.putpalette(newleg)
     this = this.convert("RGB")
-    retv = ctype.copy()
+    retv = this.copy()
     
     if withCoast:
         print "INFO: Add coastlines and political borders to image. Area = %s"%(areaid)
@@ -105,7 +105,7 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     
     shape = that.cloudtype.shape    
     size=shape[1],shape[0]
-    this = Image.fromstring("P",shape,arr.tostring())
+    this = Image.fromstring("P",size,arr.tostring())
     newleg=[]
     for i in legend:    
 	newleg = newleg + list(i)
