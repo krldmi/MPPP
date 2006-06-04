@@ -58,7 +58,7 @@ AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
-NNWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv","scan","euro"]
+NWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv","scan","euro"]
 NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv","scan","euro"]
 NORDRAD_AREAS = ["euro4"]
 
