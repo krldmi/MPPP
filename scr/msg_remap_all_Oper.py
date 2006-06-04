@@ -31,6 +31,20 @@ def inform_sir(saf_name,pge_name,aidstr,status,datestr):
     os.system(cmdstr)
 
     return
+
+# -----------------------------------------------------------------------
+def inform_sir2(prod_name,aidstr,status,datestr):
+    import string
+
+    msgwrite_log("INFO","inside inform_sir...",moduleid=MODULE_ID)
+    msgwrite_log("INFO","aidstr=%s"%aidstr,moduleid=MODULE_ID)
+    informsir_params = (string.upper(prod_name),string.upper(aidstr))
+    msgwrite_log("INFO","informsir_params: ",informsir_params,moduleid=MODULE_ID)
+    cmdstr = "%s %s %s %s %d"%(INFORMSIR_SCRIPT,informsir_params[0],informsir_params[1],datestr,status)
+    msgwrite_log("INFO","Inform SIR command: %s"%(cmdstr),moduleid=MODULE_ID)
+    os.system(cmdstr)
+
+    return
     
 # -----------------------------------------------------------------------
 def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=None):
@@ -82,8 +96,8 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
             sirname,imformat=tup
             msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
             aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
+            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
             sir_stat=0
             try:
@@ -94,7 +108,7 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
                 pass
             if os.path.exists(outname):
                 os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+                inform_sir2(prodid,areaid,sir_stat,timestamp)
             else:
                 msgwrite_log("INFO","No product to SIR for this area: %s"%(areaid),moduleid=MODULE_ID)
     
@@ -166,8 +180,8 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
             sirname,imformat = tup
             msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
             aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
+            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
             sir_stat=0
             try:
@@ -178,7 +192,7 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
                 pass
             if os.path.exists(outname):
                 os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+                inform_sir2(prodid,areaid,sir_stat,timestamp)
             else:
                 msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
     
@@ -248,8 +262,8 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
             sirname,imformat=tup
             msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
             aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
+            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
             if SIR_SIGNAL[areaid]["PGE02b"]:
                 sir_stat = 0
@@ -261,7 +275,7 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
                     pass
                 if os.path.exists(outname):
                     os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+                    inform_sir2(prodid,areaid,sir_stat,timestamp)
                 else:
                     msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
@@ -298,7 +312,8 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
     ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
     msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
-    this = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    #this = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=0)
 
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02c" in SIR_PRODUCTS[areaid].keys() and \
@@ -307,20 +322,26 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
             sirname,imformat=tup
             msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
             aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-            outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            #prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
+            #outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
+            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
             if SIR_SIGNAL[areaid]["PGE02c"]:
                 sir_stat = 0
                 try:
-                    this.save(outname,FORMAT=imformat,quality=100)
+                    if sirname in ["metirccj"]:
+                        img_with_ovl.save(outname,FORMAT=imformat,quality=100)
+                    else:
+                        this.save(outname,FORMAT=imformat,quality=100)
                 except:
                     msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
                     sir_stat=-1
                     pass
                 if os.path.exists(outname):
                     os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir("MSG",sirname,areaid,sir_stat,timestamp)
+                    #if sirname in ["METEIRCJ","METEIRCT","METIRCCJ"]:
+                    inform_sir2(prodid,areaid,sir_stat,timestamp)
             else:
                 msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     

@@ -101,8 +101,9 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     # Read the Cloud Type product:
     that = epshdf.read_cloudtype(ctypefile,1,0,0)
     legend = smhi_safnwc_legends.get_tv_legend()
-    arr = Numeric.where(Numeric.less_equal(that.cloudtype,2),that.cloudtype,bw).astype('b')
-    
+    #arr = Numeric.where(Numeric.less_equal(that.cloudtype,2),that.cloudtype,bw).astype('b')
+    arr = Numeric.where(Numeric.less_equal(that.cloudtype,4),that.cloudtype,bw).astype('b')
+
     shape = that.cloudtype.shape    
     size=shape[1],shape[0]
     this = Image.fromstring("P",size,arr.tostring())
@@ -112,6 +113,7 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     this.putpalette(newleg)
     this = this.convert("RGB")
     retv = this.copy()
+    thumb = this.copy()
     
     if withCoast:
         print "INFO: Add coastlines and political borders to image. Area = %s"%(areaid)
@@ -127,7 +129,6 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
             print "INFO: Didn't find an area specific overlay. Have to read world-map..."
             overlay = _acpgpilext.read_overlay(COAST_FILE)
             pass        
-        thumb = this.copy()
         print "INFO: Add overlay"
         this = pps_array2image.add_overlay(rimg,overlay,this)
 
@@ -137,7 +138,7 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     thumbnail = ctypefile.split(".hdf")[0] + "_irtv.thumbnail.png"
     thumb.save(thumbnail)
 
-    return retv
+    return retv,this
 
 # ------------------------------------------------------------------
 if __name__ == "__main__":

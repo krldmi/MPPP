@@ -2,9 +2,12 @@
 #
 # CVS History:
 #
-# $Id: smhi_safnwc_legends.py,v 1.4 2005/12/13 13:01:02 adybbroe Exp $
+# $Id: smhi_safnwc_legends.py,v 1.5 2006/06/04 21:58:12 adybbroe Exp $
 #
 # $Log: smhi_safnwc_legends.py,v $
+# Revision 1.5  2006/06/04 21:58:12  adybbroe
+# Added support for new products replacing old prosat products (ir_cloud).
+#
 # Revision 1.4  2005/12/13 13:01:02  adybbroe
 # *** empty log message ***
 #
@@ -25,8 +28,11 @@ def get_tv_legend():
     legend.append((  0,  0,  0)) # Unprocessed: Black
     legend.append((  0,120,  0)) # Land
     legend.append((  0,  0,215)) # Sea: Blue
-
-    for i in range(3,256):
+    legend.append((  0,120,  0)) # Land (Snow on land)
+    legend.append((  0,  0,215)) # Sea: Blue (Snow/Ice on sea)
+        
+    #for i in range(3,256):
+    for i in range(5,256):
         legend.append((i,i,i)) # All other pixel values are grey according to IR temp.        
     
     return legend

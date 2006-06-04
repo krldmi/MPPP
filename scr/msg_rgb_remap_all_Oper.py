@@ -28,8 +28,8 @@ def do_sir(imIn,prodid,year,month,day,hour,min,areaid):
         imformat=name_format[1]
         msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
         aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-        prodid=string.ljust(prodname,4).replace(" ","_") # Pad with "_" up to 4 characters
-        outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+        prodid=string.ljust(prodname,8).replace(" ","_") # Pad with "_" up to 8 characters
+        outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
         msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
 
         sir_stat=0
@@ -41,7 +41,7 @@ def do_sir(imIn,prodid,year,month,day,hour,min,areaid):
             pass
         if os.path.exists(outname):
             os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-            msg_remap_all_Oper.inform_sir("MSG",prodname,areaid,sir_stat,timestamp)
+            msg_remap_all_Oper.inform_sir2(prodid,areaid,sir_stat,timestamp)
         else:
             msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
 

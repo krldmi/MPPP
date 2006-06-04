@@ -58,8 +58,8 @@ AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
-NWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv"]
-NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv"]
+NNWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv","scan","euro"]
+NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv","scan","euro"]
 NORDRAD_AREAS = ["euro4"]
 
 # Nordrad product injection:
@@ -71,7 +71,10 @@ N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
 N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
 
 # Standard and derived products:
-NWCSAF_PRODUCTS = {"PGE02":["euro4"],"PGE02b":["euro4"],"PGE02c":["euro4","eurotv"],"PGE03":["euro4"]}
+NWCSAF_PRODUCTS = {"PGE02":["euro4"],
+		   "PGE02b":["euro4"],
+                   "PGE02c":["euro4","eurotv","scan","euro"],
+                   "PGE03":["euro4"]}
 
 
 # PGE02 IMAGE_LEGENDS:
@@ -111,8 +114,8 @@ for aid in NWCSAF_MSG_AREAS:
 INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnwBROKEN.csh"
 #SIR_DIR="/data/prod/sirexp/sir2/data"
 SIR_DIR="/local_disk/data/sir"
-PGE02_SIR_NAMES={"standard":"02a"}
-PGE03_SIR_NAMES={"standard":"03a"}
+PGE02_SIR_NAMES={"standard":"msg_02a"}
+PGE03_SIR_NAMES={"standard":"msg_03a"}
 
 #
 SIR_PRODUCTS = {}
@@ -123,21 +126,36 @@ for aid in NWCSAF_MSG_AREAS:
     SIR_SIGNAL[aid] = {}
         
 for aid in NWCSAF_MSG_AREAS_SIRPROD:
-    SIR_PRODUCTS[aid] = {"PGE01":[],"PGE02":[("02a","tif"),],"PGE02b":[("02b","png"),],"PGE02c":[("02c","png"),],
-			 "PGE03":[("03a","tif"),],"PGE04":[("04a","tif"),],
-			 "ir9":[("ir9","tif"),],
-			 "watervapour_low":[("ir6","tif"),],
-			 "watervapour_high":[("ir5","tif"),],
-			 "overview":[("ovw","tif"),],
-			 "cloudtop":[("clt","tif"),],
-			 "nightfog":[("nfog","tif"),],
-			 "fog":[("fog","tif"),],
-			 "convection":[("conv","tif"),],
-			 "greensnow":[("snow","tif"),]
+    if aid in ["euro","scan"]:
+        SIR_PRODUCTS[aid]["PGE02c"] = [("meteircj","jpg"),("metirccj","jpg")]
+        SIR_SIGNAL[aid] = {"PGE02c":1}
+        continue
+    elif aid in ["eurotv"]:
+        SIR_PRODUCTS[aid] = {"PGE02c":[("msg_02c","png"),]}
+        SIR_SIGNAL[aid] = {"PGE02c":1}
+        continue
+    
+    SIR_PRODUCTS[aid] = {"PGE01":[],"PGE02":[("msg_02a","tif"),],"PGE02b":[("msg_02b","png"),],
+                         "PGE02c":[("msg_02c","png"),],
+			 "PGE03":[("msg_03a","tif"),],"PGE04":[("msg_04a","tif"),],
+			 "ir9":[("msg_ir9","tif"),],
+			 "watervapour_low":[("msg_ir6","tif"),],
+			 "watervapour_high":[("msg_ir5","tif"),],
+			 "overview":[("msg_ovw","tif"),],
+			 "cloudtop":[("msg_clt","tif"),],
+			 "nightfog":[("msg_nfog","tif"),],
+			 "fog":[("msg_fog","tif"),],
+			 "convection":[("msg_conv","tif"),],
+			 "greensnow":[("msg_snow","tif"),]
 			}
+
 
     SIR_SIGNAL[aid] = {"PGE02":0,"PGE03":0,"PGE02b":0,"PGE02c":0,
 		       "ir9":0,"watervapour_low":0,"watervapour_high":0,
 		       "overview":0,"cloudtop":0,"nightfog":0,
 		       "fog":0,"convection":0,"greensnow":0
 		      }
+
+SIR_PRODUCTS["scan"]["PGE02c"].append(("meteirct","tif"))
+SIR_PRODUCTS["euro"]["PGE02c"].append(("meteoict","tif"))
+
