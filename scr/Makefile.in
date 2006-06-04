@@ -23,6 +23,7 @@ clean:
 distclean:
 	@\rm -f core *.pyc *~
 	@\rm -f Makefile
+	@\rm -f tm_msg_postproc.ksh msg_remap_all_Oper.ksh msg_n2inject.ksh msg_remap_all.ksh
 
 install:
 	@for i in $(INSTALL_FILES) ; \
