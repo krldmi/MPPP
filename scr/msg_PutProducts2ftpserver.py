@@ -17,25 +17,29 @@ if __name__ == "__main__":
     # Open and login on ftp site
     ftp = ftplib.FTP(ftp_site)
     ftp.login(user,psw)
+    home_dir=ftp.pwd()
 
     local_dir = "/local_disk/data/Meteosat8/RGBs"
-    remote_dir = "/users/adybbroe/TillPia/RGB"
+    remote_dir = "%s/TillPia/RGB"%home_dir
 
-    flist = glob.glob("%s/*scan*.png"%(local_dir))
+    #flist = glob.glob("%s/*scan*.png"%(local_dir))
+    flist = glob.glob("%s/*euro4*.png"%(local_dir))
     flist = [s for s in flist if s.find("thumbnail")<0]
-    flist = [s for s in flist if s.find("euro")<0]
-    flist = [s for s in flist if s.find("sswe")<0]
-    flist = [s for s in flist if s.find("nswe")<0]
+    #flist = [s for s in flist if s.find("euro")<0]
+    #flist = [s for s in flist if s.find("sswe")<0]
+    #flist = [s for s in flist if s.find("nswe")<0]
     
     ftp.cwd(remote_dir)
     putall(ftp,local_dir,remote_dir,flist,time_thr,1)
 
     local_dir = "/local_disk/data/Meteosat8/MesanX"
-    flist = glob.glob("%s/*scan*.png"%(local_dir))
+    #flist = glob.glob("%s/*scan*.png"%(local_dir))
+    flist = glob.glob("%s/*euro4*.png"%(local_dir))
     flist = [s for s in flist if s.find("thumbnail")<0]
-    flist = [s for s in flist if s.find("cloudtype_vv2")<0]
-    remote_dir = "/users/adybbroe/TillPia/SAF"
+    #flist = [s for s in flist if s.find("cloudtype_vv2")<0]
+    remote_dir = "%s/TillPia/SAF"%home_dir
     ftp.cwd(remote_dir)
+    remote_dir=ftp.pwd()
     putall(ftp,local_dir,remote_dir,flist,time_thr,1)
     
     ftp.quit()
