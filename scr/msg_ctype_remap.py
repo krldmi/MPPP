@@ -434,7 +434,7 @@ if __name__ == "__main__":
     lat = read_msg_lonlat(LATFILE)
     
     in_aid=MSG_AREA
-    prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)    
+    prefix="SAFNWC_MSG%.1d_CT___%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)    
     a=area.area(areaid)
 
     # Check for existing coverage file for the area:

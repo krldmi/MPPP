@@ -482,7 +482,7 @@ if __name__ == "__main__":
     
     #in_aid="CEuro"
     in_aid=MSG_AREA
-    prefix="SAFNWC_MSG1_CTTH_%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)    
+    prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(SAT_NUMBER,year-2000,jday,slotn,in_aid)    
     a=area.area(areaid)
 
     # Check for existing coverage file for the area:
