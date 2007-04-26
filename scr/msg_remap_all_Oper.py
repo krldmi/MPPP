@@ -72,6 +72,13 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
     if nrgbs >= 2:
         return
 
+    msgwrite_log("INFO","areaid: ",areaid,moduleid=MODULE_ID)
+    msgwrite_log("INFO","SIR_PRODUCTS.has_key(areaid): ",SIR_PRODUCTS.has_key(areaid),moduleid=MODULE_ID)
+    if SIR_PRODUCTS.has_key(areaid):
+        msgwrite_log("INFO","SIR_PRODUCTS[areaid].keys(): ",SIR_PRODUCTS[areaid].keys(),moduleid=MODULE_ID)
+    if SIR_PRODUCTS.has_key(areaid) and "PGE02" in SIR_PRODUCTS[areaid].keys():
+	msgwrite_log("INFO","SIR product PGE02 is there",moduleid=MODULE_ID)
+
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02" in SIR_PRODUCTS[areaid].keys() and \
            len(SIR_PRODUCTS[areaid]["PGE02"]) > 0 and os.path.exists(outfile) and SIR_SIGNAL[areaid]["PGE02"]:
@@ -108,7 +115,7 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
                 pass
             if os.path.exists(outname):
                 os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                inform_sir2(prodid,areaid,sir_stat,timestamp)
+                inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
             else:
                 msgwrite_log("INFO","No product to SIR for this area: %s"%(areaid),moduleid=MODULE_ID)
     
@@ -192,7 +199,7 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
                 pass
             if os.path.exists(outname):
                 os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                inform_sir2(prodid,areaid,sir_stat,timestamp)
+                inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
             else:
                 msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
     
@@ -253,7 +260,7 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
     ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
     msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
-    this = msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    this,img_with_ovl = msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
 
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02b" in SIR_PRODUCTS[areaid].keys() and \
@@ -268,16 +275,47 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
             if SIR_SIGNAL[areaid]["PGE02b"]:
                 sir_stat = 0
                 try:
-                    this.save(outname,FORMAT=imformat,quality=100)
+                    if sirname in ["msg_02b",] and areaid in ["scan","euro4"] and imformat == "jpg": # FIXME! Ad, 2006-09-27
+                        img_with_ovl.save(outname,FORMAT=imformat,quality=100)
+                    else:
+                        this.save(outname,FORMAT=imformat,quality=100)
+                    #this.save(outname,FORMAT=imformat,quality=100)
                 except:
                     msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
                     sir_stat=-1
                     pass
                 if os.path.exists(outname):
                     os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir2(prodid,areaid,sir_stat,timestamp)
+                    inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
                 else:
                     msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+
+    # ==========================================================
+    # New since Nov-7, 2006, Adam Dybbroe:
+    if SIR_PRODUCTS.has_key(areaid) and "PGE02bj" in SIR_PRODUCTS[areaid].keys() and \
+           len(SIR_PRODUCTS[areaid]["PGE02bj"]) > 0:
+        for tup in SIR_PRODUCTS[areaid]["PGE02bj"]:
+            sirname,imformat=tup
+            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
+            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
+            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
+            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
+            if SIR_SIGNAL[areaid]["PGE02bj"]:
+                sir_stat = 0
+                try:
+                    img_with_ovl.save(outname,FORMAT=imformat,quality=100)
+                except:
+                    msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
+                    sir_stat=-1
+                    pass
+                if os.path.exists(outname):
+                    os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
+                    inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
+                else:
+                    msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+    # ==========================================================
+    
     
     # Sync the output with fileserver:
     if FSERVER_SYNC:
@@ -313,6 +351,7 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
     msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
     this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    #this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,stretch="linear",overlay=1)
     #this = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=0)
 
     # Make images to distribute via SIR for forecasters and others:
@@ -341,7 +380,7 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
                 if os.path.exists(outname):
                     os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
                     #if sirname in ["METEIRCJ","METEIRCT","METIRCCJ"]:
-                    inform_sir2(prodid,areaid,sir_stat,timestamp)
+                    inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
             else:
                 msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
@@ -423,7 +462,7 @@ if __name__ == "__main__":
         year,month,day,hour,min,dummy,dummy,jday,dummy = ttup
         slotn = hour*4+int((min+7.5)/15)
 
-        prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
+        prefix="SAFNWC_MSG%.1d_CT___%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
         match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
         flist = glob.glob(match_str)
@@ -437,7 +476,7 @@ if __name__ == "__main__":
             msgwrite_log("INFO","Read MSG CT file: ",flist[0],moduleid=MODULE_ID)
             msgctype = read_msgCtype(flist[0])
 
-        prefix="SAFNWC_MSG1_CTTH_%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
+        prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
         match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
         flist = glob.glob(match_str)
@@ -475,13 +514,14 @@ if __name__ == "__main__":
                 doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NORDRAD_AREAS:
                     doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
-                if areaid in NWCSAF_PRODUCTS["PGE02b"]:
+                if areaid in NWCSAF_PRODUCTS["PGE02b"] or areaid in NWCSAF_PRODUCTS["PGE02bj"]:
                     doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NWCSAF_PRODUCTS["PGE02c"]:
                     doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 
             if msgctth:
-                doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
+                if areaid not in ["euro","eurotv","scan"]:
+                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
 
         sec = sec + DSEC_SLOTS
 
