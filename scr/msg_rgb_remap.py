@@ -29,9 +29,29 @@ def gamma_corr(g,arr):
     return retv
 
 # ------------------------------------------------------------------
-def get_bw_array(ch,gamma,inverse,**options):
+# Doing either a gamma correction or a linear contrast stretch:
+def get_bw_array(ch,**options):    
     import Numeric
+    import pps_imagelib # From PPS/ACPG
     
+    if options.has_key("cutoffs"):
+        cutoffs = options["cutoffs"]
+    else:
+        cutoffs = [0.005,0.005]
+    if options.has_key("stretch"):
+        stretch=options["stretch"]
+    else:
+        stretch=None
+    gamma=None
+    if not stretch:
+        if options.has_key("gamma"):
+            gamma = options["gamma"]
+
+    if options.has_key("inverse"):
+        inverse = options["inverse"]
+    else:
+        inverse = 0
+     
     not_missing_data = Numeric.greater(ch,0.0).astype('b')
     if inverse:
         ch=-ch
@@ -51,28 +71,49 @@ def get_bw_array(ch,gamma,inverse,**options):
 
     newch = (ch-min_ch) * 255.0/(max_ch-min_ch)
     layer = Numeric.where(Numeric.greater(newch,255),255,Numeric.where(Numeric.less(newch,0),0,newch)).astype('b')
-    # Gamma correction:
-    layer=(gamma_corr(gamma,layer) * not_missing_data).astype('b')
-    
+    if gamma:
+        # Gamma correction:
+        msgwrite_log("INFO","Do gamma correction: gamma = %f"%gamma,moduleid=MODULE_ID)
+        layer=(gamma_corr(gamma,layer) * not_missing_data).astype('b')
+    elif stretch=="linear":
+        # Linear contrast stretch:
+        msgwrite_log("INFO","Do a linear contrast stretch: ",moduleid=MODULE_ID)
+        layer = pps_imagelib.stretch_linear(chnew,0,0,cutoffs) * not_missing_data
+        layer = layer.astype('b')
+    else:
+        layer=(layer * not_missing_data).astype('b')
+        
     return layer
 
 # ------------------------------------------------------------------
 def make_bw(ch,outprfx,**options):
     import Image
-    
-    if options.has_key("gamma"):
-        gamma=options["gamma"]
+
+    if options.has_key("stretch"):
+        stretch=options["stretch"]
     else:
-        gamma = 1.0
+        stretch=None
+    gamma = None
+    if not stretch:
+        if options.has_key("gamma"):
+            gamma=options["gamma"]
+
     if options.has_key("inverse"):
         inverse=options["inverse"]
     else:
         inverse = 0
-    if options.has_key("bwrange"):
-        layer = get_bw_array(ch,gamma,inverse,bwrange=options["bwrange"])
-    else:
-        layer = get_bw_array(ch,gamma,inverse)
 
+    if options.has_key("bwrange"):
+        if gamma:
+            layer = get_bw_array(ch,gamma=gamma,inverse=inverse,bwrange=options["bwrange"])
+        else:
+            layer = get_bw_array(ch,inverse=inverse,bwrange=options["bwrange"])
+    else:
+        if gamma:
+            layer = get_bw_array(ch,gamma=gamma,inverse=inverse)
+        else:
+            layer = get_bw_array(ch,inverse=inverse,stretch=stretch)
+            
     imsize = ch.shape[1],ch.shape[0]
     that=Image.fromstring("P", imsize, layer.tostring())    
         
