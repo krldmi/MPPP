@@ -99,10 +99,18 @@ if __name__ == "__main__":
                     print "Read the MSG coverage from file..."
                     CoverageData,info = readCoverage(covfilename)
 
+
                 if msgctype:
-                    doCloudType(CoverageData,msgctype,areaid,in_aid,MetSat,year,month,day,hour,min)
-                #if msgctth:
-                #    doCtth(CoverageData,msgctth,areaid,in_aid,MetSat,year,month,day,hour,min)
+                    doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                    if areaid in NORDRAD_AREAS:
+                        doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                    if areaid in NWCSAF_PRODUCTS["PGE02b"]:
+                        doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                    if areaid in NWCSAF_PRODUCTS["PGE02c"]:
+                        doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                
+                if msgctth:
+                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
 
         sec = sec + DSEC_SLOTS
 
