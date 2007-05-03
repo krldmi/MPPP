@@ -21,10 +21,13 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     if options.has_key("gamma"):
         gamma=options["gamma"]
     else:
-        gamma = 1.0
+        gamma = None
 
     # Generate bw IR image:
-    bw = get_bw_array(irch,1,gamma)
+    if gamma:
+        bw = get_bw_array(irch,inverse=1,gamma=gamma)
+    else:
+        bw = get_bw_array(irch,inverse=1)
 
     if not os.path.exists(ctypefile):
         print "ERROR: Cloud Type product not found! Filename = %s"%ctypefile
@@ -65,13 +68,17 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
         print "INFO: Add overlay"
         this = pps_array2image.add_overlay(rimg,overlay,this)
 
-    imagefile = ctypefile.split(".hdf")[0] + "_ir.png"
-    this.save(imagefile)
-    thumb.thumbnail((size[0]/3,size[1]/3))
-    thumbnail = ctypefile.split(".hdf")[0] + "_ir.thumbnail.png"
-    thumb.save(thumbnail)
-
-    return retv
+    if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):
+        imformat = PRODUCT_IMAGES["PGE02"][areaid]["standard"][0]
+        imagefile = ctypefile.split(".hdf")[0] + "_ir.%s"%imformat
+        this.save(imagefile)
+        thumb.thumbnail((size[0]/3,size[1]/3))
+        thumbnail = ctypefile.split(".hdf")[0] + "_ir.thumbnail.%s"%imformat
+        thumb.save(thumbnail)
+    else:
+        msgwrite_log("WARNING","No image format specified in configuration... No image saved!",moduleid=MODULE_ID)
+        
+    return retv,this
 
 # ------------------------------------------------------------------
 def make_ctype_prod02(irch,ctypefile,areaid,**options):
@@ -89,10 +96,13 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     if options.has_key("gamma"):
         gamma=options["gamma"]
     else:
-        gamma = 1.0
+        gamma = None
 
     # Generate bw IR image:
-    bw = get_bw_array(irch,1,gamma)
+    if gamma:
+        bw = get_bw_array(irch,inverse=1,gamma=gamma)
+    else:
+        bw = get_bw_array(irch,inverse=1)
 
     if not os.path.exists(ctypefile):
         print "ERROR: Cloud Type product not found! Filename = %s"%ctypefile
@@ -132,11 +142,15 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
         print "INFO: Add overlay"
         this = pps_array2image.add_overlay(rimg,overlay,this)
 
-    imagefile = ctypefile.split(".hdf")[0] + "_irtv.png"
-    this.save(imagefile)
-    thumb.thumbnail((size[0]/3,size[1]/3))
-    thumbnail = ctypefile.split(".hdf")[0] + "_irtv.thumbnail.png"
-    thumb.save(thumbnail)
+    if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):
+        imformat = PRODUCT_IMAGES["PGE02"][areaid]["standard"][0]
+        imagefile = ctypefile.split(".hdf")[0] + "_irtv.%s"%imformat
+        this.save(imagefile,quality=100)
+        thumb.thumbnail((size[0]/3,size[1]/3))
+        thumbnail = ctypefile.split(".hdf")[0] + "_irtv.thumbnail.%s"%imformat
+        thumb.save(thumbnail,quality=100)
+    else:
+        msgwrite_log("WARNING","No image format specified in configuration... No image saved!",moduleid=MODULE_ID)
 
     return retv,this
 

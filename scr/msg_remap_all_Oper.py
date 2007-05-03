@@ -65,7 +65,11 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
         ctype = msg_ctype2ppsformat(msgctypeRem)
         epshdf.write_cloudtype(outfile,ctype,6)
 
-    imagelist = glob.glob("%s*.png"%string.split(outfile,".hdf")[0])
+    if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):
+        imformat = PRODUCT_IMAGES["PGE02"][areaid]["standard"][0]
+    else:
+        imformat = "png"
+    imagelist = glob.glob("%s*.%s"%(string.split(outfile,".hdf")[0],imformat))
     nrgbs = len(imagelist)
     msgwrite_log("INFO","Number of images already there: ",nrgbs,outfile,moduleid=MODULE_ID)
     # Is this okay? Ad, 2006-03-08
@@ -140,7 +144,7 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
                         msgwrite_log("ERROR","Failed generating image file",moduleid=MODULE_ID)
                         msgwrite_log("INFO","Legend not supported!",moduleid=MODULE_ID)
                     
-    # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
+    # Sync the output with fileserver:
     if FSERVER_SYNC:
         os.system("%s %s/%s* %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
 
@@ -149,8 +153,13 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
 # -----------------------------------------------------------------------
 def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
     import string
-
+    
     msgwrite_log("INFO","Area id: %s"%(areaid),moduleid=MODULE_ID)
+    if PRODUCT_IMAGES["PGE03"].has_key(areaid) and  PRODUCT_IMAGES["PGE03"][areaid].has_key("standard"):
+        imformat = PRODUCT_IMAGES["PGE03"][areaid]["standard"][0]
+    else:
+        imformat = "png"
+    
     areaObj = area.area(areaid)
     yystr = ("%.4d"%year)[2:4]
     timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
@@ -164,7 +173,7 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
         ctth = msg_ctth2ppsformat(msgctthRem)
         epshdf.write_cloudtop(outfile,ctth,6)
 
-    imagelist = glob.glob("%s*.png"%string.split(outfile,".hdf")[0])
+    imagelist = glob.glob("%s*.%s"%(string.split(outfile,".hdf")[0],imformat))
     nrgbs = len(imagelist)
     msgwrite_log("INFO","Number of images already there: %d"%nrgbs,moduleid=MODULE_ID)
     if nrgbs >= 2:
@@ -316,11 +325,15 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
                     msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     # ==========================================================
     
-    
     # Sync the output with fileserver:
-    if FSERVER_SYNC:
-        os.system("%s %s/%s_ir.*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
-
+    if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):
+        for key in PRODUCT_IMAGES["PGE02"][areaid].keys():
+            imformat = PRODUCT_IMAGES["PGE02"][areaid][key]
+            if FSERVER_SYNC:
+                os.system("%s %s/%s_ir.*%s %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],imformat,FSERVER_CTYPEDIR_OUT))
+    else:
+        msgwrite_log("WARNING","No image format specified in configuration... No syncing to fileserver!",moduleid=MODULE_ID)
+        
     return
 
 # -----------------------------------------------------------------------
@@ -385,8 +398,13 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
                 msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
     # Sync the output with fileserver:
-    if FSERVER_SYNC:
-        os.system("%s %s/%s_irtv.*png %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
+    if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):
+        for key in PRODUCT_IMAGES["PGE02"][areaid].keys():
+            imformat = PRODUCT_IMAGES["PGE02"][areaid][key]
+            if FSERVER_SYNC:
+                os.system("%s %s/%s_irtv.*%s %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(ctypefile).split(".hdf")[0],imformat,FSERVER_CTYPEDIR_OUT))
+    else:
+        msgwrite_log("WARNING","No image format specified in configuration... No syncing to fileserver!",moduleid=MODULE_ID)
 
     return
 
@@ -413,7 +431,6 @@ def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,min):
         else:
             msgwrite_log("ERROR","Failed writing cloudtype product for Nordrad!",moduleid=MODULE_ID)
             msgwrite_log("INFO","Filename = %s"%(outfile),moduleid=MODULE_ID)
-
 
     return
 

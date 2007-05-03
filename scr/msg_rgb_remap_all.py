@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 
 from msgpp_config import *
 from msg_remap_util import *
