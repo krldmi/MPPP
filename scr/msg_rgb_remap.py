@@ -117,10 +117,10 @@ def make_bw(ch,outprfx,**options):
     imsize = ch.shape[1],ch.shape[0]
     that=Image.fromstring("P", imsize, layer.tostring())    
         
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
@@ -183,10 +183,10 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
     blue=Image.fromstring("L", imsize, rgb[2].tostring())
     
     that=Image.merge("RGB",(red,green,blue))
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
@@ -251,10 +251,10 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
     blue=Image.fromstring("L", imsize, rgb[2].tostring())
     
     that=Image.merge("RGB",(red,green,blue))
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     
     return imcopy
 
@@ -336,10 +336,10 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     msgwrite_log("INFO","Ch4-Ch9 min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch3-Ch1 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
     
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
@@ -401,10 +401,10 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     blue=Image.fromstring("L", imsize, rgb[2].tostring())
     
     that=Image.merge("RGB",(red,green,blue))
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     
     return imcopy
 
@@ -427,10 +427,10 @@ def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
     gl=[visgain,visgain,irgain]
     il=[visicept,visicept,iricept]
     that = sm_display_util.make_rgb([ch1,ch3,ch9],gl,il,not_missing_data)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((size[0]/2,size[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
@@ -492,10 +492,10 @@ def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
     blue=Image.fromstring("L", imsize, rgb[2].tostring())
     
     that=Image.merge("RGB",(red,green,blue))
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
     that.thumbnail((imsize[0]/2,imsize[1]/2))
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
