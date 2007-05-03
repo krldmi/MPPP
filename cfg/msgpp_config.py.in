@@ -34,11 +34,14 @@ RGBDIR_IN = "/opt/MSG/current/tmp"
 FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
-FSERVER_SYNC = 0 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
-#SYNC = "/usr/bin/rsync -crzul"
-SYNC = "/usr/bin/rsync -crzuln"
+FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
+SYNC = "/usr/bin/rsync -crzul"
+#SYNC = "/usr/bin/rsync -crzuln"
 
 MSG_SATELLITE = "met08"
+#MSG_SATELLITE = "met09"
+#MSG_NUMBER = 2
+MSG_NUMBER = 1
 #MSG_AREA = "CEuro"
 #MSG_AREA_CENTER=(429,1999)
 #ROWS,COLS=(700,900)
@@ -63,18 +66,25 @@ NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv","scan","euro"]
 NORDRAD_AREAS = ["euro4"]
 
 # Nordrad product injection:
-#N2INJECT = "n2inject"
-N2INJECT = "n2injectBROKEN"
-#N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
-N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
-#N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
-N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
+N2INJECT = "n2inject"
+#N2INJECT = "n2injectBROKEN"
+N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
+#N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
+N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
+#N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
 
 # Standard and derived products:
 NWCSAF_PRODUCTS = {"PGE02":["euro4"],
 		   "PGE02b":["euro4"],
+		   "PGE02bj":["euro4","scan"],
                    "PGE02c":["euro4","eurotv","scan","euro"],
                    "PGE03":["euro4"]}
+#                   "PGE02c":["euro4","eurotv","scan","euro"],
+
+# ==========================================================
+# New since Nov-7, 2006, Adam Dybbroe:
+#"PGE02bj":["euro4","scan"],
+# ==========================================================
 
 
 # PGE02 IMAGE_LEGENDS:
@@ -86,7 +96,8 @@ NWCSAF_PRODUCTS = {"PGE02":["euro4"],
 
 # Products on which areas, and with which colour-palettes, and in what image formats?:
 PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
-		         "euro4"   :{"standard":["png"]}},
+		         "euro4"   :{"standard":["png"]},
+		         "eurotv"   :{"standard":["png"]}},
 		"PGE03":{"mesanX":{"standard":["png"]},
 			 "euro4"  :{"standard":["png"]}
 		}
@@ -108,25 +119,51 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
 PGE03_LEGENDS = {"standard":"height"}
 PGE03_LEGEND_NAMES = {}
 for aid in NWCSAF_MSG_AREAS:
-    PGE03_LEGEND_NAMES[aid] = ("standard",)
+    if aid not in ["euro","eurotv"]:
+        PGE03_LEGEND_NAMES[aid] = ("standard",)
 
-#INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
-INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnwBROKEN.csh"
-#SIR_DIR="/data/prod/sirexp/sir2/data"
-SIR_DIR="/local_disk/data/sir"
+INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
+#INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnwBROKEN.csh"
+SIR_DIR="/data/prod/sirexp/sir2/data"
+#SIR_DIR="/local_disk/data/sir"
 PGE02_SIR_NAMES={"standard":"msg_02a"}
 PGE03_SIR_NAMES={"standard":"msg_03a"}
 
 #
+RGB_IMAGE = {}
+for aid in NWCSAF_MSG_AREAS:
+    RGB_IMAGE[aid] = {"ir9":0,"watervapour_low":0,"watervapour_high":0,
+                      "overview":0,"cloudtop":0,"nightfog":0,
+                      "fog":0,"convection":0,"greensnow":0
+		      }
+
+for prodname in RGB_IMAGE["euro4"].keys():
+    RGB_IMAGE["euro4"][prodname] = 1
+RGB_IMAGE["mesanX"]["fog"]=1
+RGB_IMAGE["mesanX"]["overview"]=1
+RGB_IMAGE_FORMAT="png"
+RGB_IMAGE_QUALITY=100
+
+#
 SIR_PRODUCTS = {}
 SIR_SIGNAL = {}
-    
+
 for aid in NWCSAF_MSG_AREAS:
     SIR_PRODUCTS[aid] = {}
     SIR_SIGNAL[aid] = {}
         
 for aid in NWCSAF_MSG_AREAS_SIRPROD:
-    if aid in ["euro","scan"]:
+    if aid in ["scan"]:
+        SIR_PRODUCTS[aid]["PGE02c"] = [("meteircj","jpg"),("metirccj","jpg")]
+        #SIR_PRODUCTS[aid]["PGE02b"]=[("msg_02b","jpg"),] # For vv-web site.
+        # ==========================================================
+        # New since Nov-7, 2006, Adam Dybbroe:
+        SIR_PRODUCTS[aid]["PGE02bj"]=[("msg_02bj","jpg"),] # For vv-web site.
+        # ==========================================================
+        #SIR_SIGNAL[aid] = {"PGE02c":1,"PGE02b":1}
+	SIR_SIGNAL[aid] = {"PGE02c":1,"PGE02bj":1}
+        continue
+    elif aid in ["euro"]:
         SIR_PRODUCTS[aid]["PGE02c"] = [("meteircj","jpg"),("metirccj","jpg")]
         SIR_SIGNAL[aid] = {"PGE02c":1}
         continue
@@ -135,7 +172,9 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
         SIR_SIGNAL[aid] = {"PGE02c":1}
         continue
     
-    SIR_PRODUCTS[aid] = {"PGE01":[],"PGE02":[("msg_02a","tif"),],"PGE02b":[("msg_02b","png"),],
+    SIR_PRODUCTS[aid] = {"PGE01":[],
+                         "PGE02":[("msg_02a","tif"),],
+                         "PGE02b":[("msg_02b","png"),],
                          "PGE02c":[("msg_02c","png"),],
 			 "PGE03":[("msg_03a","tif"),],"PGE04":[("msg_04a","tif"),],
 			 "ir9":[("msg_ir9","tif"),],
@@ -149,13 +188,23 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
 			 "greensnow":[("msg_snow","tif"),]
 			}
 
-
-    SIR_SIGNAL[aid] = {"PGE02":0,"PGE03":0,"PGE02b":0,"PGE02c":0,
-		       "ir9":0,"watervapour_low":0,"watervapour_high":0,
-		       "overview":0,"cloudtop":0,"nightfog":0,
-		       "fog":0,"convection":0,"greensnow":0
+    SIR_SIGNAL[aid] = {"PGE02":1,"PGE03":1,"PGE02b":1,"PGE02c":1,
+		       "ir9":1,"watervapour_low":1,"watervapour_high":1,
+		       "overview":1,"cloudtop":1,"nightfog":1,
+		       "fog":1,"convection":1,"greensnow":1
 		      }
 
 SIR_PRODUCTS["scan"]["PGE02c"].append(("meteirct","tif"))
 SIR_PRODUCTS["euro"]["PGE02c"].append(("meteoict","tif"))
-
+# For vv-web site:
+# ==========================================================
+# New since Nov-7, 2006, Adam Dybbroe:
+if SIR_PRODUCTS["euro4"].has_key("PGE02bj"):
+    SIR_PRODUCTS["euro4"]["PGE02bj"].append(("msg_02bj","jpg"))
+else:
+    SIR_PRODUCTS["euro4"]["PGE02bj"]=[("msg_02bj","jpg"),]
+if SIR_SIGNAL.has_key("euro4"):
+    SIR_SIGNAL["euro4"]["PGE02bj"]=1
+else:
+    SIR_SIGNAL["euro4"] = {"PGE02bj":1}
+# ==========================================================
