@@ -66,8 +66,8 @@ if __name__ == "__main__":
             year,month,day,hour,min,dummy,dummy,jday,dummy = ttup
             slotn = hour*4+int((min+7.5)/15)
             
-            fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
-            #fileprfx="%s"%(RGBDIR_IN)
+            #fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
+            fileprfx="%s"%(RGBDIR_IN)
             fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
             fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
@@ -112,12 +112,11 @@ if __name__ == "__main__":
                     msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
                     msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
     
-                
-                """
                 # IR - channel 9:
                 if ok9:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    make_bw(ch9,outname,inverse=1,gamma=1.6)
+                    #make_bw(ch9,outname,inverse=1,gamma=1.6)
+                    make_bw(ch9,outname,inverse=1,stretch="no",bwrange=[-70,57.5])
 
                 # Water vapour - channel 5:
                 if ok5:
@@ -148,7 +147,6 @@ if __name__ == "__main__":
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                     makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
 
-                """
                 # "red snow": Low clouds and snow daytime
                 #if ok1 and ok3 and ok9:
                 #    outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_redsnow_016"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
