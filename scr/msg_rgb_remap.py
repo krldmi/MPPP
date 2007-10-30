@@ -1,4 +1,42 @@
+# -*- coding: UTF-8 -*-
+# **************************************************************************
 #
+#  COPYRIGHT   : SMHI
+#  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
+#                Folkborgsvaegen 1
+#                Norrköping, Sweden
+#
+#  PROJECT      : 
+#  FILE         : msg_rgb_remap.py
+#  TYPE         : Python program
+#  PACKAGE      : Nowcasting-SAF Post processing for MSG
+#
+#  SUMMARY      : 
+# 
+#  DESCRIPTION  :
+#
+#  SYNOPSIS     :
+#
+#  OPTIONS      : None
+#
+# *************************************************************************
+#
+# CVS History:
+#
+# $Id: msg_rgb_remap.py,v 1.11 2007/10/30 14:39:39 adybbroe Exp $
+#
+# $Log: msg_rgb_remap.py,v $
+# Revision 1.11  2007/10/30 14:39:39  adybbroe
+# Changes to bring in and older version from cvs release 0.27, that seem
+# to have been lost. The stretching of channel 9 bw data for SVT should
+# be less sensitive to diurnal cycle now again - this was in previously
+# but was lost in release 0.30. Also added functions to write channel
+# data (brighness temperatures, radiances and reflectances) from the
+# NWCSAF/MSG temporary binary format in hdf5. This should be useful for
+# archiving.
+#
+#
+# *************************************************************************
 #
 from msg_communications import *
 from msgpp_config import *
@@ -6,8 +44,7 @@ from msg_remap_util import *
 
 MODULE_ID = "MSG_RGB_REMAP"
 
-nodata=0.
-missingdata=0.
+COMPRESS_LVL = 6
 
 # ------------------------------------------------------------------
 def gamma_corr(g,arr):
@@ -34,6 +71,14 @@ def get_bw_array(ch,**options):
     import Numeric
     import pps_imagelib # From PPS/ACPG
     
+    if options.has_key("missingdata"):
+        missingdata = options["missingdata"]
+    else:
+        missingdata = 0
+    if options.has_key("nodata"):
+        nodata = options["nodata"]
+    else:
+        nodata = 0
     if options.has_key("cutoffs"):
         cutoffs = options["cutoffs"]
     else:
@@ -51,18 +96,22 @@ def get_bw_array(ch,**options):
         inverse = options["inverse"]
     else:
         inverse = 0
-     
+        
     not_missing_data = Numeric.greater(ch,0.0).astype('b')
-    if inverse:
-        ch=-ch
+    #not_missing_data = Numeric.logical_and(Numeric.not_equal(ch,missingdata),
+    #                                       Numeric.not_equal(ch,nodata)).astype('b')
+    #not_missing_data = Numeric.logical_and(Numeric.not_equal(ch,NODATA),
+    #                                       Numeric.not_equal(ch,MISSINGDATA)).astype('b')
+    #if inverse:
+    #    ch=-ch
     
     if options.has_key("bwrange"):
         ch_range = options["bwrange"]
         min_ch,max_ch = ch_range[0],ch_range[1]
-        if inverse:
-            tmp = max_ch
-            max_ch = -min_ch
-            min_ch = -tmp
+        #if inverse:
+        #    tmp = max_ch
+        #    max_ch = -min_ch
+        #    min_ch = -tmp
     else:
         min_ch,max_ch = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,ch.flat,99999)),\
                         Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,ch.flat,-99999))
@@ -70,20 +119,29 @@ def get_bw_array(ch,**options):
     msgwrite_log("INFO","min & max: ",min_ch,max_ch,moduleid=MODULE_ID)
 
     newch = (ch-min_ch) * 255.0/(max_ch-min_ch)
-    layer = Numeric.where(Numeric.greater(newch,255),255,Numeric.where(Numeric.less(newch,0),0,newch)).astype('b')
+    layer8bit = Numeric.where(Numeric.greater(newch,255),255,Numeric.where(Numeric.less(newch,0),0,newch))
     if gamma:
         # Gamma correction:
         msgwrite_log("INFO","Do gamma correction: gamma = %f"%gamma,moduleid=MODULE_ID)
-        layer=(gamma_corr(gamma,layer) * not_missing_data).astype('b')
+        layer8bit=gamma_corr(gamma,layer8bit)
     elif stretch=="linear":
         # Linear contrast stretch:
         msgwrite_log("INFO","Do a linear contrast stretch: ",moduleid=MODULE_ID)
-        layer = pps_imagelib.stretch_linear(chnew,0,0,cutoffs) * not_missing_data
-        layer = layer.astype('b')
-    else:
-        layer=(layer * not_missing_data).astype('b')
+        #layer = pps_imagelib.stretch_linear(newch,0,0,cutoffs) * not_missing_data
+        layer8bit = pps_imagelib.stretch_linear(ch,nodata,missingdata,cutoffs)
+    elif stretch == "histogram":
+        msgwrite_log("INFO","Do a histogram equalized contrast stretch: ",moduleid=MODULE_ID)
+        layer8bit = pps_imagelib.stretch_hist_equalize(newch,0,0)
+    elif stretch == "crude-linear":
+        msgwrite_log("INFO","Crude linear contrast stretch done!",moduleid=MODULE_ID)
         
-    return layer
+    if inverse:
+        msgwrite_log("INFO","Invert the data! ",moduleid=MODULE_ID)
+        layer8bit = ((255-layer8bit) * not_missing_data).astype('b')
+    else:
+        layer8bit=(layer8bit * not_missing_data).astype('b')
+    
+    return layer8bit
 
 # ------------------------------------------------------------------
 def make_bw(ch,outprfx,**options):
@@ -124,11 +182,91 @@ def make_bw(ch,outprfx,**options):
 
     return imcopy
 
+
+# ------------------------------------------------------------------
+# This rgb (airmass) is not yet possible, as we do not have any channel 8 as a by-product
+# from the NWCSAF-package! FIXME!
+# This is the recipe from EUMETSAT:
+# WV6.2 - WV7.3	                -25 till   0 K	gamma 1
+# IR9.7 - IR10.8		-40 till  +5 K	gamma 1
+# WV6.2		               +243 till 208 K	gamma 1
+#
+# Adam Dybbroe 2007-10-30
+#
+def makergb_airmass(ch5,ch6,ch8,ch9,outprfx,**options):
+    import sm_display_util
+    import Numeric
+    import Image
+    nodata = 0
+    
+    if options.has_key("gamma"):
+        gamma_red,gamma_green,gamma_blue=options["gamma"]
+    else:
+        gamma_red = 1.0
+        gamma_green = 1.0
+        gamma_blue = 1.0
+
+    not_missing_data = Numeric.greater(ch9,0.0).astype('b')
+    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
+
+    red = ch5-ch6
+    green = ch8-ch9
+    blue = ch5
+
+    if options.has_key("rgbrange"):
+        range_red = options["rgbrange"][0]
+        range_green = options["rgbrange"][1]
+        range_blue = options["rgbrange"][2]
+        min_red,max_red = range_red[0],range_red[1]
+        min_green,max_green = range_green[0],range_green[1]
+        min_blue,max_blue = range_blue[0],range_blue[1]
+    else:
+        min_red,max_red = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,red.flat,99999)),\
+                          Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,red.flat,-99999))
+        min_green,max_green = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,green.flat,99999)),\
+                              Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,green.flat,-99999))
+        min_blue,max_blue = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,blue.flat,99999)),\
+                            Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,blue.flat,-99999))
+
+    msgwrite_log("INFO","Ch5-Ch6 min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch8-Ch9 min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch5 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
+
+    rgb=[None,None,None]
+    newred = (red-min_red) * 255.0/(max_red-min_red)
+    rgb[0] = Numeric.where(Numeric.greater(newred,255),255,Numeric.where(Numeric.less(newred,0),0,newred))
+
+    newgreen = (green-min_green) * 255.0/(max_green-min_green)
+    rgb[1] = Numeric.where(Numeric.greater(newgreen,255),255,Numeric.where(Numeric.less(newgreen,0),0,newgreen))
+
+    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
+    rgb[2] = Numeric.where(Numeric.greater(newblue,255),255,Numeric.where(Numeric.less(newblue,0),0,newblue))
+
+    # Gamma correction:
+    rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
+    rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
+    rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
+    
+    red=Image.fromstring("L", imsize, rgb[0].tostring())
+    green=Image.fromstring("L", imsize, rgb[1].tostring())
+    blue=Image.fromstring("L", imsize, rgb[2].tostring())
+    
+    that=Image.merge("RGB",(red,green,blue))
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    imcopy = that.copy()
+    that.thumbnail((imsize[0]/2,imsize[1]/2))
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+
+    return imcopy
+
+
+
 # ------------------------------------------------------------------
 def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
     import sm_display_util
     import Numeric
     import Image
+    nodata = 0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -194,6 +332,7 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
 def makergb_fog(ch7,ch9,ch10,outprfx,**options):
     #import sm_display_util
     import Numeric,Image
+    nodata = 0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -347,6 +486,7 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
 def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     import sm_display_util
     import Numeric,Image
+    nodata=0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -438,6 +578,7 @@ def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
 def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
     import sm_display_util
     import Numeric,Image
+    nodata=0
 
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -500,18 +641,160 @@ def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
     return imcopy
 
 # ------------------------------------------------------------------
+# Store the sun or satellite zenith and azimuth angles in hdf5
+def sunsat_angles2hdf(filename,zenith,azimuth,angletype):
+    import _pyhl
+
+    a=_pyhl.nodelist()
+
+    shape=[zenith.shape[0],zenith.shape[1]]
+    
+    b=_pyhl.node(_pyhl.GROUP_ID,"/info")
+    a.addNode(b)
+    if angletype == "sun":
+        b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/description")
+        b.setScalarValue(-1,"MSG SEVIRI sun zenith and azimuth angles","string",-1)
+        a.addNode(b)
+    elif angletype == "sat":
+        b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/description")
+        b.setScalarValue(-1,"MSG SEVIRI satellite zenith and azimuth angles","string",-1)
+        a.addNode(b)        
+    else:
+        print "Error!"
+        return -1
+    
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/num_of_rows")
+    b.setScalarValue(-1,shape[0],"int",-1)
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/num_of_columns")
+    b.setScalarValue(-1,shape[1],"int",-1)
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/nodata")
+    b.setScalarValue(-1,-99999.0,"float",-1)
+    a.addNode(b)
+    
+    if angletype == "sun":
+        b=_pyhl.node(_pyhl.DATASET_ID,"/sunzenith")
+    else:
+        b=_pyhl.node(_pyhl.DATASET_ID,"/satzenith")
+    b.setArrayValue(1,shape,zenith,"float",-1)
+    a.addNode(b)
+
+    if angletype == "sun":
+        b=_pyhl.node(_pyhl.DATASET_ID,"/sunazimuth")
+    else:
+        b=_pyhl.node(_pyhl.DATASET_ID,"/satazimuth")
+        
+    b.setArrayValue(1,shape,azimuth,"float",-1)
+    a.addNode(b)
+
+    a.write(filename,COMPRESS_LVL)
+    return 0
+
+# ------------------------------------------------------------------
+# Store the MSG SEVIRI geolocation in hdf5
+def lonlat2hdf(filename,lon,lat):
+    import _pyhl
+
+    a=_pyhl.nodelist()
+
+    shape=[lon.shape[0],lon.shape[1]]
+    
+    b=_pyhl.node(_pyhl.GROUP_ID,"/info")
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/description")
+    b.setScalarValue(-1,"MSG SEVIRI geolocation - longitudes and latitudes","string",-1)
+    a.addNode(b)
+
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/num_of_rows")
+    b.setScalarValue(-1,shape[0],"int",-1)
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/num_of_columns")
+    b.setScalarValue(-1,shape[1],"int",-1)
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/nodata")
+    b.setScalarValue(-1,-99999.0,"float",-1)
+    a.addNode(b)
+    
+    b=_pyhl.node(_pyhl.DATASET_ID,"/longitude")
+    b.setArrayValue(1,shape,lon,"float",-1)
+    a.addNode(b)
+
+    b=_pyhl.node(_pyhl.DATASET_ID,"/latitude")
+    b.setArrayValue(1,shape,lat,"float",-1)
+    a.addNode(b)
+
+    a.write(filename,COMPRESS_LVL)
+
+    return 0
+
+# ------------------------------------------------------------------
+# Store the raw (unprojected BT&RAD or REF) SEVIRI channel data to hdf5
+def raw_channel2hdf(filename,ch_tuple,channel_number,type="BT"):
+    import _pyhl
+
+    if len(ch_tuple)==1:
+        ch = ch_tuple[0]
+    else:
+        ch,ch_radiance=ch_tuple
+        
+    a=_pyhl.nodelist()
+
+    shape=[ch.shape[0],ch.shape[1]]
+    
+    b=_pyhl.node(_pyhl.GROUP_ID,"/info")
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/description")
+    if type == "BT":
+        b.setScalarValue(-1,"MSG SEVIRI channel number %d - Radiances (w/(m**2*sr)) Brightness temperatures (K)"%channel_number,"string",-1)
+    elif type == "REF":
+        b.setScalarValue(-1,"MSG SEVIRI channel number %d - Reflectivities (%%)"%channel_number,"string",-1)
+    else:
+        print "Failed: Data are neither reflectances (REF) nor brightness temperatures (BT)"
+        return -1    
+    a.addNode(b)
+
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/num_of_rows")
+    b.setScalarValue(-1,shape[0],"int",-1)
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/num_of_columns")
+    b.setScalarValue(-1,shape[1],"int",-1)
+    a.addNode(b)
+    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/info/nodata")
+    b.setScalarValue(-1,-99999.0,"float",-1)
+    a.addNode(b)
+    
+    if type == "BT":
+        c=_pyhl.node(_pyhl.DATASET_ID,"/rad")
+        c.setArrayValue(1,shape,ch_radiance,"float",-1)
+        a.addNode(c)
+        b=_pyhl.node(_pyhl.DATASET_ID,"/bt")
+    elif type == "REF":
+        b=_pyhl.node(_pyhl.DATASET_ID,"/ref")
+
+    b.setArrayValue(1,shape,ch,"float",-1)
+    a.addNode(b)
+
+    a.write(filename,COMPRESS_LVL)
+
+    
+    return 0
+
+    
+# ------------------------------------------------------------------
 def get_ch_projected(ch_file,cov):
-    import msg_ctype_remap
+    import msg_remap_util
     import _satproj
     import os
+    missingdata=-99998
     
     if os.path.exists(ch_file):
-        ch_raw = msg_ctype_remap.read_msg_lonlat(ch_file)
+        ch_raw = msg_remap_util.read_msg_lonlat(ch_file)
     else:
         print "File %s not available!"%(ch_file)
         return None,0
     
-    ch_proj = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,ch_raw)
+    ch_proj = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,ch_raw,missingdata)
 
     return ch_proj,1
 

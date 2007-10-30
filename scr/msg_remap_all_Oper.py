@@ -1,3 +1,45 @@
+# -*- coding: UTF-8 -*-
+# **************************************************************************
+#
+#  COPYRIGHT   : SMHI
+#  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
+#                Folkborgsvaegen 1
+#                Norrköping, Sweden
+#
+#  PROJECT      : 
+#  FILE         : msg_remap_all_Oper.py
+#  TYPE         : Python program
+#  PACKAGE      : Nowcasting-SAF Post processing for MSG
+#
+#  SUMMARY      : 
+# 
+#  DESCRIPTION  :
+#
+#  SYNOPSIS     :
+#
+#  OPTIONS      : None
+#
+# *************************************************************************
+#
+# CVS History:
+#
+# $Id: msg_remap_all_Oper.py,v 1.25 2007/10/30 14:39:39 adybbroe Exp $
+#
+# $Log: msg_remap_all_Oper.py,v $
+# Revision 1.25  2007/10/30 14:39:39  adybbroe
+# Changes to bring in and older version from cvs release 0.27, that seem
+# to have been lost. The stretching of channel 9 bw data for SVT should
+# be less sensitive to diurnal cycle now again - this was in previously
+# but was lost in release 0.30. Also added functions to write channel
+# data (brighness temperatures, radiances and reflectances) from the
+# NWCSAF/MSG temporary binary format in hdf5. This should be useful for
+# archiving.
+#
+#
+# *************************************************************************
+#
+#
+#
 #
 from msgpp_config import *
 

@@ -118,15 +118,13 @@ if __name__ == "__main__":
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                     #make_bw(ch9,outname,inverse=1,gamma=1.6)
                     make_bw(ch9,outname,inverse=1,stretch="no",bwrange=[-70+273.15,57.5+273.15])
-                break
-
-            
 
                 # Water vapour - channel 5:
                 if ok5:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch5"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
-                    make_bw(ch5,outname,inverse=1,gamma=1.6)
-
+                    #make_bw(ch5,outname,inverse=1,gamma=1.6)
+                    make_bw(ch5,outname,inverse=1,stretch="linear")
+            
                 # Daytime overview:
                 if ok1 and ok2 and ok9:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(RGBDIR_OUT,year,month,day,hour,min,areaid)

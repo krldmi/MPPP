@@ -1,3 +1,43 @@
+# -*- coding: UTF-8 -*-
+# **************************************************************************
+#
+#  COPYRIGHT   : SMHI
+#  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
+#                Folkborgsvaegen 1
+#                Norrköping, Sweden
+#
+#  PROJECT      : 
+#  FILE         : msg_ctype_products.py
+#  TYPE         : Python program
+#  PACKAGE      : Nowcasting-SAF Post processing for MSG
+#
+#  SUMMARY      : 
+# 
+#  DESCRIPTION  :
+#
+#  SYNOPSIS     :
+#
+#  OPTIONS      : None
+#
+# *************************************************************************
+#
+# CVS History:
+#
+# $Id: msg_ctype_products.py,v 1.10 2007/10/30 14:39:39 adybbroe Exp $
+#
+# $Log: msg_ctype_products.py,v $
+# Revision 1.10  2007/10/30 14:39:39  adybbroe
+# Changes to bring in and older version from cvs release 0.27, that seem
+# to have been lost. The stretching of channel 9 bw data for SVT should
+# be less sensitive to diurnal cycle now again - this was in previously
+# but was lost in release 0.30. Also added functions to write channel
+# data (brighness temperatures, radiances and reflectances) from the
+# NWCSAF/MSG temporary binary format in hdf5. This should be useful for
+# archiving.
+#
+#
+# *************************************************************************
+#
 #
 #
 from msgpp_config import *
@@ -6,6 +46,12 @@ from msg_ctype_remap import *
 from msg_rgb_remap import *
 
 # ------------------------------------------------------------------
+# Product for the Swedish road authorities (Vaegverket): Focus on low clouds and fog.
+# Cloudfree green and blue background.
+# All clouds, except "very low" and "low" according to classification are represented in greyscale
+# using the 10 micron IR channel (channel number 9 on SEVIRI).
+# All low and very low clouds are represented in their usual colours (red and orange/yellow).
+#
 def make_ctype_prod01(irch,ctypefile,areaid,**options):
     import acpgimage,_acpgpilext
     import smhi_safnwc_legends
@@ -21,13 +67,13 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     if options.has_key("gamma"):
         gamma=options["gamma"]
     else:
-        gamma = None
+        gamma = 1.0
 
     # Generate bw IR image:
-    if gamma:
-        bw = get_bw_array(irch,inverse=1,gamma=gamma)
+    if options.has_key("gamma"):
+        bw = get_bw_array(irch,stretch="gamma",gamma=gamma,inverse=1)
     else:
-        bw = get_bw_array(irch,inverse=1)
+        bw = get_bw_array(irch,stretch="crude-linear",bwrange=[225.0,285.0],inverse=1)
 
     if not os.path.exists(ctypefile):
         print "ERROR: Cloud Type product not found! Filename = %s"%ctypefile
@@ -39,7 +85,13 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     arr = Numeric.where(Numeric.logical_and(Numeric.less_equal(that.cloudtype,8),
                                             Numeric.greater_equal(that.cloudtype,5)),that.cloudtype-2,bw)
     arr = Numeric.where(Numeric.less_equal(that.cloudtype,2),that.cloudtype,arr).astype('b')
-    
+    # Put the snow&ice as cloudfree land/sea:
+    #arr = Numeric.where(Numeric.logical_and(Numeric.less_equal(that.cloudtype,4),
+    #                                        Numeric.greater_equal(that.cloudtype,3)),that.cloudtype-2,arr)
+    # The above was in before (version 0.27) but seems to have been lost - but knowone has complained!
+    # Check with Claes Brundin!
+    # Adam Dybbroe, 2007-10-30
+    #
     shape = that.cloudtype.shape    
     size=shape[1],shape[0]
     this = Image.fromstring("P",size,arr.tostring())
@@ -51,21 +103,21 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     retv = this.copy()
     
     if withCoast:
-        print "INFO: Add coastlines and political borders to image. Area = %s"%(areaid)
+        msgwrite_log("INFO","Add coastlines and political borders to image. Area = %s"%(areaid),moduleid=MODULE_ID)
         rimg = acpgimage.image(areaid)
         rimg.info["nodata"]=255
         rimg.data = arr.astype('b')
         area_overlayfile = "%s/coastlines_%s.asc"%(AUX_DIR,areaid)
-        print "INFO: Read overlay. Try find something prepared on the area..."
+        msgwrite_log("INFO","Read overlay. Try find something prepared on the area...",moduleid=MODULE_ID)
         try:
             overlay = _acpgpilext.read_overlay(area_overlayfile)
-            print "INFO: Got overlay for area: ",area_overlayfile
+            msgwrite_log("INFO","Got overlay for area: ",area_overlayfile,moduleid=MODULE_ID)
         except:            
-            print "INFO: Didn't find an area specific overlay. Have to read world-map..."
+            msgwrite_log("INFO","Didn't find an area specific overlay. Have to read world-map...",moduleid=MODULE_ID)
             overlay = _acpgpilext.read_overlay(COAST_FILE)
             pass        
         thumb = this.copy()
-        print "INFO: Add overlay"
+        msgwrite_log("INFO","Add overlay",moduleid=MODULE_ID)
         this = pps_array2image.add_overlay(rimg,overlay,this)
 
     if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):
@@ -81,12 +133,17 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     return retv,this
 
 # ------------------------------------------------------------------
+# Product for tv: Cloud movie with cloudfree green and blue background.
+# All clouds according to classification are represented in greyscale using the 10 micron IR channel
+# (channel number 9 on SEVIRI).
+#
 def make_ctype_prod02(irch,ctypefile,areaid,**options):
     import acpgimage,_acpgpilext
     import smhi_safnwc_legends
     import Numeric
     import Image
     import pps_array2image
+    nodata = 0 # Should check this and make a better solution for future relases, Ad 2007-10-30
     
     if options.has_key("overlay"):
         withCoast = options["overlay"]
@@ -96,22 +153,29 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     if options.has_key("gamma"):
         gamma=options["gamma"]
     else:
-        gamma = None
-
-    # Generate bw IR image:
-    if gamma:
-        bw = get_bw_array(irch,inverse=1,gamma=gamma)
+        gamma = 1.0
+    if options.has_key("stretch"):
+        stretch=options["stretch"]
     else:
-        bw = get_bw_array(irch,inverse=1)
+        stretch = "linear"
 
     if not os.path.exists(ctypefile):
-        print "ERROR: Cloud Type product not found! Filename = %s"%ctypefile
+        msgwrite_log("ERROR","Cloud Type product not found! Filename = %s"%ctypefile,moduleid=MODULE_ID)
         return
-        
+
     # Read the Cloud Type product:
     that = epshdf.read_cloudtype(ctypefile,1,0,0)
     legend = smhi_safnwc_legends.get_tv_legend()
-    #arr = Numeric.where(Numeric.less_equal(that.cloudtype,2),that.cloudtype,bw).astype('b')
+
+    # Stretching ir-channel only on the cloudy pixels!
+    irch = Numeric.where(Numeric.less_equal(that.cloudtype,4),0,irch)
+
+    # Generate bw IR image:
+    if options.has_key("gamma"):
+        bw = get_bw_array(irch,stretch="gamma",gamma=gamma,inverse=1,nodata=nodata,missingdata=0)
+    else:
+        bw = get_bw_array(irch,stretch="crude-linear",bwrange=[225.0,285.0],inverse=1,missingdata=0,nodata=nodata)
+        
     arr = Numeric.where(Numeric.less_equal(that.cloudtype,4),that.cloudtype,bw).astype('b')
 
     shape = that.cloudtype.shape    
@@ -126,20 +190,20 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     thumb = this.copy()
     
     if withCoast:
-        print "INFO: Add coastlines and political borders to image. Area = %s"%(areaid)
+        msgwrite_log("INFO","Add coastlines and political borders to image. Area = %s"%(areaid),moduleid=MODULE_ID)
         rimg = acpgimage.image(areaid)
         rimg.info["nodata"]=255
         rimg.data = arr.astype('b')
         area_overlayfile = "%s/coastlines_%s.asc"%(AUX_DIR,areaid)
-        print "INFO: Read overlay. Try find something prepared on the area..."
+        msgwrite_log("INFO","Read overlay. Try find something prepared on the area...",moduleid=MODULE_ID)
         try:
             overlay = _acpgpilext.read_overlay(area_overlayfile)
-            print "INFO: Got overlay for area: ",area_overlayfile
+            msgwrite_log("INFO","Got overlay for area: ",area_overlayfile,moduleid=MODULE_ID)
         except:            
-            print "INFO: Didn't find an area specific overlay. Have to read world-map..."
+            msgwrite_log("INFO","Didn't find an area specific overlay. Have to read world-map...",moduleid=MODULE_ID)
             overlay = _acpgpilext.read_overlay(COAST_FILE)
             pass        
-        print "INFO: Add overlay"
+        msgwrite_log("INFO","Add overlay",moduleid=MODULE_ID)
         this = pps_array2image.add_overlay(rimg,overlay,this)
 
     if PRODUCT_IMAGES["PGE02"].has_key(areaid) and  PRODUCT_IMAGES["PGE02"][areaid].has_key("standard"):

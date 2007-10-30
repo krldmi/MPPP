@@ -1,3 +1,46 @@
+# -*- coding: UTF-8 -*-
+# **************************************************************************
+#
+#  COPYRIGHT   : SMHI
+#  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
+#                Folkborgsvaegen 1
+#                Norrköping, Sweden
+#
+#  PROJECT      : 
+#  FILE         : msg_rgb_remap_all_Oper.py
+#  TYPE         : Python program
+#  PACKAGE      : Nowcasting-SAF Post processing for MSG
+#
+#  SUMMARY      : 
+# 
+#  DESCRIPTION  :
+#
+#  SYNOPSIS     :
+#
+#  OPTIONS      : None
+#
+# *************************************************************************
+#
+# CVS History:
+#
+# $Id: msg_rgb_remap_all_Oper.py,v 1.17 2007/10/30 14:39:39 adybbroe Exp $
+#
+# $Log: msg_rgb_remap_all_Oper.py,v $
+# Revision 1.17  2007/10/30 14:39:39  adybbroe
+# Changes to bring in and older version from cvs release 0.27, that seem
+# to have been lost. The stretching of channel 9 bw data for SVT should
+# be less sensitive to diurnal cycle now again - this was in previously
+# but was lost in release 0.30. Also added functions to write channel
+# data (brighness temperatures, radiances and reflectances) from the
+# NWCSAF/MSG temporary binary format in hdf5. This should be useful for
+# archiving.
+#
+#
+# *************************************************************************
+#
+#
+#
+
 from msg_communications import *
 
 from msgpp_config import *
@@ -179,7 +222,8 @@ if __name__ == "__main__":
                 outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,min,areaid)
                 msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(MSG_SATELLITE,year,month,day,hour,min,areaid),moduleid=MODULE_ID)                
                 #this = make_bw(ch9,outname,inverse=1,gamma=1.6,stretch="gamma")
-                this = make_bw(ch9,outname,inverse=1,stretch="linear")
+                #this = make_bw(ch9,outname,inverse=1,stretch="linear")
+                this = make_bw(ch9,outname,inverse=1,stretch="no",bwrange=[-70+273.15,57.5+273.15])
                 # Sync the output with fileserver:
                 if FSERVER_SYNC:
                     os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
