@@ -29,6 +29,12 @@ CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
 RGBDIR_OUT = "/local_disk/data/Meteosat8/RGBs"
 RGBDIR_IN = "/opt/MSG/current/tmp"
 
+# SEVIRI channel data + lon,lat and sun-satellite angles in hdf5 for archiving:
+SEVIRI_CHANNELS_IN_HDF5 = "/data/24/saf/msg/channels"
+#SEVIRI_CHANNELS_IN_HDF5 = "/data/arkiv/satellit/geo/seviri_channels"
+#SEVIRI_CHANNELS_IN_HDF5 = "/data/proj/saf/adybbroe/ExJobbHenriksson/data/hdf5"
+
+
 FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
