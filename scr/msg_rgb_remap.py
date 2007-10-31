@@ -23,9 +23,16 @@
 #
 # CVS History:
 #
-# $Id: msg_rgb_remap.py,v 1.11 2007/10/30 14:39:39 adybbroe Exp $
+# $Id: msg_rgb_remap.py,v 1.12 2007/10/31 19:50:05 adybbroe Exp $
 #
 # $Log: msg_rgb_remap.py,v $
+# Revision 1.12  2007/10/31 19:50:05  adybbroe
+# Updated function makergb_visvisir: Now using PPS-library function to
+# check the physical range of the solar channels, in order to try to
+# avoid noisy RGB's when there is no or very little daylight in the
+# image. If the range of the channel is less than a threshold the whole
+# channel is set to zero.
+#
 # Revision 1.11  2007/10/30 14:39:39  adybbroe
 # Changes to bring in and older version from cvs release 0.27, that seem
 # to have been lost. The stretching of channel 9 bw data for SVT should
@@ -45,6 +52,17 @@ from msg_remap_util import *
 MODULE_ID = "MSG_RGB_REMAP"
 
 COMPRESS_LVL = 6
+
+# --------------------------
+class SeviriChObj:
+    def __init__(self):
+        self.data = None
+        self.intercept = 0.0
+        self.gain = 1.0
+
+# --------------------------
+
+
 
 # ------------------------------------------------------------------
 def gamma_corr(g,arr):
@@ -487,6 +505,7 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     import sm_display_util
     import Numeric,Image
     nodata=0
+    missingdata = 0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -498,14 +517,27 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     not_missing_data = Numeric.greater(ch9,0.0).astype('b')
     imsize = not_missing_data.shape[1],not_missing_data.shape[0]
 
-    red = vis1
-    green = vis2
+    #red = vis1
+    #green = vis2
     blue = Numeric.where(not_missing_data,-ch9,nodata)
 
-    min_red,max_red = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,red.flat,99999)),\
-                      Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,red.flat,-99999))
-    min_green,max_green = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,green.flat,99999)),\
-                          Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,green.flat,-99999))
+    # Use PPS library function to check range in SEVIRI vis/nir channels.
+    # The PPS function was made for avhrr data, but works more general.
+    # Adam Dybbroe, 2007-10-31
+    import ppss_imagelib
+    seviri_ch = SeviriChObj()
+    seviri_ch.data = vis1
+    seviri_ch.gain = 1.0
+    seviri_ch.intercept = 0.0
+    red,min_red,max_red = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+
+    seviri_ch.data = vis2
+    green,min_green,max_green = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+
+    #min_red,max_red = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,red.flat,99999)),\
+    #                  Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,red.flat,-99999))
+    #min_green,max_green = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,green.flat,99999)),\
+    #                      Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,green.flat,-99999))
     min_blue,max_blue = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,blue.flat,99999)),\
                         Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,blue.flat,-99999))
 
