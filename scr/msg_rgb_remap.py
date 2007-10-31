@@ -23,9 +23,13 @@
 #
 # CVS History:
 #
-# $Id: msg_rgb_remap.py,v 1.12 2007/10/31 19:50:05 adybbroe Exp $
+# $Id: msg_rgb_remap.py,v 1.13 2007/10/31 20:00:46 adybbroe Exp $
 #
 # $Log: msg_rgb_remap.py,v $
+# Revision 1.13  2007/10/31 20:00:46  adybbroe
+# Updated function makergb_severe_convection similarly to the previous
+# update of makergb_visvisir.
+#
 # Revision 1.12  2007/10/31 19:50:05  adybbroe
 # Updated function makergb_visvisir: Now using PPS-library function to
 # check the physical range of the solar channels, in order to try to
@@ -419,6 +423,8 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
 def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     import sm_display_util
     import Numeric,Image
+    nodata = 0
+    missingdata = 0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -432,8 +438,21 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
 
     red = ch5-ch6
     green = ch4-ch9
-    blue = ch3-ch1
 
+    # Use PPS library function to check range in SEVIRI vis/nir channels.
+    # The PPS function was made for avhrr data, but works more general.
+    # Adam Dybbroe, 2007-10-31
+    import ppss_imagelib
+    seviri_ch = SeviriChObj()
+    seviri_ch.data = ch1
+    seviri_ch.gain = 1.0
+    seviri_ch.intercept = 0.0
+    ch1,min_ch1,max_ch1 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+    seviri_ch.data = ch3
+    ch3,min_ch3,max_ch3 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+
+    blue = ch3-ch1
+    
     if options.has_key("rgbrange"):
         range_red = options["rgbrange"][0]
         range_green = options["rgbrange"][1]
@@ -466,7 +485,7 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     else:
         min_red,max_red = Numeric.minimum.reduce(red.flat),Numeric.maximum.reduce(red.flat)
         min_green,max_green = Numeric.minimum.reduce(green.flat),Numeric.maximum.reduce(green.flat)
-        min_blue,max_blue = Numeric.minimum.reduce(blue.flat),Numeric.maximum.reduce(blue.flat)     
+        min_blue,max_blue = Numeric.minimum.reduce(blue.flat),Numeric.maximum.reduce(blue.flat)
         min_ir = min(min_red,min_green)
         max_ir = max(max_red,max_green)
         min_vis = min_blue
