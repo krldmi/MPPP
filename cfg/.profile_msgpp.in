@@ -1,5 +1,4 @@
 ACPG=@ACPG_INSTALL_ROOT@
-ACPG_FUTURE=@ACPG_FUTURE_INSTALL_ROOT@
 N2=@N2_INSTALL_ROOT@
 APPLDIR=@prefix@
 HLHDF_INSTALL_PATH=@HLHDF_ROOTDIR@
@@ -11,7 +10,7 @@ ACPG_DATA_DIR=/local_disk/data/pps ; export ACPG_DATA_DIR
 
 # ----------------------------
 # python stuff:
-PYTHONPATH=${APPLDIR}/scr:${APPLDIR}/cfg:${APPLDIR}/cst:${ACPG_FUTURE}/lib:${ACPG}/lib:${ACPG}/scr:${ACPG}/cfg:${PYTHONPATH} ; export PYTHONPATH
+PYTHONPATH=${APPLDIR}/scr:${APPLDIR}/cfg:${APPLDIR}/cst:${ACPG}/lib:${ACPG}/scr:${ACPG}/cfg:${PYTHONPATH} ; export PYTHONPATH
 # ----------------------------
 
 SM_REGION_CONFIGURATION_FILE="${ACPG}/cfg/region_config.cfg"; export SM_REGION_CONFIGURATION_FILE
@@ -36,6 +35,6 @@ else
 fi
 export LD_RUN_PATH
 
-PATH=/usr/local/bin:/bin:/usr/bin:${ACPG_FUTURE}/scr:${N2}/n2lib:${PATH}; export PATH
+PATH=/usr/local/bin:/bin:/usr/bin:${ACPG}/scr:${N2}/n2lib:${PATH}; export PATH
 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${N2}/Lib"; export LD_LIBRARY_PATH
 LD_RUN_PATH="${LD_RUN_PATH}:${N2}/Lib"; export LD_RUN_PATH
