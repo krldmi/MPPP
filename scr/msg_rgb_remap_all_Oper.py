@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_rgb_remap_all_Oper.py,v 1.17 2007/10/30 14:39:39 adybbroe Exp $
+# $Id: msg_rgb_remap_all_Oper.py,v 1.18 2007/10/31 20:01:35 adybbroe Exp $
 #
 # $Log: msg_rgb_remap_all_Oper.py,v $
+# Revision 1.18  2007/10/31 20:01:35  adybbroe
+# Added for airmass RGB generation, if channel 8 is available.
+#
 # Revision 1.17  2007/10/30 14:39:39  adybbroe
 # Changes to bring in and older version from cvs release 0.27, that seem
 # to have been lost. The stretching of channel 9 bw data for SVT should
@@ -197,6 +200,7 @@ if __name__ == "__main__":
             ch5file = "%s/5_%s.BT"%(fileprfx,fname)
             ch6file = "%s/6_%s.BT"%(fileprfx,fname)
             ch7file = "%s/7_%s.BT"%(fileprfx,fname)
+            ch8file = "%s/8_%s.BT"%(fileprfx,fname)
             ch9file = "%s/9_%s.BT"%(fileprfx,fname)
             ch10file = "%s/10_%s.BT"%(fileprfx,fname)
             ch11file = "%s/11_%s.BT"%(fileprfx,fname)
@@ -208,6 +212,7 @@ if __name__ == "__main__":
             ch5,ok5=get_ch_projected(ch5file,CoverageData)
             ch6,ok6=get_ch_projected(ch6file,CoverageData)
             ch7,ok7=get_ch_projected(ch7file,CoverageData)
+            ch8,ok8=get_ch_projected(ch8file,CoverageData)
             ch9,ok9=get_ch_projected(ch9file,CoverageData)
             ch10,ok10=get_ch_projected(ch10file,CoverageData)
             ch11,ok11=get_ch_projected(ch11file,CoverageData)
@@ -283,6 +288,18 @@ if __name__ == "__main__":
                     os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
                 do_sir(this,"convection",year,month,day,hour,min,areaid)
+
+            # New since October 31, 2007. Adam Dybbroe
+            # Airmass - IR/WV:
+            if ok5 and ok6 and ok8 and ok9 and RGB_IMAGE[areaid]["convection"]:
+                outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_airmass"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,min,areaid)
+                msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_airmass"%(MSG_SATELLITE,year,month,day,hour,min,areaid),moduleid=MODULE_ID)
+                # WV6.2 - WV7.3	                -25 till   0 K	gamma 1
+                # IR9.7 - IR10.8		-40 till  +5 K	gamma 1
+                # WV6.2		               +243 till 208 K	gamma 1
+                this = makergb_arimass(ch5,ch6,ch8,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-25,0),(-40,5.0),(243-70.0,208+20.0)])
+                if FSERVER_SYNC:
+                    os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
             # Fog and low clouds
             if ok4r and ok9 and ok10 and RGB_IMAGE[areaid]["nightfog"]:
