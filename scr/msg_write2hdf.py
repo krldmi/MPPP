@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_write2hdf.py,v 1.1 2007/10/30 14:39:39 adybbroe Exp $
+# $Id: msg_write2hdf.py,v 1.2 2007/10/31 22:22:37 adybbroe Exp $
 #
 # $Log: msg_write2hdf.py,v $
+# Revision 1.2  2007/10/31 22:22:37  adybbroe
+# Using SEVIRI_CHANNELS_IN_HDF5 instead of hardcoded path.
+#
 # Revision 1.1  2007/10/30 14:39:39  adybbroe
 # Changes to bring in and older version from cvs release 0.27, that seem
 # to have been lost. The stretching of channel 9 bw data for SVT should
@@ -91,7 +94,7 @@ if __name__ == "__main__":
     if time_start > time_end:
         msgwrite_log("INFO","Start time is later than end time!",moduleid=MODULE_ID)
         
-    fileprfx_out="/data/proj/saf/adybbroe/ExJobbHenriksson/data/hdf5"
+    fileprfx_out=SEVIRI_CHANNELS_IN_HDF5
 
     sec = time_start
     while (sec < time_end + 1):
