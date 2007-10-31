@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_rgb_remap.py,v 1.13 2007/10/31 20:00:46 adybbroe Exp $
+# $Id: msg_rgb_remap.py,v 1.14 2007/10/31 22:09:08 adybbroe Exp $
 #
 # $Log: msg_rgb_remap.py,v $
+# Revision 1.14  2007/10/31 22:09:08  adybbroe
+# Corrected bug: ppss_imagelib -> pps_imagelib
+#
 # Revision 1.13  2007/10/31 20:00:46  adybbroe
 # Updated function makergb_severe_convection similarly to the previous
 # update of makergb_visvisir.
@@ -442,7 +445,7 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     # Use PPS library function to check range in SEVIRI vis/nir channels.
     # The PPS function was made for avhrr data, but works more general.
     # Adam Dybbroe, 2007-10-31
-    import ppss_imagelib
+    import pps_imagelib
     seviri_ch = SeviriChObj()
     seviri_ch.data = ch1
     seviri_ch.gain = 1.0
@@ -543,7 +546,7 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     # Use PPS library function to check range in SEVIRI vis/nir channels.
     # The PPS function was made for avhrr data, but works more general.
     # Adam Dybbroe, 2007-10-31
-    import ppss_imagelib
+    import pps_imagelib
     seviri_ch = SeviriChObj()
     seviri_ch.data = vis1
     seviri_ch.gain = 1.0
