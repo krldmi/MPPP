@@ -23,9 +23,13 @@
 #
 # CVS History:
 #
-# $Id: msg_rgb_remap.py,v 1.14 2007/10/31 22:09:08 adybbroe Exp $
+# $Id: msg_rgb_remap.py,v 1.15 2007/11/01 00:10:42 adybbroe Exp $
 #
 # $Log: msg_rgb_remap.py,v $
+# Revision 1.15  2007/11/01 00:10:42  adybbroe
+# Solving for overflow in division, when trying to stretch channel data
+# with no values (vis channels in darkness).
+#
 # Revision 1.14  2007/10/31 22:09:08  adybbroe
 # Corrected bug: ppss_imagelib -> pps_imagelib
 #
@@ -428,6 +432,7 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     import Numeric,Image
     nodata = 0
     missingdata = 0
+    delta_max = 1.0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -450,9 +455,9 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     seviri_ch.data = ch1
     seviri_ch.gain = 1.0
     seviri_ch.intercept = 0.0
-    ch1,min_ch1,max_ch1 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+    ch1,min_ch1,max_ch1 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
     seviri_ch.data = ch3
-    ch3,min_ch3,max_ch3 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+    ch3,min_ch3,max_ch3 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
 
     blue = ch3-ch1
     
@@ -502,8 +507,13 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
         green_gain=255.0/(max_green-min_green)
         green_icept=-1.*min_green*green_gain
         print "Green channel: Gain,Intercept = %f,%f"%(green_gain,green_icept)
-        blue_gain=255.0/(max_blue-min_blue)
-        blue_icept=-1.*min_blue*blue_gain
+
+        if (max_blue - min_blue) > delta_max:
+            blue_gain=255.0/(max_blue-min_blue)
+            blue_icept=-1.*min_blue*blue_gain
+        else:
+            blue_gain=1.0
+            blue_icept=0.0
         msgwrite_log("INFO","Blue channel: Gain,Intercept = %f,%f"%(blue_gain,blue_icept),moduleid=MODULE_ID)
 
         gl=[red_gain,green_gain,blue_gain]
@@ -528,6 +538,7 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     import Numeric,Image
     nodata=0
     missingdata = 0
+    delta_max = 1.0
     
     if options.has_key("gamma"):
         gamma_red,gamma_green,gamma_blue=options["gamma"]
@@ -551,10 +562,10 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     seviri_ch.data = vis1
     seviri_ch.gain = 1.0
     seviri_ch.intercept = 0.0
-    red,min_red,max_red = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+    red,min_red,max_red = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
 
     seviri_ch.data = vis2
-    green,min_green,max_green = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata)
+    green,min_green,max_green = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
 
     #min_red,max_red = Numeric.minimum.reduce(Numeric.where(not_missing_data.flat,red.flat,99999)),\
     #                  Numeric.maximum.reduce(Numeric.where(not_missing_data.flat,red.flat,-99999))
@@ -576,11 +587,17 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     rgb=[None,None,None]
-    newred = (red-min_red) * 255.0/(max_red-min_red)
-    rgb[0] = Numeric.where(Numeric.greater(newred,255),255,Numeric.where(Numeric.less(newred,0),0,newred))
+    if (max_red - min_red) > delta_max:
+        newred = (red-min_red) * 255.0/(max_red-min_red)
+        rgb[0] = Numeric.where(Numeric.greater(newred,255),255,Numeric.where(Numeric.less(newred,0),0,newred))
+    else:
+        rgb[0] = red
 
-    newgreen = (green-min_green) * 255.0/(max_green-min_green)
-    rgb[1] = Numeric.where(Numeric.greater(newgreen,255),255,Numeric.where(Numeric.less(newgreen,0),0,newgreen))
+    if (max_green - min_green) > delta_max:
+        newgreen = (green-min_green) * 255.0/(max_green-min_green)
+        rgb[1] = Numeric.where(Numeric.greater(newgreen,255),255,Numeric.where(Numeric.less(newgreen,0),0,newgreen))
+    else:
+        rgb[1] = green
 
     newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
     rgb[2] = Numeric.where(Numeric.greater(newblue,255),255,Numeric.where(Numeric.less(newblue,0),0,newblue))
