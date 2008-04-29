@@ -462,14 +462,15 @@ def msgCtth_remap_fast(cov,msgctth,areaid,a):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 6:
-        print "Usage: %s <year> <month> <day> <slot number> <area id>"%(sys.argv[0])
+        print "Usage: %s <year> <month> <day> <hourmin (HHMM)> <area id>"%(sys.argv[0])
         sys.exit(-9)
     else:
         import string
         year = string.atoi(sys.argv[1])
         month = string.atoi(sys.argv[2])
         day = string.atoi(sys.argv[3])
-        slotn = string.atoi(sys.argv[4])
+        hour = string.atoi(sys.argv[4][0:2])
+        minute = string.atoi(sys.argv[4][2:4])
         areaid = sys.argv[5]
 
     import time
@@ -482,7 +483,8 @@ if __name__ == "__main__":
     
     #in_aid="CEuro"
     in_aid=MSG_AREA
-    prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(SAT_NUMBER,year-2000,jday,slotn,in_aid)    
+    #prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(SAT_NUMBER,year-2000,jday,slotn,in_aid)    
+    prefix="SAFNWC_MSG%.1d_CT___%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
     a=area.area(areaid)
 
     # Check for existing coverage file for the area:

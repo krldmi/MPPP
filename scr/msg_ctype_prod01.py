@@ -76,14 +76,16 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 6:
-        print "Usage: %s <year> <month> <day> <slot number> <area id>"%(sys.argv[0])
+        print "Usage: %s <year> <month> <day> <hourmin (HHMM)> <area id>"%(sys.argv[0])
         sys.exit(-9)
     else:
         import string
         year = string.atoi(sys.argv[1])
         month = string.atoi(sys.argv[2])
         day = string.atoi(sys.argv[3])
-        slotn = string.atoi(sys.argv[4])
+        hour = string.atoi(sys.argv[4][0:2])
+        minute = string.atoi(sys.argv[4][2:4])        
+        #slotn = string.atoi(sys.argv[4])
         areaid = sys.argv[5]
 
     import time
@@ -100,8 +102,8 @@ if __name__ == "__main__":
     timetup = time.localtime(time.mktime((year,month,day,0,0,0,0,0,0)))    
     jday=timetup[7]
     print "year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday)
-    hour = slotn/4
-    min = (slotn%4)*15
+    #hour = slotn/4
+    #minute = (slotn%4)*15
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
@@ -117,13 +119,13 @@ if __name__ == "__main__":
 
     #fileprfx="%s"%(RGBDIR_IN)
     fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
-    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,minute,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
     if len(fl) == 0:
-        print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+        print "No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute)
     else:
-        print "Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+        print "Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute)
 
     ch9file = "%s/9_%s.BT"%(fileprfx,fname)
     ch9,ok9=get_ch_projected(ch9file,cov)
@@ -134,7 +136,7 @@ if __name__ == "__main__":
 
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
-    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,min,areaid)
+    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,minute,areaid)
     print "Output file: ",ctypefile
 
     make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)

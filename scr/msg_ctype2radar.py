@@ -125,14 +125,17 @@ def msg_writectype2nordradformat(msgctype,filename,datestr,satid="Meteosat 8"):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 6:
-        print "Usage: %s <year> <month> <day> <slot number> <area id>"%(sys.argv[0])
+        #print "Usage: %s <year> <month> <day> <slot number> <area id>"%(sys.argv[0])
+        print "Usage: %s <year> <month> <day> <hourmin (HHMM)> <area id>"%(sys.argv[0])
         sys.exit(-9)
     else:
         import string
         year = string.atoi(sys.argv[1])
         month = string.atoi(sys.argv[2])
         day = string.atoi(sys.argv[3])
-        slotn = string.atoi(sys.argv[4])
+        #slotn = string.atoi(sys.argv[4])
+        hour = string.atoi(sys.argv[4][0:2])
+        minute = string.atoi(sys.argv[4][2:4])        
         areaid = sys.argv[5]
 
     MetSat=MSG_SATELLITE
@@ -141,14 +144,15 @@ if __name__ == "__main__":
     timetup = time.localtime(time.mktime((year,month,day,0,0,0,0,0,0)))    
     jday=timetup[7]
     msgwrite_log("INFO","year,month,day: %d %d %d Julian day = %d"%(year,month,day,jday),moduleid=MODULE_ID)
-    hour = slotn/4
-    min = (slotn%4)*15
+    #hour = slotn/4
+    #minute = (slotn%4)*15
     
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
     
     in_aid=MSG_AREA
-    prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)    
+    #prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)    
+    prefix="SAFNWC_MSG%.1d_CT___%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
     a=area.area(areaid)
 
     # Check for existing coverage file for the area:
@@ -160,13 +164,13 @@ if __name__ == "__main__":
         cov,info = readCoverage(covfilename)
         #print info.items()
 
-    datestr = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+    datestr = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute)
     print "Date string: %s"%datestr
     
     for infile in glob.glob("%s/%s*h5"%(CTYPEDIR_IN,prefix)):
         s=string.ljust(areaid,12)
         ext=string.replace(s," ","_")
-        outfile = "%s/%s_nordrad_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,min,areaid)
+        outfile = "%s/%s_nordrad_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,minute,areaid)
         msgwrite_log("INFO","Output file: ",outfile,moduleid=MODULE_ID)
         if not os.path.exists(outfile):
             msgctype = read_msgCtype(infile)

@@ -23,9 +23,13 @@
 #
 # CVS History:
 #
-# $Id: msg_remap_all_Oper.py,v 1.26 2008/04/29 08:31:57 adybbroe Exp $
+# $Id: msg_remap_all_Oper.py,v 1.27 2008/04/29 09:38:16 adybbroe Exp $
 #
 # $Log: msg_remap_all_Oper.py,v $
+# Revision 1.27  2008/04/29 09:38:16  adybbroe
+# Adapted to new naming convention as of NWCSAF/MSG version 2008. The
+# julian day number and slot number is now replaced by a date-time string.
+#
 # Revision 1.26  2008/04/29 08:31:57  adybbroe
 # Do not sync hdf5 mesanx products at times 23:30, 23:45, and 00 UTC out
 # to fileserver. This is the hack introduced on safir April 24, 2008, in
@@ -95,18 +99,18 @@ def inform_sir2(prod_name,aidstr,status,datestr):
     return
     
 # -----------------------------------------------------------------------
-def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=None):
+def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,minute,ctype=None):
     import string
 
     msgwrite_log("INFO","Area = ",areaid,moduleid=MODULE_ID)
     areaObj = area.area(areaid)
 
     yystr = ("%.4d"%year)[2:4]
-    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
     
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
-    outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,minute,areaid)
     msgwrite_log("INFO","Output file: ",outfile,moduleid=MODULE_ID)
     if not os.path.exists(outfile):
         msgctypeRem = msgCtype_remap_fast(covData,msgctype,areaid,areaObj)
@@ -203,7 +207,7 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
     return
 
 # -----------------------------------------------------------------------
-def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
+def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,minute,ctth=None):
     import string
     
     msgwrite_log("INFO","Area id: %s"%(areaid),moduleid=MODULE_ID)
@@ -214,11 +218,11 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
     
     areaObj = area.area(areaid)
     yystr = ("%.4d"%year)[2:4]
-    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
 
-    outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.ctth.hdf"%(CTTHDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    outfile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.ctth.hdf"%(CTTHDIR_OUT,satellite,year,month,day,hour,minute,areaid)
     msgwrite_log("INFO","Output file: %s"%(outfile),moduleid=MODULE_ID)
     if not os.path.exists(outfile):
         msgctthRem = msgCtth_remap_fast(covData,msgctth,areaid,areaObj)
@@ -296,22 +300,22 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
     return
 
 # -----------------------------------------------------------------------
-def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
+def doCprod01(cov,areaid,satellite,year,month,day,hour,minute):
     import string
     import msg_ctype_products
 
     yystr = ("%.4d"%year)[2:4]
-    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
 
     #fileprfx="%s/%.4d/%.2d/%.2d"%(RGBDIR_IN,year,month,day)
     fileprfx="%s"%(RGBDIR_IN)
-    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,minute,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
     if len(fl) == 0:
-        msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
+        msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute),moduleid=MODULE_ID)
     else:
-        msgwrite_log("INFO","Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
+        msgwrite_log("INFO","Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute),moduleid=MODULE_ID)
 
     ch9file = "%s/9_%s.BT"%(fileprfx,fname)
     ch9,ok9=get_ch_projected(ch9file,cov)
@@ -322,7 +326,7 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
 
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
-    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,minute,areaid)
     msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
     this,img_with_ovl = msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
@@ -393,20 +397,20 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,min):
     return
 
 # -----------------------------------------------------------------------
-def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
+def doCprod02(cov,areaid,satellite,year,month,day,hour,minute):
     import string
     import msg_ctype_products
 
     yystr = ("%.4d"%year)[2:4]
-    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,min)
+    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
     fileprfx="%s"%(RGBDIR_IN)
-    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,min,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
+    fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,minute,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
 
     fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
     if len(fl) == 0:
-        msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
+        msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute),moduleid=MODULE_ID)
     else:
-        msgwrite_log("INFO","Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min),moduleid=MODULE_ID)
+        msgwrite_log("INFO","Try extract SEVIRI channel(s) for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute),moduleid=MODULE_ID)
 
     ch9file = "%s/9_%s.BT"%(fileprfx,fname)
     ch9,ok9=get_ch_projected(ch9file,cov)
@@ -416,7 +420,7 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
 
     s=string.ljust(areaid,12)
     ext=string.replace(s," ","_")
-    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,minute,areaid)
     msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
     #this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
@@ -466,15 +470,15 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
     return
 
 # -----------------------------------------------------------------------
-def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,min):
+def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,minute):
     import string
     import area
     import msg_ctype2radar
 
     areaObj = area.area(areaid)
-    datestr = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,min)
+    datestr = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute)
 
-    outfile = "%s/%s_nordrad_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
+    outfile = "%s/%s_nordrad_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,minute,areaid)
     msgwrite_log("INFO","Output file: ",outfile,moduleid=MODULE_ID)
     if not os.path.exists(outfile):
         msgctype = msgCtype_remap_fast(covData,msgctype,areaid,areaObj)            
@@ -517,15 +521,15 @@ if __name__ == "__main__":
     month=string.atoi(start_date[4:6])
     day=string.atoi(start_date[6:8])
     hour=string.atoi(start_date[8:10])
-    min=string.atoi(start_date[10:12])    
-    time_start = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
+    minute=string.atoi(start_date[10:12])    
+    time_start = time.mktime((year,month,day,hour,minute,0,0,0,0)) - time.timezone
 
     year=string.atoi(end_date[0:4])
     month=string.atoi(end_date[4:6])
     day=string.atoi(end_date[6:8])
     hour=string.atoi(end_date[8:10])
-    min=string.atoi(end_date[10:12])    
-    time_end = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
+    minute=string.atoi(end_date[10:12])    
+    time_end = time.mktime((year,month,day,hour,minute,0,0,0,0)) - time.timezone
 
     if time_start > time_end:
         msgwrite_log("INFO","Start time is later than end time!",moduleid=MODULE_ID)
@@ -533,10 +537,12 @@ if __name__ == "__main__":
     sec = time_start    
     while (sec < time_end + 1):
         ttup = time.gmtime(sec)
-        year,month,day,hour,min,dummy,dummy,jday,dummy = ttup
-        slotn = hour*4+int((min+7.5)/15)
+        year,month,day,hour,minute,dummy,dummy,jday,dummy = ttup
+        slotn = hour*4+int((minute+7.5)/15)
 
-        prefix="SAFNWC_MSG%.1d_CT___%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
+        #prefix="SAFNWC_MSG%.1d_CT___%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
+        # Changed name-convention with version 2008!:
+        prefix="SAFNWC_MSG%.1d_CT___%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
         match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
         flist = glob.glob(match_str)
@@ -550,7 +556,8 @@ if __name__ == "__main__":
             msgwrite_log("INFO","Read MSG CT file: ",flist[0],moduleid=MODULE_ID)
             msgctype = read_msgCtype(flist[0])
             
-        prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
+        #prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
+        prefix="SAFNWC_MSG%.1d_CTTH_%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
         match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
         flist = glob.glob(match_str)
@@ -561,7 +568,7 @@ if __name__ == "__main__":
             msgwrite_log("ERROR","No matching input file",moduleid=MODULE_ID)
         else:
             # First read the original MSG file if not already done...
-            msgwrite_log("INFO","Read MSG CT file: ",flist[0],moduleid=MODULE_ID)
+            msgwrite_log("INFO","Read MSG CTTH file: ",flist[0],moduleid=MODULE_ID)
             msgctth = read_msgCtth(flist[0])
 
 	if not msgctype and not msgctth:
@@ -585,17 +592,17 @@ if __name__ == "__main__":
                 CoverageData,info = readCoverage(covfilename)
 
             if msgctype:
-                doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
                 if areaid in NORDRAD_AREAS:
-                    doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                    doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
                 if areaid in NWCSAF_PRODUCTS["PGE02b"] or areaid in NWCSAF_PRODUCTS["PGE02bj"]:
-                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,minute)
                 if areaid in NWCSAF_PRODUCTS["PGE02c"]:
-                    doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                    doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,minute)
 
             if msgctth:
                 if areaid not in ["euro","eurotv","scan"]:
-                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
+                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,minute)
 
         sec = sec + DSEC_SLOTS
 

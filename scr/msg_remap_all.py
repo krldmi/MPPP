@@ -33,15 +33,15 @@ if __name__ == "__main__":
     month=string.atoi(start_date[4:6])
     day=string.atoi(start_date[6:8])
     hour=string.atoi(start_date[8:10])
-    min=string.atoi(start_date[10:12])
-    time_start = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
+    minute=string.atoi(start_date[10:12])
+    time_start = time.mktime((year,month,day,hour,minute,0,0,0,0)) - time.timezone
 
     year=string.atoi(end_date[0:4])
     month=string.atoi(end_date[4:6])
     day=string.atoi(end_date[6:8])
     hour=string.atoi(end_date[8:10])
-    min=string.atoi(end_date[10:12])    
-    time_end = time.mktime((year,month,day,hour,min,0,0,0,0)) - time.timezone
+    minute=string.atoi(end_date[10:12])    
+    time_end = time.mktime((year,month,day,hour,minute,0,0,0,0)) - time.timezone
 
     if time_start > time_end:
         print "Start time is later than end time!"
@@ -49,11 +49,12 @@ if __name__ == "__main__":
     sec = time_start    
     while (sec < time_end + 1):
         ttup = time.gmtime(sec)
-        year,month,day,hour,min,dummy,dummy,jday,dummy = ttup
-        slotn = hour*4+int((min+7.5)/15)
+        year,month,day,hour,minute,dummy,dummy,jday,dummy = ttup
+        slotn = hour*4+int((minute+7.5)/15)
 
         msgctype = None
-        prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
+        #prefix="SAFNWC_MSG1_CT___%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
+        prefix="SAFNWC_MSG%.1d_CT___%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
         match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
         print "file-match: ",match_str
         flist = glob.glob(match_str)
@@ -67,7 +68,8 @@ if __name__ == "__main__":
             msgctype = read_msgCtype(flist[0])
 
         msgctth = None
-        prefix="SAFNWC_MSG1_CTTH_%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
+        #prefix="SAFNWC_MSG1_CTTH_%.2d%.3d_%.3d_%s"%(year-2000,jday,slotn,in_aid)
+        prefix="SAFNWC_MSG%.1d_CTTH_%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
         match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
         print "file-match: ",match_str
         flist = glob.glob(match_str)
@@ -101,16 +103,16 @@ if __name__ == "__main__":
 
 
                 if msgctype:
-                    doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                    doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
                     if areaid in NORDRAD_AREAS:
-                        doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,min)
+                        doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
                     if areaid in NWCSAF_PRODUCTS["PGE02b"]:
-                        doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                        doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,minute)
                     if areaid in NWCSAF_PRODUCTS["PGE02c"]:
-                        doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
+                        doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,minute)
                 
                 if msgctth:
-                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
+                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,minute)
 
         sec = sec + DSEC_SLOTS
 
