@@ -3,7 +3,7 @@ setenv AHAMAP_SOFTWARE "/local_disk/opt/AHAMAP"
 setenv HLHDF_SOFTWARE "/local_disk/opt/HLHDF"
 setenv DATA_DIR "/local_disk/data/pps"
 setenv TMP_DIR "/local_disk/tmp"
-setenv AAPP_VERSION "/local_disk/opt/AAPP/AAPP/6_3"
+setenv AAPP_VERSION "/local_disk/opt/AAPP/AAPP/6_6"
 setenv RTTOV_DIR "/local_disk/opt/RTTOV7/7_1"
 setenv PPS_TM_DIR "/local_disk/opt/PPS_TaskManager/python"
 
