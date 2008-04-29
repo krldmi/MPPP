@@ -23,9 +23,15 @@
 #
 # CVS History:
 #
-# $Id: msg_remap_all_Oper.py,v 1.25 2007/10/30 14:39:39 adybbroe Exp $
+# $Id: msg_remap_all_Oper.py,v 1.26 2008/04/29 08:31:57 adybbroe Exp $
 #
 # $Log: msg_remap_all_Oper.py,v $
+# Revision 1.26  2008/04/29 08:31:57  adybbroe
+# Do not sync hdf5 mesanx products at times 23:30, 23:45, and 00 UTC out
+# to fileserver. This is the hack introduced on safir April 24, 2008, in
+# order to prevent bad classifications entering Mesan. It should be
+# turned off again, and anyhow a more general solution should be prepared.
+#
 # Revision 1.25  2007/10/30 14:39:39  adybbroe
 # Changes to bring in and older version from cvs release 0.27, that seem
 # to have been lost. The stretching of channel 9 bw data for SVT should
@@ -188,7 +194,11 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,min,ctype=
                     
     # Sync the output with fileserver:
     if FSERVER_SYNC:
-        os.system("%s %s/%s* %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
+        synctmp = "%s --exclude 'met0*_0000.*hdf' --exclude 'met0*_2345.*hdf' --exclude 'met0*2330.*hdf'"%SYNC
+        cmdstr = "%s %s/%s* %s/."%(synctmp,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT)
+        msgwrite_log("INFO","Sync-command = %s"%cmdstr,moduleid=MODULE_ID)
+        os.system(cmdstr)
+        #os.system("%s %s/%s* %s/."%(SYNC,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT))
 
     return
 
@@ -277,7 +287,11 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,min,ctth=None):
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
-        os.system("%s %s/%s* %s/."%(SYNC,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTTHDIR_OUT))
+        synctmp = "%s --exclude 'met0*_0000.*hdf' --exclude 'met0*_2345.*hdf' --exclude 'met0*2330.*hdf'"%SYNC
+        cmdstr = "%s %s/%s* %s/."%(synctmp,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTTHDIR_OUT)
+        msgwrite_log("INFO","Sync-command = %s"%cmdstr,moduleid=MODULE_ID)
+        os.system(cmdstr)
+        #os.system("%s %s/%s* %s/."%(SYNC,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTTHDIR_OUT))
 
     return
 
@@ -405,7 +419,8 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,min):
     ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,satellite,year,month,day,hour,min,areaid)
     msgwrite_log("INFO","Output file: ",ctypefile,moduleid=MODULE_ID)
 
-    this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    #this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
+    this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,overlay=1) # Use stretch = crude-linear
     #this,img_with_ovl = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,stretch="linear",overlay=1)
     #this = msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=0)
 
@@ -534,7 +549,7 @@ if __name__ == "__main__":
             # First read the original MSG file if not already done...
             msgwrite_log("INFO","Read MSG CT file: ",flist[0],moduleid=MODULE_ID)
             msgctype = read_msgCtype(flist[0])
-
+            
         prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
         match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
@@ -577,7 +592,7 @@ if __name__ == "__main__":
                     doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,min)
                 if areaid in NWCSAF_PRODUCTS["PGE02c"]:
                     doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,min)
-                
+
             if msgctth:
                 if areaid not in ["euro","eurotv","scan"]:
                     doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,min)
