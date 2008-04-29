@@ -23,9 +23,13 @@
 #
 # CVS History:
 #
-# $Id: msg_ctype_products.py,v 1.10 2007/10/30 14:39:39 adybbroe Exp $
+# $Id: msg_ctype_products.py,v 1.11 2008/04/29 08:28:51 adybbroe Exp $
 #
 # $Log: msg_ctype_products.py,v $
+# Revision 1.11  2008/04/29 08:28:51  adybbroe
+# Corrected stretching make_ctype_prod02 for tv product.
+# Should be more diurnal invariant (contant over day and night).
+#
 # Revision 1.10  2007/10/30 14:39:39  adybbroe
 # Changes to bring in and older version from cvs release 0.27, that seem
 # to have been lost. The stretching of channel 9 bw data for SVT should
@@ -168,14 +172,18 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     legend = smhi_safnwc_legends.get_tv_legend()
 
     # Stretching ir-channel only on the cloudy pixels!
-    irch = Numeric.where(Numeric.less_equal(that.cloudtype,4),0,irch)
+    #irch = Numeric.where(Numeric.less_equal(that.cloudtype,4),0,irch)
 
     # Generate bw IR image:
     if options.has_key("gamma"):
+        msgwrite_log("INFO","Using stretch = gamma, gamma correction = %f"%gamma,moduleid=MODULE_ID)
         bw = get_bw_array(irch,stretch="gamma",gamma=gamma,inverse=1,nodata=nodata,missingdata=0)
     else:
-        bw = get_bw_array(irch,stretch="crude-linear",bwrange=[225.0,285.0],inverse=1,missingdata=0,nodata=nodata)
-        
+        msgwrite_log("INFO","Using stretch = crude-linear with temp-range = [205.0,295.0]",moduleid=MODULE_ID)
+        bw = get_bw_array(irch,stretch="crude-linear",bwrange=[205.0,295.0],inverse=1,missingdata=0,nodata=nodata)
+
+    bw = Numeric.where(Numeric.less(bw,5),5,bw).astype('b')
+
     arr = Numeric.where(Numeric.less_equal(that.cloudtype,4),that.cloudtype,bw).astype('b')
 
     shape = that.cloudtype.shape    
