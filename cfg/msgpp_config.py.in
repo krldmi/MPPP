@@ -42,6 +42,11 @@ FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, oth
 SYNC = "/usr/bin/rsync -crzul"
 #SYNC = "/usr/bin/rsync -crzuln"
 
+# For equinox problems, avoiding bad NWCSAF products for Mesan:
+#SYNC_EXCLUDE_TIMESLOTS = ["0000","2345","2330"]
+SYNC_EXCLUDE_TIMESLOTS = []
+
+
 #MSG_SATELLITE = "met08"
 MSG_SATELLITE = "met09"
 MSG_NUMBER = 2
