@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_remap_all_Oper.py,v 1.27 2008/04/29 09:38:16 adybbroe Exp $
+# $Id: msg_remap_all_Oper.py,v 1.28 2008/07/08 12:22:43 adybbroe Exp $
 #
 # $Log: msg_remap_all_Oper.py,v $
+# Revision 1.28  2008/07/08 12:22:43  adybbroe
+# Excluding certain slots, known to have bad quality under certain conditions - equinox problems.
+#
 # Revision 1.27  2008/04/29 09:38:16  adybbroe
 # Adapted to new naming convention as of NWCSAF/MSG version 2008. The
 # julian day number and slot number is now replaced by a date-time string.
@@ -198,7 +201,11 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,minute,cty
                     
     # Sync the output with fileserver:
     if FSERVER_SYNC:
-        synctmp = "%s --exclude 'met0*_0000.*hdf' --exclude 'met0*_2345.*hdf' --exclude 'met0*2330.*hdf'"%SYNC
+        synctmp = "%s"%SYNC
+        for item in SYNC_EXCLUDE_TIMESLOTS:
+            synctmp = synctmp + " --exclude 'met0*_%s.*hdf'"%item
+        #synctmp = "%s --exclude 'met0*_0000.*hdf' --exclude 'met0*_2345.*hdf' --exclude 'met0*2330.*hdf'"%SYNC
+        #synctmp = "%s"%SYNC
         cmdstr = "%s %s/%s* %s/."%(synctmp,CTYPEDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTYPEDIR_OUT)
         msgwrite_log("INFO","Sync-command = %s"%cmdstr,moduleid=MODULE_ID)
         os.system(cmdstr)
@@ -291,7 +298,11 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,minute,ctth=None
 
     # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
     if FSERVER_SYNC:
-        synctmp = "%s --exclude 'met0*_0000.*hdf' --exclude 'met0*_2345.*hdf' --exclude 'met0*2330.*hdf'"%SYNC
+        synctmp = "%s"%SYNC
+        for item in SYNC_EXCLUDE_TIMESLOTS:
+            synctmp = synctmp + " --exclude 'met0*_%s.*hdf'"%item
+        #synctmp = "%s --exclude 'met0*_0000.*hdf' --exclude 'met0*_2345.*hdf' --exclude 'met0*2330.*hdf'"%SYNC
+        #synctmp = "%s"%SYNC
         cmdstr = "%s %s/%s* %s/."%(synctmp,CTTHDIR_OUT,os.path.basename(outfile).split(".hdf")[0],FSERVER_CTTHDIR_OUT)
         msgwrite_log("INFO","Sync-command = %s"%cmdstr,moduleid=MODULE_ID)
         os.system(cmdstr)
