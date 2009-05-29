@@ -14,25 +14,16 @@ def setenvpath(env):
 
 APPLDIR="@prefix@"
 
-#CTYPEDIR_OUT = "/local_disk/data/Meteosat/MesanX"
-#CTTHDIR_OUT = "/local_disk/data/Meteosat/MesanX"
-#CTYPEDIR_IN = "/local_disk/data/msg/export/PGE02"
-#CTTHDIR_IN = "/local_disk/data/msg/export/PGE03"
-#RGBDIR_OUT = "/local_disk/data/Meteosat/RGBs"
-#RGBDIR_IN = "/data/arkiv/satellit/geo/ceuro"
-#RGBDIR_IN = "/local_disk/data/msg/tmp"
-
-CTYPEDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
-CTTHDIR_OUT = "/local_disk/data/Meteosat8/MesanX"
+CTYPEDIR_OUT = "/local_disk/data/Meteosat/MesanX"
+CTTHDIR_OUT = "/local_disk/data/Meteosat/MesanX"
 CTYPEDIR_IN = "/opt/MSG/current/export/PGE02"
 CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
-RGBDIR_OUT = "/local_disk/data/Meteosat8/RGBs"
+RGBDIR_OUT = "/local_disk/data/Meteosat/RGBs"
 RGBDIR_IN = "/opt/MSG/current/tmp"
 
 # SEVIRI channel data + lon,lat and sun-satellite angles in hdf5 for archiving:
 SEVIRI_CHANNELS_IN_HDF5 = "/data/24/saf/msg/channels"
-#SEVIRI_CHANNELS_IN_HDF5 = "/data/arkiv/satellit/geo/seviri_channels"
-#SEVIRI_CHANNELS_IN_HDF5 = "/data/proj/saftest/msg/data/channels/hdf5"
+#SEVIRI_CHANNELS_IN_HDF5 = "/data/prodtest/saf/msg/24/saf/msg/channels"
 
 
 FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
@@ -105,13 +96,14 @@ NWCSAF_PRODUCTS = {"PGE02":["euro4"],
 
 # PGE03 IMAGE_LEGENDS:
 
-
 # Products on which areas, and with which colour-palettes, and in what image formats?:
 PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
 		         "euro4"   :{"standard":["png"]},
+		         "eurol"   :{"standard":["png"]},
 		         "eurotv"   :{"standard":["png"]}},
 		"PGE03":{"mesanX":{"standard":["png"]},
-			 "euro4"  :{"standard":["png"]}
+			 "euro4"  :{"standard":["png"]},
+			 "eurol"  :{"standard":["png"]}
 		}
 		}
 
@@ -134,10 +126,11 @@ for aid in NWCSAF_MSG_AREAS:
     if aid not in ["euro","eurotv"]:
         PGE03_LEGEND_NAMES[aid] = ("standard",)
 
-INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnw.csh"
-#INFORMSIR_SCRIPT="/data/prod/sirexp/sir2/lib/informsirnwBROKEN.csh"
-SIR_DIR="/data/prod/sirexp/sir2/data"
-#SIR_DIR="/local_disk/data/sir"
+#SIR_DIR="/data/24/sirux/sir/data"
+SIR_DIR="/data/prodtest/sirux/sir/data"
+LOCAL_SIR_DIR="/local_disk/data/sir"
+
+
 PGE02_SIR_NAMES={"standard":"msg_02a"}
 PGE03_SIR_NAMES={"standard":"msg_03a"}
 
@@ -151,10 +144,20 @@ for aid in NWCSAF_MSG_AREAS:
 
 for prodname in RGB_IMAGE["euro4"].keys():
     RGB_IMAGE["euro4"][prodname] = 1
+for prodname in RGB_IMAGE["eurol"].keys():
+    RGB_IMAGE["eurol"][prodname] = 1
 RGB_IMAGE["mesanX"]["fog"]=1
 RGB_IMAGE["mesanX"]["overview"]=1
+RGB_IMAGE["eurotv"]["fog"]=1
+RGB_IMAGE["eurotv"]["overview"]=1
+RGB_IMAGE["eurotv"]["greensnow"]=1
 RGB_IMAGE_FORMAT="png"
 RGB_IMAGE_QUALITY=100
+
+# For FM:
+RGB_IMAGE["scan2"]["greensnow"]=1
+RGB_IMAGE["scan2"]["cloudtop"]=1
+RGB_IMAGE["scan2"]["convection"]=1
 
 #
 SIR_PRODUCTS = {}
@@ -180,24 +183,43 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
         SIR_SIGNAL[aid] = {"PGE02c":1}
         continue
     elif aid in ["eurotv"]:
-        SIR_PRODUCTS[aid] = {"PGE02c":[("msg_02c","png"),]}
+        SIR_PRODUCTS[aid] = {"PGE02c":[("msg_02cp","png"),]}
         SIR_SIGNAL[aid] = {"PGE02c":1}
         continue
-    
+    elif aid in ["scan2"]:
+        # New since May-26, 2008, Adam Dybbroe:
+        # --------------------------------------
+        #Gron sno        Skandinavien       msgsnowpscan____yymmddhhmm.png_original
+        #Molntopp        Skandinavien:      msg_cltpscan____yymmddhhmm.png_original
+        #Konvektion      Skandinavien:      msgconvpscan____yymmddhhmm.png_original
+        #Molnoversida    Europa:            msg_03apeuro4___yymmddhhmm.png_original
+        # --------------------------------------        
+        SIR_PRODUCTS[aid]["cloudtop"] = [("msg_cltp","png")]
+        SIR_SIGNAL[aid] = {"cloudtop":1,"convection":1,"greensnow":1,"PGE03":1}
+        # Changed names to be consistent, Adam & Anna, 2008-11-21:
+        # 
+        #Gron sno        Skandinavien       msgsnowpscan____yymmddhhmm.png_original
+        #Konvektion      Skandinavien:      msgconvpscan____yymmddhhmm.png_original
+        SIR_PRODUCTS[aid]["convection"] = [("msgconvp","png")]
+        SIR_PRODUCTS[aid]["greensnow"] = [("msgsnowp","png")]
+        SIR_PRODUCTS[aid]["PGE03"] = [("msg_03ap","png")]
+        continue
+        
     SIR_PRODUCTS[aid] = {"PGE01":[],
                          "PGE02":[("msg_02a","tif"),],
-                         "PGE02b":[("msg_02b","png"),],
-                         "PGE02c":[("msg_02c","png"),],
-			 "PGE03":[("msg_03a","tif"),],"PGE04":[("msg_04a","tif"),],
-			 "ir9":[("msg_ir9","tif"),],
+                         "PGE02b":[("msg_02bp","png"),],
+                         "PGE02c":[("msg_02cp","png"),],
+			 "PGE03":[("msg_03a","tif"),("msg_03ap","png"),],
+                         "PGE04":[("msg_04a","tif"),],
+			 "ir9":[("msg_ir9","tif"),("msg_ir9p","png"),],
 			 "watervapour_low":[("msg_ir6","tif"),],
 			 "watervapour_high":[("msg_ir5","tif"),],
-			 "overview":[("msg_ovw","tif"),],
-			 "cloudtop":[("msg_clt","tif"),],
-			 "nightfog":[("msg_nfog","tif"),],
-			 "fog":[("msg_fog","tif"),],
-			 "convection":[("msg_conv","tif"),],
-			 "greensnow":[("msg_snow","tif"),]
+			 "overview":[("msg_ovw","tif"),("msg_ovwp","png"),],
+			 "cloudtop":[("msg_clt","tif"),("msg_cltp","png"),],
+			 "nightfog":[("msg_nfog","tif"),("msg_nfop","png"),],
+			 "fog":[("msg_fog","tif"),("msg_fogp","png"),],
+			 "convection":[("msg_conv","tif"),("msg_conp","png"),],
+			 "greensnow":[("msg_snow","tif"),("msg_snop","png"),]
 			}
 
     SIR_SIGNAL[aid] = {"PGE02":1,"PGE03":1,"PGE02b":1,"PGE02c":1,
@@ -220,3 +242,4 @@ if SIR_SIGNAL.has_key("euro4"):
 else:
     SIR_SIGNAL["euro4"] = {"PGE02bj":1}
 # ==========================================================
+
