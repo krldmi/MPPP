@@ -4,7 +4,7 @@
 #  COPYRIGHT   : SMHI
 #  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
 #                Folkborgsvaegen 1
-#                Norrköping, Sweden
+#                Norrkoping, Sweden
 #
 #  PROJECT      : 
 #  FILE         : msg_rgb_remap.py
@@ -23,9 +23,13 @@
 #
 # CVS History:
 #
-# $Id: msg_rgb_remap.py,v 1.15 2007/11/01 00:10:42 adybbroe Exp $
+# $Id: msg_rgb_remap.py,v 1.16 2009/05/29 22:12:16 Adam.Dybbroe Exp $
 #
 # $Log: msg_rgb_remap.py,v $
+# Revision 1.16  2009/05/29 22:12:16  Adam.Dybbroe
+# Added documentation of code.
+# Improved function get_ch_projected to be able to also read the hdf5 packed channel data files.
+#
 # Revision 1.15  2007/11/01 00:10:42  adybbroe
 # Solving for overflow in division, when trying to stretch channel data
 # with no values (vis channels in darkness).
@@ -77,6 +81,16 @@ class SeviriChObj:
 
 # ------------------------------------------------------------------
 def gamma_corr(g,arr):
+    """
+    Applies gamma correction to an array, which is assumed to be in the range 0 to 256.
+
+    @type g: float scalar
+    @param g: The gamma correction factor 
+    @type arr: Numeric array
+    @param arr: Array with values assumed to be in the range 0 to 256.
+    @rtype: Numeric array
+    @return: One-byte (uchar) array after gamma correction
+    """
     import Numeric
 
     # Assume array to be between 0 and 255: Put the array between 0 and 1:
@@ -96,7 +110,23 @@ def gamma_corr(g,arr):
 
 # ------------------------------------------------------------------
 # Doing either a gamma correction or a linear contrast stretch:
-def get_bw_array(ch,**options):    
+def get_bw_array(ch,**options):
+    """
+    Derive an 8-bit stretched (either gamma, linear or histogram equalized)
+    image layer from a given array of calibrated sensor channel data.
+
+    @type ch: Numeric array
+    @param ch: Array with calibrated channel data (Tb or Refl)
+    @type options: Options
+    @keyword missingdata: Missing data value
+    @keyword nodata: Nodata value
+    @keyword cutoffs: Tuple with left and right interval cut-offs
+    @keyword stretch: String determining the stretch-method
+    @keyword gamma: Gamma correction factor
+    @keyword inverse: Switch. 1=Invert data, 0=Don't invert data
+    @rtype: Numeric array
+    @return: 8-bit scaled and stretched image data layer
+    """
     import Numeric
     import pps_imagelib # From PPS/ACPG
     
@@ -174,6 +204,20 @@ def get_bw_array(ch,**options):
 
 # ------------------------------------------------------------------
 def make_bw(ch,outprfx,**options):
+    """
+    Make an 8-bit one layer image and save to output file.
+
+    @type ch: Numeric array
+    @param ch: Array with calibrated channel data (Tb or Refl)
+    @type outprfx: String
+    @param outprfx: Output file name prefix (name excluding extention).
+    @type options: Options
+    @keyword stretch: String determining the stretch-method
+    @keyword inverse: Switch. 1=Invert data, 0=Don't invert data
+    @keyword bwrange: Tuple with start and end values of input array
+    @rtype: Numeric array
+    @return: 8-bit scaled and stretched image data layer
+    """
     import Image
 
     if options.has_key("stretch"):
@@ -223,6 +267,20 @@ def make_bw(ch,outprfx,**options):
 # Adam Dybbroe 2007-10-30
 #
 def makergb_airmass(ch5,ch6,ch8,ch9,outprfx,**options):
+    """
+    Make Airmass RGB image composite from SEVIRI channels.
+    
+    @type ch5: Array of floats
+    @param ch5: SEVIRI channel 5 calibrated Tbs on area (remapped)
+    @type ch6: Array of floats
+    @param ch6: SEVIRI channel 6 calibrated Tbs on area (remapped)
+    @type ch8: Array of floats
+    @param ch8: SEVIRI channel 8 calibrated Tbs on area (remapped)
+    @type ch9: Array of floats
+    @param ch9: SEVIRI channel 9 calibrated Tbs on area (remapped)
+    @rtype: Image instance
+    @return: Result image instance
+    """
     import sm_display_util
     import Numeric
     import Image
@@ -288,10 +346,20 @@ def makergb_airmass(ch5,ch6,ch8,ch9,outprfx,**options):
 
     return imcopy
 
-
-
 # ------------------------------------------------------------------
 def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
+    """
+    Make Nightfog RGB image composite from SEVIRI channels.
+    
+    @type ch4r: Array of floats
+    @param ch4r: CO2-corrected SEVIRI channel 4 calibrated Tbs on area (remapped)
+    @type ch9: Array of floats
+    @param ch9: SEVIRI channel 9 calibrated Tbs on area (remapped)
+    @type ch10: Array of floats
+    @param ch10: SEVIRI channel 10 calibrated Tbs on area (remapped)
+    @rtype: Image instance
+    @return: Result image instance
+    """
     import sm_display_util
     import Numeric
     import Image
@@ -359,6 +427,10 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_fog(ch7,ch9,ch10,outprfx,**options):
+    """
+    Make Fog RGB image composite from SEVIRI channels.
+    """
+    
     #import sm_display_util
     import Numeric,Image
     nodata = 0
@@ -428,6 +500,9 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
+    """
+    Make Severe convection RGB image composite from SEVIRI channels.
+    """
     import sm_display_util
     import Numeric,Image
     nodata = 0
@@ -534,6 +609,9 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
+    """
+    Make Overview RGB image composite from SEVIRI channels.
+    """
     import sm_display_util
     import Numeric,Image
     nodata=0
@@ -621,6 +699,9 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
+    """
+    Make Red snow RGB image composite from SEVIRI channels.
+    """
     import sm_display_util
     import Numeric
 
@@ -647,6 +728,9 @@ def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
+    """
+    Make Cloudtop RGB image composite from SEVIRI channels.
+    """
     import sm_display_util
     import Numeric,Image
     nodata=0
@@ -714,6 +798,9 @@ def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
 # ------------------------------------------------------------------
 # Store the sun or satellite zenith and azimuth angles in hdf5
 def sunsat_angles2hdf(filename,zenith,azimuth,angletype):
+    """
+    Store the sun or satellite zenith and azimuth angles in hdf5
+    """
     import _pyhl
 
     a=_pyhl.nodelist()
@@ -765,6 +852,9 @@ def sunsat_angles2hdf(filename,zenith,azimuth,angletype):
 # ------------------------------------------------------------------
 # Store the MSG SEVIRI geolocation in hdf5
 def lonlat2hdf(filename,lon,lat):
+    """
+    Store the MSG SEVIRI geolocation in hdf5
+    """
     import _pyhl
 
     a=_pyhl.nodelist()
@@ -802,6 +892,9 @@ def lonlat2hdf(filename,lon,lat):
 # ------------------------------------------------------------------
 # Store the raw (unprojected BT&RAD or REF) SEVIRI channel data to hdf5
 def raw_channel2hdf(filename,ch_tuple,channel_number,type="BT"):
+    """
+    Store the raw (unprojected BT&RAD or REF) SEVIRI channel data to hdf5
+    """
     import _pyhl
 
     if len(ch_tuple)==1:
@@ -847,20 +940,42 @@ def raw_channel2hdf(filename,ch_tuple,channel_number,type="BT"):
     a.addNode(b)
 
     a.write(filename,COMPRESS_LVL)
-
     
     return 0
 
     
 # ------------------------------------------------------------------
 def get_ch_projected(ch_file,cov):
+    """
+    Read calibrated SEVIRI channel data from file and project
+    the data to a cartographic map area, given by the coverage field.
+
+    @type ch_file: String
+    @param ch_file: Filename with SEVIRI channel data (The binary raw dump from the NWCSAF/MSG package)
+    @rtype: Tuple (array,int)
+    @return: Tuple with an array of channel data and a 0/1 okay switch (1=okay,0=failure)
+    """
     import msg_remap_util
     import _satproj
     import os
     missingdata=-99998
     
     if os.path.exists(ch_file):
-        ch_raw = msg_remap_util.read_msg_lonlat(ch_file)
+        # The following as a rather crude way of letting this function
+        # being able to read both the raw binary channels dumps (from the NWCSAF-package)
+        # and those already converted to hdf5.
+        # There is a lack of proper error handling!
+        #
+        # Adam Dybbroe, 2008-12-08
+        try:
+            ch_raw = msg_remap_util.read_msg_lonlat(ch_file)
+        except:
+            print "Probably the file is an hdf5 file. Try read Tb's or Reflectivities"
+            channelObj = read_raw_channels_hdf5(ch_file)
+            if channelObj.ref:
+                ch_raw = channelObj.ref
+            else:
+                ch_raw = channelObj.bt
     else:
         print "File %s not available!"%(ch_file)
         return None,0
@@ -877,6 +992,17 @@ def get_ch_projected(ch_file,cov):
 # dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
 #
 def co2corr_bt39(bt039,bt108,bt134):
+    """
+    CO2 correction of the MSG 3.9 um channel:
+    
+    T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
+    Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
+    dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
+
+    @type bt039: Array
+    @param bt039: Channel 4 (3.9um) brightness temperatures
+
+    """
     import Numeric
     epsilon = 0.001
     
