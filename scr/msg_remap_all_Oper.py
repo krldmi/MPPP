@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_remap_all_Oper.py,v 1.29 2009/05/29 23:06:28 Adam.Dybbroe Exp $
+# $Id: msg_remap_all_Oper.py,v 1.30 2009/05/29 23:28:23 Adam.Dybbroe Exp $
 #
 # $Log: msg_remap_all_Oper.py,v $
+# Revision 1.30  2009/05/29 23:28:23  Adam.Dybbroe
+# import shutil
+#
 # Revision 1.29  2009/05/29 23:06:28  Adam.Dybbroe
 # No more use of swedish letters.
 # Added threading to the code. Added doOneArea function.
@@ -65,7 +68,7 @@ from msgpp_config import *
 import _satproj
 import epshdf
 import area
-import glob,os
+import glob,os,shutil
 import pps_array2image
 
 from msg_communications import *
