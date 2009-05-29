@@ -4,7 +4,7 @@
 #  COPYRIGHT   : SMHI
 #  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
 #                Folkborgsvaegen 1
-#                Norrköping, Sweden
+#                Norrkoping, Sweden
 #
 #  PROJECT      : 
 #  FILE         : msg_ctype_products.py
@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_ctype_products.py,v 1.11 2008/04/29 08:28:51 adybbroe Exp $
+# $Id: msg_ctype_products.py,v 1.12 2009/05/29 23:03:28 Adam.Dybbroe Exp $
 #
 # $Log: msg_ctype_products.py,v $
+# Revision 1.12  2009/05/29 23:03:28  Adam.Dybbroe
+# Using no swedish letters.
+#
 # Revision 1.11  2008/04/29 08:28:51  adybbroe
 # Corrected stretching make_ctype_prod02 for tv product.
 # Should be more diurnal invariant (contant over day and night).
