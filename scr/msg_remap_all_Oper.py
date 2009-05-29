@@ -4,7 +4,7 @@
 #  COPYRIGHT   : SMHI
 #  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
 #                Folkborgsvaegen 1
-#                Norrköping, Sweden
+#                Norrkoping, Sweden
 #
 #  PROJECT      : 
 #  FILE         : msg_remap_all_Oper.py
@@ -23,9 +23,15 @@
 #
 # CVS History:
 #
-# $Id: msg_remap_all_Oper.py,v 1.28 2008/07/08 12:22:43 adybbroe Exp $
+# $Id: msg_remap_all_Oper.py,v 1.29 2009/05/29 23:06:28 Adam.Dybbroe Exp $
 #
 # $Log: msg_remap_all_Oper.py,v $
+# Revision 1.29  2009/05/29 23:06:28  Adam.Dybbroe
+# No more use of swedish letters.
+# Added threading to the code. Added doOneArea function.
+# Adapted to new SIR, using /local_disk/data/sir saving as a local repository (to be able to debug).
+# Documented the code.
+#
 # Revision 1.28  2008/07/08 12:22:43  adybbroe
 # Excluding certain slots, known to have bad quality under certain conditions - equinox problems.
 #
@@ -71,10 +77,41 @@ from msg_rgb_remap import *
 from pps_array2image import get_cms_modified
 from smhi_safnwc_legends import *
 
+from msg_rgb_remap_all_Oper import do_sir
+
+
 MODULE_ID = "MSG_PROD_REMAP"
 
 # -----------------------------------------------------------------------
+# In order to utilise more than one CPU at the same time
+from threading import Thread
+
+class threadit(Thread):
+   def __init__ (self,in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute,**options):
+      Thread.__init__(self)      
+      self.output_areaId=areaid
+      self.input_areaId=in_aid
+      self.lon = lon      
+      self.lat = lat
+      self.MetSat=MetSat
+      self.year=year
+      self.month=month
+      self.day=day
+      self.hour=hour
+      self.minute=minute
+      
+   def run(self):
+       doOneArea(self.input_areaId,self.output_areaId,self.lon,self.lat,
+                 self.MetSat,self.year,self.month,self.day,self.hour,self.minute)
+
+
+# -----------------------------------------------------------------------
 def inform_sir(saf_name,pge_name,aidstr,status,datestr):
+    """
+    Send signal to SIR launching SIR-script from system command.
+
+    @return: None
+    """
     import string
 
     msgwrite_log("INFO","inside inform_sir...",moduleid=MODULE_ID)
@@ -89,6 +126,19 @@ def inform_sir(saf_name,pge_name,aidstr,status,datestr):
 
 # -----------------------------------------------------------------------
 def inform_sir2(prod_name,aidstr,status,datestr):
+    """
+    Send signal to SIR launching SIR-script from system command.
+
+    @type prod_name: String
+    @param prod_name: Product name to be passed to SIR script
+    @type aidstr: String
+    @param aidstr: Area id string to be passed to SIR script
+    @type status: Int
+    @param status: Switch - 0 or 1 (1=ok,0=do nothing)
+    @type datestr: String
+    @param datestr: Date-time string to be passed to SIR script
+    @return: None
+    """
     import string
 
     msgwrite_log("INFO","inside inform_sir...",moduleid=MODULE_ID)
@@ -103,6 +153,34 @@ def inform_sir2(prod_name,aidstr,status,datestr):
     
 # -----------------------------------------------------------------------
 def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,minute,ctype=None):
+    """
+    Make Cloud Type images from hdf5 and save to file and send to SIR.
+    It reads the MSG Cloud Type in satellite projection, maps it to
+    a cartographic area, converts it to PPS-HDF5-format model, and
+    generates images and saves results to files.
+    
+    @type covData: Coverage Instance
+    @param covData: Coverage data used when mapping
+    @type msgctype: msgCloudTypeData instance
+    @param msgctype: NWCSAF/MSG Cloud Type
+    @type areaid: String
+    @param areaid: Area id
+    @type satellite: String
+    @param satellite: Satellite
+    @type year: String
+    @param year: Year
+    @type month: String
+    @param month: Month (number)
+    @type day: String
+    @param day: Day of month
+    @type hour: String
+    @param hour: Hour of day
+    @type minute: String
+    @param minute: Minute of hour
+    @type ctype: CloudType instance (optional)
+    @param ctype: PPS Cloud Type instance - MSG cloud type already remapped and converted to PPS format 
+    @return: None
+    """
     import string
 
     msgwrite_log("INFO","Area = ",areaid,moduleid=MODULE_ID)
@@ -157,27 +235,10 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,minute,cty
                 
         im = pps_array2image.cloudtype2image(ctype.cloudtype,legend)
         msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
-            
-        for tup in SIR_PRODUCTS[areaid]["PGE02"]:
-            sirname,imformat=tup
-            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
-            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-            sir_stat=0
-            try:
-                im.save(outname,FORMAT=imformat,quality=100)
-            except:
-                msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-                sir_stat=-1
-                pass
-            if os.path.exists(outname):
-                os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
-            else:
-                msgwrite_log("INFO","No product to SIR for this area: %s"%(areaid),moduleid=MODULE_ID)
-    
+
+        # do_sir function taken from msg_rgb_remap_all_Oper.py
+        do_sir(im,"PGE02",year,month,day,hour,minute,areaid)        
+        
     # Make standard images:
     if PRODUCT_IMAGES["PGE02"].has_key(areaid):
         #print PRODUCT_IMAGES["PGE02"][areaid].keys()
@@ -215,6 +276,34 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,minute,cty
 
 # -----------------------------------------------------------------------
 def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,minute,ctth=None):
+    """
+    Make CTTH product images from hdf5 and save to file and send to SIR.
+    It reads the MSG CTTH product in satellite projection, maps it to
+    a cartographic area, converts it to PPS-HDF5-format model, and
+    generates images and saves results to files.
+    
+    @type covData: Coverage Instance
+    @param covData: Coverage data used when mapping
+    @type msgctth: msgCTTHData instance
+    @param msgctth: NWCSAF/MSG CTTH instance
+    @type areaid: String
+    @param areaid: Area id
+    @type satellite: String
+    @param satellite: Satellite
+    @type year: String
+    @param year: Year
+    @type month: String
+    @param month: Month (number)
+    @type day: String
+    @param day: Day of month
+    @type hour: String
+    @param hour: Hour of day
+    @type minute: String
+    @param minute: Minute of hour
+    @type ctth: CloudTop instance (optional)
+    @param ctth: PPS CTTH instance - MSG CTTH product already remapped and converted to PPS format 
+    @return: None
+    """
     import string
     
     msgwrite_log("INFO","Area id: %s"%(areaid),moduleid=MODULE_ID)
@@ -254,27 +343,10 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,minute,ctth=None
 
         this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[legend_name])
         msgwrite_log("INFO","image instance created...",moduleid=MODULE_ID)
-            
-        for tup in SIR_PRODUCTS[areaid]["PGE03"]:
-            sirname,imformat = tup
-            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
-            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-            sir_stat=0
-            try:
-                this.save(outname,FORMAT=imformat,quality=100)
-            except:
-                msgwrite_log("INFO","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-                sir_stat=-1
-                pass
-            if os.path.exists(outname):
-                os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
-            else:
-                msgwrite_log("INFO","No product to SIR for this legend: %s"%(legend_name),moduleid=MODULE_ID)
-    
+
+        # do_sir function taken from msg_rgb_remap_all_Oper.py
+        do_sir(this,"PGE03",year,month,day,hour,minute,areaid)        
+        
     # Make standard images:
     if PRODUCT_IMAGES["PGE03"].has_key(areaid):
         msgwrite_log("INFO",PRODUCT_IMAGES["PGE03"][areaid].keys(),moduleid=MODULE_ID)
@@ -312,8 +384,37 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,minute,ctth=None
 
 # -----------------------------------------------------------------------
 def doCprod01(cov,areaid,satellite,year,month,day,hour,minute):
+    """
+    Make CTTH product images from hdf5 and save to file and send to SIR.
+    It reads the MSG CTTH product in satellite projection, maps it to
+    a cartographic area, converts it to PPS-HDF5-format model, and
+    generates images and saves results to files.
+    
+    @type covData: Coverage Instance
+    @param covData: Coverage data used when mapping
+    @type msgctth: msgCTTHData instance
+    @param msgctth: NWCSAF/MSG CTTH instance
+    @type areaid: String
+    @param areaid: Area id
+    @type satellite: String
+    @param satellite: Satellite
+    @type year: String
+    @param year: Year
+    @type month: String
+    @param month: Month (number)
+    @type day: String
+    @param day: Day of month
+    @type hour: String
+    @param hour: Hour of day
+    @type minute: String
+    @param minute: Minute of hour
+    @type ctth: CloudTop instance (optional)
+    @param ctth: PPS CTTH instance - MSG CTTH product already remapped and converted to PPS format 
+    @return: None
+    """
     import string
     import msg_ctype_products
+    import tempfile,os
 
     yystr = ("%.4d"%year)[2:4]
     timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
@@ -345,55 +446,53 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,minute):
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02b" in SIR_PRODUCTS[areaid].keys() and \
            len(SIR_PRODUCTS[areaid]["PGE02b"]) > 0:
+
         for tup in SIR_PRODUCTS[areaid]["PGE02b"]:
             sirname,imformat=tup
             msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
             aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
             prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
-            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            local_outname = "%s/%s%s%s.%s"%(LOCAL_SIR_DIR,prodid,aidstr,timestamp,imformat)
+            outname = "%s/%s%s%s.%s_original"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
             if SIR_SIGNAL[areaid]["PGE02b"]:
                 sir_stat = 0
                 try:
                     if sirname in ["msg_02b",] and areaid in ["scan","euro4"] and imformat == "jpg": # FIXME! Ad, 2006-09-27
-                        img_with_ovl.save(outname,FORMAT=imformat,quality=100)
+                        img_with_ovl.save(local_outname,FORMAT=imformat,quality=100)
                     else:
-                        this.save(outname,FORMAT=imformat,quality=100)
+                        this.save(local_outname,FORMAT=imformat,quality=100)
                     #this.save(outname,FORMAT=imformat,quality=100)
                 except:
                     msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
                     sir_stat=-1
                     pass
-                if os.path.exists(outname):
-                    os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
+                # Migration to new SIR:
+                # No more invoking the sir-signal script.
+                # Adam Dybbroe, 2008-11-20
+	    	# We keep the '_original' extentions for consistency - proved
+            	# too much work for customers to adapt. Adam Dybbroe, 2008-11-26
+                fdhandle_lvl,tmpfilename = tempfile.mkstemp('.%s'%imformat,
+                                                            '%s%s%s'%(prodid,aidstr,timestamp),SIR_DIR)
+                msgwrite_log("INFO","Temporary file created: Handle level=%d, Name=%s"%(fdhandle_lvl,tmpfilename),moduleid=MODULE_ID)
+            	if os.path.exists(local_outname):
+                   shutil.copy(local_outname,tmpfilename)
+                   msgwrite_log("INFO","Temporary file available in SIR: Name=%s"%(tmpfilename),moduleid=MODULE_ID)
+                   os.rename(tmpfilename,outname)
+                   msgwrite_log("INFO","Temporary file in SIR renamed: Name=%s"%(outname),moduleid=MODULE_ID)
                 else:
-                    msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+                   os.remove(tmpfilename)
+            else:
+               msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
 
     # ==========================================================
     # New since Nov-7, 2006, Adam Dybbroe:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02bj" in SIR_PRODUCTS[areaid].keys() and \
            len(SIR_PRODUCTS[areaid]["PGE02bj"]) > 0:
-        for tup in SIR_PRODUCTS[areaid]["PGE02bj"]:
-            sirname,imformat=tup
-            msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
-            aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
-            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
-            msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
-            if SIR_SIGNAL[areaid]["PGE02bj"]:
-                sir_stat = 0
-                try:
-                    img_with_ovl.save(outname,FORMAT=imformat,quality=100)
-                except:
-                    msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
-                    sir_stat=-1
-                    pass
-                if os.path.exists(outname):
-                    os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
-                else:
-                    msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
+
+        # do_sir function taken from msg_rgb_remap_all_Oper.py
+        do_sir(img_with_ovl,"PGE02bj",year,month,day,hour,minute,areaid)        
+
     # ==========================================================
     
     # Sync the output with fileserver:
@@ -411,6 +510,7 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,minute):
 def doCprod02(cov,areaid,satellite,year,month,day,hour,minute):
     import string
     import msg_ctype_products
+    import tempfile,os
 
     yystr = ("%.4d"%year)[2:4]
     timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
@@ -442,30 +542,38 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,minute):
     # Make images to distribute via SIR for forecasters and others:
     if SIR_PRODUCTS.has_key(areaid) and "PGE02c" in SIR_PRODUCTS[areaid].keys() and \
            len(SIR_PRODUCTS[areaid]["PGE02c"]) > 0:
+
         for tup in SIR_PRODUCTS[areaid]["PGE02c"]:
             sirname,imformat=tup
             msgwrite_log("INFO","File time stamp = %s"%timestamp,moduleid=MODULE_ID)
             aidstr=string.ljust(areaid,8).replace(" ","_") # Pad with "_" up to 8 characters
-            #prodid=string.ljust(sirname,4).replace(" ","_") # Pad with "_" up to 4 characters
-            #outname = "%s/msg_%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             prodid=string.ljust(sirname,8).replace(" ","_") # Pad with "_" up to 8 characters
-            outname = "%s/%s%s%s.%s"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
+            local_outname = "%s/%s%s%s.%s"%(LOCAL_SIR_DIR,prodid,aidstr,timestamp,imformat)
+            outname = "%s/%s%s%s.%s_original"%(SIR_DIR,prodid,aidstr,timestamp,imformat)
             msgwrite_log("INFO","Image file name to SIR = %s"%outname,moduleid=MODULE_ID)
             if SIR_SIGNAL[areaid]["PGE02c"]:
                 sir_stat = 0
                 try:
                     if sirname in ["metirccj"]:
-                        img_with_ovl.save(outname,FORMAT=imformat,quality=100)
+                        img_with_ovl.save(local_outname,FORMAT=imformat,quality=100)
                     else:
-                        this.save(outname,FORMAT=imformat,quality=100)
+                        this.save(local_outname,FORMAT=imformat,quality=100)
                 except:
                     msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
                     sir_stat=-1
                     pass
-                if os.path.exists(outname):
-                    os.rename(outname,outname.split(imformat)[0]+imformat+"_original")
-                    #if sirname in ["METEIRCJ","METEIRCT","METIRCCJ"]:
-                    inform_sir2(prodid.strip('_'),areaid,sir_stat,timestamp)
+                # Migration to new SIR:
+                # No more invoking the sir-signal script.
+                # Adam Dybbroe, 2008-11-20
+	    	# We keep the '_original' extentions for consistency - proved
+            	# too much work for customers to adapt. Adam Dybbroe, 2008-11-26
+                fdhandle_lvl,tmpfilename = tempfile.mkstemp('.%s'%imformat,
+                                                            '%s%s%s'%(prodid,aidstr,timestamp),SIR_DIR)
+            	if os.path.exists(local_outname):
+                   shutil.copy(local_outname,tmpfilename)
+                   os.rename(tmpfilename,outname)
+                else:
+                   os.remove(tmpfilename)
             else:
                 msgwrite_log("INFO","No product to SIR",moduleid=MODULE_ID)
     
@@ -503,6 +611,39 @@ def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,minute)
         else:
             msgwrite_log("ERROR","Failed writing cloudtype product for Nordrad!",moduleid=MODULE_ID)
             msgwrite_log("INFO","Filename = %s"%(outfile),moduleid=MODULE_ID)
+
+    return
+
+
+# -----------------------------------------------------------------------
+def doOneArea(in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute):
+    import area
+    areaObj=area.area(areaid)
+
+    # Check for existing coverage file for the area:
+    covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
+    CoverageData = None
+    
+    if not CoverageData and not os.path.exists(covfilename):
+        msgwrite_log("INFO","Generate MSG coverage and store in file...",moduleid=MODULE_ID)
+        CoverageData = _satproj.create_coverage(areaObj,lon,lat,1)
+        writeCoverage(CoverageData,covfilename,in_aid,areaid)
+    elif not CoverageData:
+        msgwrite_log("INFO","Read the MSG coverage from file...",moduleid=MODULE_ID)
+        CoverageData,info = readCoverage(covfilename)
+
+    if msgctype:
+        doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
+        if areaid in NORDRAD_AREAS:
+            doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
+        if areaid in NWCSAF_PRODUCTS["PGE02b"] or areaid in NWCSAF_PRODUCTS["PGE02bj"]:
+            doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,minute)
+        if areaid in NWCSAF_PRODUCTS["PGE02c"]:
+            doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,minute)
+
+    if msgctth:
+        if areaid not in ["euro","eurotv","scan"]:
+            doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,minute)
 
     return
 
@@ -554,7 +695,8 @@ if __name__ == "__main__":
         #prefix="SAFNWC_MSG%.1d_CT___%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
         # Changed name-convention with version 2008!:
         prefix="SAFNWC_MSG%.1d_CT___%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
-        match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
+        #match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
+        match_str = "%s/%s*PLAX.CTTH.0.h5"%(CTYPEDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
         flist = glob.glob(match_str)
 	msgctype=None
@@ -569,7 +711,8 @@ if __name__ == "__main__":
             
         #prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
         prefix="SAFNWC_MSG%.1d_CTTH_%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
-        match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
+        #match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
+        match_str = "%s/%s*PLAX.CTTH.0.h5"%(CTTHDIR_IN,prefix)
         msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
         flist = glob.glob(match_str)
 	msgctth=None
@@ -586,34 +729,19 @@ if __name__ == "__main__":
             sec = sec + DSEC_SLOTS
             continue
 
+        runlist = []
         # Loop over areas:
         for areaid in NWCSAF_MSG_AREAS:
-            areaObj=area.area(areaid)
+            this = threadit(in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute)
+            runlist.append(this)
+            this.start()
 
-            # Check for existing coverage file for the area:
-            covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
-            CoverageData = None
-            
-            if not CoverageData and not os.path.exists(covfilename):
-                msgwrite_log("INFO","Generate MSG coverage and store in file...",moduleid=MODULE_ID)
-                CoverageData = _satproj.create_coverage(areaObj,lon,lat,1)
-                writeCoverage(CoverageData,covfilename,in_aid,areaid)
-            elif not CoverageData:
-                msgwrite_log("INFO","Read the MSG coverage from file...",moduleid=MODULE_ID)
-                CoverageData,info = readCoverage(covfilename)
+        for item in runlist:
+            item.join()
 
-            if msgctype:
-                doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
-                if areaid in NORDRAD_AREAS:
-                    doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
-                if areaid in NWCSAF_PRODUCTS["PGE02b"] or areaid in NWCSAF_PRODUCTS["PGE02bj"]:
-                    doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,minute)
-                if areaid in NWCSAF_PRODUCTS["PGE02c"]:
-                    doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,minute)
-
-            if msgctth:
-                if areaid not in ["euro","eurotv","scan"]:
-                    doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,minute)
+        # Loop over areas:
+        #for areaid in NWCSAF_MSG_AREAS:
+        #    doOneArea(in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute)
 
         sec = sec + DSEC_SLOTS
 
