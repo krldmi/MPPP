@@ -9,11 +9,17 @@ MODULE_ID = "MSG_CMASK_REMAP"
 import area
 import glob,os
 
+"""
+Provides a reader to the NWCSAF/MSG CloudMask. No remapping.
+"""
+
 # THIS MODULE ONLY PROVIDES A READER TO THE NWCSAF/MSG
 # CLOUDMASK. NO REMAPPING OR ANYTHING, YET.
 #
 # ----------------------------------------
 class msgCloudMaskData:
+    """NWCSAF/MSG Cloud Mask data layer
+    """
     def __init__(self):
         self.data = None
         self.scaling_factor=1
@@ -24,6 +30,8 @@ class msgCloudMaskData:
         self.id=""
         
 class msgCloudMask:
+    """NWCSAF/MSG Cloud Mask data structure as retrieved from HDF5 file
+    """
     def __init__(self):
         self.package=""
         self.saf=""
@@ -58,6 +66,11 @@ class msgCloudMask:
         
 # ------------------------------------------------------------------
 def read_msgCmask(filename):
+    """Reader for the NWCSAF/MSG cloudmask
+
+    @return: msgCloudMask instance
+    """
+    
     import _pyhl
     aNodeList=_pyhl.read_nodelist(filename)
     aNodeList.selectAll()
@@ -163,9 +176,12 @@ def read_msgCmask(filename):
     
     return retv
 
-
 # ------------------------------------------------------------------
 def convert_procflags2pps(data):
+    """Converting cloud mask processing flags to
+    the PPS format, in order to have consistency between
+    PPS and MSG cloud mask contents.
+    """
     import Numeric
     
     ones = Numeric.ones(data.shape,"s")
