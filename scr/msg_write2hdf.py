@@ -4,7 +4,7 @@
 #  COPYRIGHT   : SMHI
 #  PRODUCED BY : Swedish Meteorological and Hydrological Institute (SMHI)
 #                Folkborgsvaegen 1
-#                Norrköping, Sweden
+#                Norrkoping, Sweden
 #
 #  PROJECT      : 
 #  FILE         : msg_write2hdf.py
@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_write2hdf.py,v 1.2 2007/10/31 22:22:37 adybbroe Exp $
+# $Id: msg_write2hdf.py,v 1.3 2009/05/29 22:14:46 Adam.Dybbroe Exp $
 #
 # $Log: msg_write2hdf.py,v $
+# Revision 1.3  2009/05/29 22:14:46  Adam.Dybbroe
+# Removed swedish characters.
+#
 # Revision 1.2  2007/10/31 22:22:37  adybbroe
 # Using SEVIRI_CHANNELS_IN_HDF5 instead of hardcoded path.
 #
