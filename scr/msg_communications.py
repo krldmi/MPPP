@@ -5,6 +5,20 @@ FALSE = 0
 
 # --------------------------------------------------------
 def msgwrite_log(level, txt, *param,**options):
+    """
+    Write log information with time stamp.
+
+    @type level: String
+    @param level: Log information type (e.g. INFO, DEBUG,...) 
+    @type txt: String
+    @param txt: The text to be logged
+    @type param: List
+    @param param: List of optional input parameters
+    @type options: Dictionary
+    @param options: Dictionary of optional parameters
+    @keyword module_id: The module id as a string
+    @return: None
+    """
     import time,sys
 
     if options.has_key("moduleid") and options["moduleid"]!=None:
@@ -31,6 +45,18 @@ def msgwrite_log(level, txt, *param,**options):
     
 # ---------------------------------------------------------------
 def retrieve(ftp, destdir, names):
+    """
+    Retrieve data from ftp connection.
+    Goes down in every sub-directory iteratively.
+
+    @type ftp: ftp instance
+    @param ftp: ftp instance of the open ftp-connection
+    @type destdir: String
+    @param destdir: Name of directory where to download the data
+    @type names: List 
+    @param names: List of filenames to be retrieved from current directory
+    @return: None
+    """
     import os, string
     msgwrite_log("INFO","Destination: ",destdir,moduleid="MSG_FTP")
     if not os.path.exists(destdir):
@@ -68,6 +94,17 @@ def retrieve(ftp, destdir, names):
 
 # ---------------------------------------------------------------
 def putall(ftp, localdir, ftpdir, flist, time_thr, delete=TRUE):
+    """
+    Function to put data over an ftp connection.
+
+    @param ftp: ftp instance holding the ftp-connection
+    @param localdir: Directory path of local area (this side of the connection)
+    @param ftpdir: Directory path of destination area (the other side of connection)
+    @param flist: List of file names
+    @param time_thr: Threshold (sec since 1970) defining which files to consider. Files older than time_thr will not be considered
+    @param delete: Switch = TRUE or FALSE. If true all files that have not been overwritten will be cleaned.
+    @return: None
+    """
     import os, glob
     import stat
 

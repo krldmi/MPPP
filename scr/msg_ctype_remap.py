@@ -17,6 +17,8 @@ import pps_array2image # From NWCSAF/PPS - ACPG
 
 # ----------------------------------------
 class msgCloudTypeData:
+    """NWCSAF/MSG Cloud Type data layer
+    """    
     def __init__(self):
         self.data = None
         self.scaling_factor=1
@@ -27,6 +29,8 @@ class msgCloudTypeData:
         self.id=""
         
 class msgCloudType:
+    """NWCSAF/MSG Cloud Type data structure as retrieved from HDF5 file
+    """
     def __init__(self):
         self.package=""
         self.saf=""
@@ -60,6 +64,10 @@ class msgCloudType:
         
 # ------------------------------------------------------------------
 def read_msgCtype(filename):
+    """Reader for the NWCSAF/MSG cloudtype
+
+    @return: msgCloudType instance
+    """
     import _pyhl
     aNodeList=_pyhl.read_nodelist(filename)
     aNodeList.selectAll()
@@ -168,6 +176,9 @@ def read_msgCtype(filename):
 
 # ------------------------------------------------------------------
 def msg_ctype2ppsformat(msgctype,satid="Meteosat 8"):
+    """Converts the NWCSAF/MSG Cloud Type to the PPS format,
+    in order to have consistency in output format between PPS and MSG.
+    """
     import area,string
 
     retv = epshdf.CloudType()
@@ -197,6 +208,10 @@ def msg_ctype2ppsformat(msgctype,satid="Meteosat 8"):
 
 # ------------------------------------------------------------------
 def convert_procflags2pps(data):
+    """Converting cloud type processing flags to
+    the PPS format, in order to have consistency between
+    PPS and MSG cloud type contents.
+    """
     import Numeric
     
     ones = Numeric.ones(data.shape,"s")
@@ -285,6 +300,11 @@ def convert_procflags2pps(data):
 
 # ------------------------------------------------------------------
 def pps_luts():
+    """Gets the LUTs for the PPS Cloud Type data fields.
+
+    @rtype: Tuple
+    @return: Tuple with Cloud Type lut, Cloud Phase lut, Processing flags lut
+    """
     ctype_lut = ['0: Not processed', '1: Cloud free land', '2: Cloud free sea', '3: Snow/ice contaminated land', '4: Snow/ice contaminated sea', '5: Very low cumiliform cloud', '6: Very low stratiform cloud', '7: Low cumiliform cloud', '8: Low stratiform cloud', '9: Medium level cumiliform cloud', '10: Medium level stratiform cloud', '11: High and opaque cumiliform cloud', '12: High and opaque stratiform cloud', '13:Very high and opaque cumiliform cloud', '14: Very high and opaque stratiform cloud', '15: Very thin cirrus cloud', '16: Thin cirrus cloud', '17: Thick cirrus cloud', '18: Cirrus above low or medium level cloud', '19: Fractional or sub-pixel cloud', '20: Undefined']
     phase_lut = ['1: Not processed or undefined', '2: Water', '4: Ice', '8: Tb11 below 260K', '16: value not defined', '32: value not defined', '64: value not defined', '128: value not defined']
     quality_lut = ['1: Land', '2: Coast', '4: Night', '8: Twilight', '16: Sunglint', '32: High terrain', '64: Low level inversion', '128: Nwp data present', '256: Avhrr channel missing', '512: Low quality', '1024: Reclassified after spatial smoothing', '2048: Stratiform-Cumuliform Distinction performed', '4096: bit not defined', '8192: bit not defined', '16384: bit not defined', '32768: bit not defined']
@@ -293,6 +313,21 @@ def pps_luts():
 
 # ------------------------------------------------------------------
 def msg_remap(msgctype,lon,lat,areaid):
+    """
+    Remaps the NWCSAF/MSG Cloyd Type to cartographic map-projection on
+    area give by a pre-registered area-id
+
+    @type msgctype: msgCloudType instance
+    @param msgctype: NWCSAF/MSG Cloud Type instance 
+    @type lon: Array
+    @param lon: Longitude array of input Cloud Type data
+    @type lat: Array
+    @param lat: Latitude array of input Cloud Type data
+    @type areaid: String
+    @param areaid: Area id of output result
+    @rtype: msgCloudType instance
+    @return: NWCSAF/MSG Cloud Type instance
+    """
     import area    
     a=area.area(areaid)
     b = _satproj.create_coverage(a,lon,lat,1)    
@@ -335,6 +370,21 @@ def OLDmsgCtype_remap_fast(cov,msgctype,areaid,a):
 
 # ------------------------------------------------------------------
 def msgCtype_remap_fast(cov,msgctype,areaid,a):
+    """
+    Remaps the NWCSAF/MSG Cloyd Type to cartographic map-projection on
+    area give by a pre-registered area-id. Faster version of msg_remap!
+
+    @type cov: Coverage type
+    @param cov: xxx
+    @type msgctype: msgCloudType instance
+    @param msgctype: NWCSAF/MSG Cloud Type instance 
+    @type areaid: String
+    @param areaid: Area id of output result
+    @type a: area instance
+    @param a: Area instance of output area
+    @rtype: msgCloudType instance
+    @return: NWCSAF/MSG Cloud Type instance
+    """
     import string
     
     retv = msgCloudType()
