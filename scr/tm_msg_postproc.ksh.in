@@ -5,31 +5,75 @@ APPLDIR=@prefix@
 # Set some basic environment:
 . ${HOME}/.profile_msg_oper
 
+userid=`whoami`
+
 # $1: N-slots back in time from now
 
 if test -f ${MSG_PP_OPER_MODE_FILE}; then
     . ${APPLDIR}/cfg/.profile_msgpp
-    # Check that no session is already active 
-    if [ -n "`ps -edalf | grep "msg_remap_all_Oper.py" | grep -v grep`" ]; then 
-	{ echo "***msg_remap_all_Oper already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1; exit ; } 
-    fi
-    if [ -n "`ps -edalf | grep "msg_rgb_remap_all_Oper.py" | grep -v grep`" ]; then 
-	{ echo "***msg_rgb_remap_all_Oper already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_rgb_remap_all_Oper.log 2>&1; exit ; } 
-    fi
-    if [ -n "`ps -edalf | grep "msg_PutProducts2ftpserver.py" | grep -v grep`" ]; then 
-	{ echo "***msg_PutProducts2ftpserver already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msgPutProducts2ftpserver.log 2>&1; exit ; } 
-    fi
-    if [ -n "`ps -edalf | grep "msg_write2hdf.py" | grep -v grep`" ]; then 
-	{ echo "***msg_write2hdf already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_write2hdf.log 2>&1; exit ; } 
-    fi
-    # otherwise continue
 else
     echo "host `uname -n` is not the current operational node..."
     echo "...don't run NWCSAF/MSG smhi post-processing."
     exit
 fi
 
-python ${APPLDIR}/scr/msg_remap_all_Oper.py 1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1
-python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py 1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_rgb_remap_all_Oper.log 2>&1
-python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msgPutProducts2ftpserver.log 2>&1
-python ${APPLDIR}/scr/msg_write2hdf.py 1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_write2hdf.log 2>&1
+# ---> msg_remap_all_Oper.py:
+# Check that no session is already active 
+psres1=`ps -edalf | grep "msg_remap_all_Oper.py" | grep -v grep`
+ok1=1
+if [ -n "$psres" ]; then 
+    psres_user=`echo "$psres" | grep "$userid"`
+    echo "msg_remap_all_Oper.py active from somewhere..." >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1
+    echo "$psres" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1
+    if [ -n "$psres_user" ]; then
+	echo "***msg_remap_all_Oper already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1 
+	ok1=0
+    fi
+fi
+if [ "$ok1" ]; then
+    python ${APPLDIR}/scr/msg_remap_all_Oper.py 1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_remap_all_Oper.log 2>&1
+fi
+# ---------------------------
+
+# ---> msg_rgb_remap_all_Oper.py:
+# Check that no session is already active 
+psres=`ps -edalf | grep "msg_rgb_remap_all_Oper.py" | grep -v grep`
+ok2=1
+if [ -n "$psres" ]; then 
+    psres_user=`echo "$psres" | grep "$userid"`
+    echo "msg_rgb_remap_all_Oper.py active from somewhere..." >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_rgb_remap_all_Oper.log
+    if [ -n "$psres_user" ]; then
+	echo "***msg_rgb_remap_all_Oper already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_rgb_remap_all_Oper.log 2>&1
+	ok2=0
+    fi
+fi
+if [ "$ok2" ]; then
+    python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py 1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_rgb_remap_all_Oper.log 2>&1
+fi
+# ---------------------------
+
+# ---> msg_PutProducts2ftpserver.py:
+# Check that no session is already active 
+psres=`ps -edalf | grep "msg_PutProducts2ftpserver.py" | grep -v grep`
+ok3=1
+if [ -n "$psres" ]; then 
+    psres_user=`echo "$psres" | grep "$userid"`
+    echo "msg_PutProducts2ftpserver.py active from somewhere..."
+    if [ -n "$psres_user" ]; then
+	echo "***msg_PutProducts2ftpserver already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msgPutProducts2ftpserver.log 2>&1
+	ok3=0
+    fi
+fi
+if [ "$ok1" ] && [ "$ok2" ] && [ "$ok3" ]; then
+    python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msgPutProducts2ftpserver.log 2>&1
+fi
+# ---------------------------
+
+# ---> msg_write2hdf.py
+# Check that no session is already active 
+if [ -n "`ps -edalf | grep "msg_write2hdf.py" | grep -v grep`" ]; then 
+    echo "***msg_write2hdf already active, abort****" >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_write2hdf.log 2>&1
+else:
+    python ${APPLDIR}/scr/msg_write2hdf.py 1 >> /local_disk/opt/NWCSAF_MSG_PP/current/log/msg_write2hdf.log 2>&1
+fi
+# ---------------------------
