@@ -2,6 +2,11 @@ from msg_communications import *
 
 # ---------------------------------------------------------
 if __name__ == "__main__":
+    """
+    Script to handle the transfer of NWCSAF-MSG (possibly post-processed)
+    products to external ftp-site or for ingestion into Prosat
+    Is called by msg_PutProducts2ftpserver.ksh
+    """
     import ftplib
     import glob
     import time
@@ -19,7 +24,7 @@ if __name__ == "__main__":
     ftp.login(user,psw)
     home_dir=ftp.pwd()
 
-    local_dir = "/local_disk/data/Meteosat8/RGBs"
+    local_dir = "/local_disk/data/Meteosat/RGBs"
     remote_dir = "%s/TillPia/RGB"%home_dir
 
     #flist = glob.glob("%s/*scan*.png"%(local_dir))
@@ -32,7 +37,7 @@ if __name__ == "__main__":
     ftp.cwd(remote_dir)
     putall(ftp,local_dir,remote_dir,flist,time_thr,1)
 
-    local_dir = "/local_disk/data/Meteosat8/MesanX"
+    local_dir = "/local_disk/data/Meteosat/MesanX"
     #flist = glob.glob("%s/*scan*.png"%(local_dir))
     flist = glob.glob("%s/*euro4*.png"%(local_dir))
     flist = [s for s in flist if s.find("thumbnail")<0]
