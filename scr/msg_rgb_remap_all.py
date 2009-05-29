@@ -109,7 +109,7 @@ if __name__ == "__main__":
                     ext=string.replace(s," ","_")
                     ctypefile = "%s/%s_%.4d%.2d%.2d_%.2d%.2d.%s.cloudtype.hdf"%(CTYPEDIR_OUT,MetSat,year,month,day,hour,min,areaid)
                     print "Output file: ",ctypefile
-                    # Two products to vägverket and tv:
+                    # Two products to vaegverket and tv:
                     msg_ctype_products.make_ctype_prod01(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
                     msg_ctype_products.make_ctype_prod02(ch9,ctypefile,areaid,gamma=1.6,overlay=1)
     
@@ -130,7 +130,7 @@ if __name__ == "__main__":
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                     makergb_visvisir(ch1,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
 
-                # Daytime "grön snö":
+                # Daytime "gron sno":
                 if ok3 and ok2 and ok9:
                     outname = "%s/met8_%.4d%.2d%.2d%.2d%.2d_%s_rgb_greensnow"%(RGBDIR_OUT,year,month,day,hour,min,areaid)
                     makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
