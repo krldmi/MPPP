@@ -77,12 +77,12 @@ N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
 #N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
 
 # Standard and derived products:
-NWCSAF_PRODUCTS = {"PGE02":["euro4"],
-		   "PGE02b":["euro4"],
-		   "PGE02bj":["euro4","scan"],
-                   "PGE02c":["euro4","eurotv","scan","euro"],
-                   "PGE03":["euro4"]}
-#                   "PGE02c":["euro4","eurotv","scan","euro"],
+# Standard and derived products:
+NWCSAF_PRODUCTS = {"PGE02":["euro4","eurol"],
+		   "PGE02b":["euro4","eurol"],
+		   "PGE02bj":["euro4","eurol","scan"],
+                   "PGE02c":["euro4","eurol","eurotv","scan","euro"],
+                   "PGE03":["euro4","eurol"]}
 
 # ==========================================================
 # New since Nov-7, 2006, Adam Dybbroe:
