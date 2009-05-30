@@ -37,6 +37,11 @@ SYNC = "/usr/bin/rsync -crzul"
 #SYNC_EXCLUDE_TIMESLOTS = ["0000","2345","2330"]
 SYNC_EXCLUDE_TIMESLOTS = []
 
+# Parallax correction.
+# Make a list of CTTH files to search. If no parallax file is available (poor ctth quality) the
+# program will search for the climate-corrected PGEs, and ultimately for the uncorrected PGEs:
+MSG_PGE_EXTENTIONS = ["PLAX.CTTH.0.h5","PLAX.CLIM.0.h5","h5"]
+
 
 #MSG_SATELLITE = "met08"
 MSG_SATELLITE = "met09"
