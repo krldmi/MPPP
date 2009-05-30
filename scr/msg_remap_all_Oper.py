@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_remap_all_Oper.py,v 1.30 2009/05/29 23:28:23 Adam.Dybbroe Exp $
+# $Id: msg_remap_all_Oper.py,v 1.31 2009/05/30 21:47:39 Adam.Dybbroe Exp $
 #
 # $Log: msg_remap_all_Oper.py,v $
+# Revision 1.31  2009/05/30 21:47:39  Adam.Dybbroe
+# Using parameter list from config-file to search for suitable PGE output product: E.g. searching for parallax corrected first, and then ultimately if no parallax corrected files are available the original uncorrected fpge-output will be used.
+#
 # Revision 1.30  2009/05/29 23:28:23  Adam.Dybbroe
 # import shutil
 #
@@ -695,38 +698,59 @@ if __name__ == "__main__":
         year,month,day,hour,minute,dummy,dummy,jday,dummy = ttup
         slotn = hour*4+int((minute+7.5)/15)
 
-        #prefix="SAFNWC_MSG%.1d_CT___%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
-        # Changed name-convention with version 2008!:
         prefix="SAFNWC_MSG%.1d_CT___%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
         #match_str = "%s/%s*h5"%(CTYPEDIR_IN,prefix)
-        match_str = "%s/%s*PLAX.CTTH.0.h5"%(CTYPEDIR_IN,prefix)
-        msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
-        flist = glob.glob(match_str)
-	msgctype=None
-        if len(flist) > 1:
-            msgwrite_log("ERROR","More than one matching input file: N = ",len(flist),moduleid=MODULE_ID)
-        elif len(flist) == 0:
-            msgwrite_log("ERROR","No matching input file",moduleid=MODULE_ID)
+        #match_str = "%s/%s*PLAX.CTTH.0.h5"%(CTYPEDIR_IN,prefix)
+        msgctype_filename=None
+        for ext in MSG_PGE_EXTENTIONS:
+           match_str = "%s/%s*%s"%(CTYPEDIR_IN,prefix,ext)
+           msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
+           flist = glob.glob(match_str)
+           msgctype=None
+           if len(flist) > 1:
+              msgwrite_log("ERROR","More than one matching input file: N = ",len(flist),moduleid=MODULE_ID)
+           elif len(flist) == 0:
+              msgwrite_log("WARNING","No matching input file",moduleid=MODULE_ID)
+           else:
+              # File found:
+              msgwrite_log("INFO","MSG CT file found: ",flist[0],moduleid=MODULE_ID)
+              msgctype_filename = flist[0]
+              break
+
+        if msgctype_filename:
+           # Read the MSG file if not already done...
+           msgwrite_log("INFO","Read MSG CT file: ",msgctype_filename,moduleid=MODULE_ID)
+           msgctype = read_msgCtype(msgctype_filename)
         else:
-            # First read the original MSG file if not already done...
-            msgwrite_log("INFO","Read MSG CT file: ",flist[0],moduleid=MODULE_ID)
-            msgctype = read_msgCtype(flist[0])
-            
-        #prefix="SAFNWC_MSG%.1d_CTTH_%.2d%.3d_%.3d_%s"%(MSG_NUMBER,year-2000,jday,slotn,in_aid)
+           msgwrite_log("ERROR","No MSG CT input file found!",moduleid=MODULE_ID)
+
+
         prefix="SAFNWC_MSG%.1d_CTTH_%.4d%.2d%.2d%.2d%.2d_%s"%(MSG_NUMBER,year,month,day,hour,minute,in_aid)
         #match_str = "%s/%s*h5"%(CTTHDIR_IN,prefix)
-        match_str = "%s/%s*PLAX.CTTH.0.h5"%(CTTHDIR_IN,prefix)
-        msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
-        flist = glob.glob(match_str)
-	msgctth=None
-        if len(flist) > 1:
-            msgwrite_log("ERROR","More than one matching input file: N = ",len(flist),moduleid=MODULE_ID)
-        elif len(flist) == 0:
-            msgwrite_log("ERROR","No matching input file",moduleid=MODULE_ID)
+        #match_str = "%s/%s*PLAX.CTTH.0.h5"%(CTTHDIR_IN,prefix)
+        msgctth_filename=None
+        for ext in MSG_PGE_EXTENTIONS:
+           match_str = "%s/%s*%s"%(CTTHDIR_IN,prefix,ext)
+           msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
+           flist = glob.glob(match_str)
+           msgctth=None
+           if len(flist) > 1:
+              msgwrite_log("ERROR","More than one matching input file: N = ",len(flist),moduleid=MODULE_ID)
+           elif len(flist) == 0:
+              msgwrite_log("WARNING","No matching input file",moduleid=MODULE_ID)
+           else:
+              # File found:
+              msgwrite_log("INFO","MSG CTTH file found: ",flist[0],moduleid=MODULE_ID)
+              msgctth_filename = flist[0]
+              break
+
+        if msgctth_filename:
+           # Read the MSG file if not already done...
+           msgwrite_log("INFO","Read MSG CTTH file: ",msgctth_filename,moduleid=MODULE_ID)
+           msgctth = read_msgCtth(msgctth_filename)
         else:
-            # First read the original MSG file if not already done...
-            msgwrite_log("INFO","Read MSG CTTH file: ",flist[0],moduleid=MODULE_ID)
-            msgctth = read_msgCtth(flist[0])
+           msgwrite_log("ERROR","No MSG CT input file found!",moduleid=MODULE_ID)
+
 
 	if not msgctype and not msgctth:
             sec = sec + DSEC_SLOTS
