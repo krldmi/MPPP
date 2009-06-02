@@ -23,9 +23,12 @@
 #
 # CVS History:
 #
-# $Id: msg_write2hdf.py,v 1.3 2009/05/29 22:14:46 Adam.Dybbroe Exp $
+# $Id: msg_write2hdf.py,v 1.4 2009/06/02 06:36:55 Adam.Dybbroe Exp $
 #
 # $Log: msg_write2hdf.py,v $
+# Revision 1.4  2009/06/02 06:36:55  Adam.Dybbroe
+# Adding support for channel 8.
+#
 # Revision 1.3  2009/05/29 22:14:46  Adam.Dybbroe
 # Removed swedish characters.
 #
@@ -133,6 +136,7 @@ if __name__ == "__main__":
         ch5file = "%s/5_%s.BT"%(fileprfx,fname)
         ch6file = "%s/6_%s.BT"%(fileprfx,fname)
         ch7file = "%s/7_%s.BT"%(fileprfx,fname)
+        ch8file = "%s/8_%s.BT"%(fileprfx,fname)
         ch9file = "%s/9_%s.BT"%(fileprfx,fname)
         ch10file = "%s/10_%s.BT"%(fileprfx,fname)
         ch11file = "%s/11_%s.BT"%(fileprfx,fname)
@@ -193,6 +197,23 @@ if __name__ == "__main__":
             ch_raw = read_msg_lonlat(ch7file)
             ch_raw_rad = read_msg_lonlat("%s.RAD"%(string.split(ch7file,".BT")[0]))
             status = raw_channel2hdf(ch7outname,(ch_raw,ch_raw_rad),7,"BT")
+
+        ch8outname = "%s/8_%s.h5"%(fileprfx_out,fname)
+        if not os.path.exists(ch8outname):
+            # Channel 8 brighness temperatures are not provided as output from the standard MSG package
+            # as of 2009. We have added it into the C-code of MSG, for now.
+            # Adam Dybbroe, 2009-06-02
+            try:
+                ch_raw = read_msg_lonlat(ch8file)
+                ch_raw_rad = read_msg_lonlat("%s.RAD"%(string.split(ch8file,".BT")[0]))
+                data_read_ok = 1
+            except:
+                data_read_ok = 0
+            if data_read_ok:
+                status = raw_channel2hdf(ch8outname,(ch_raw,ch_raw_rad),8,"BT")
+            else:
+                msgwrite_log("ERROR","Failed reading radiances and brightness temperatures for channel 8.",moduleid=MODULE_ID)
+                msgwrite_log("ERROR","No hdf5 output for this channel.",moduleid=MODULE_ID)
 
         ch9outname = "%s/9_%s.h5"%(fileprfx_out,fname)
         if not os.path.exists(ch9outname):
