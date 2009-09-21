@@ -13,23 +13,29 @@ def setenvpath(env):
 # -----------------------------------------------------
 
 APPLDIR="@prefix@"
+MSG_DIR="@MSG_INSTALL_ROOT@"
+EXPORT_DIR="@EXPORT_DIR@"
 
-CTYPEDIR_OUT = "/local_disk/data/Meteosat/MesanX"
-CTTHDIR_OUT = "/local_disk/data/Meteosat/MesanX"
-CTYPEDIR_IN = "/opt/MSG/current/export/PGE02"
-CTTHDIR_IN = "/opt/MSG/current/export/PGE03"
-RGBDIR_OUT = "/local_disk/data/Meteosat/RGBs"
-RGBDIR_IN = "/opt/MSG/current/tmp"
+CTYPEDIR_OUT = EXPORT_DIR+"/Meteosat/MesanX"
+CTTHDIR_OUT = EXPORT_DIR+"/Meteosat/MesanX"
+CTYPEDIR_IN = MSG_DIR+"/export/PGE02"
+CTTHDIR_IN = MSG_DIR+"/export/PGE03"
+RGBDIR_OUT = EXPORT_DIR+"/Meteosat/RGBs"
+RGBDIR_IN = MSG_DIR+"/tmp"
 
 # SEVIRI channel data + lon,lat and sun-satellite angles in hdf5 for archiving:
-SEVIRI_CHANNELS_IN_HDF5 = "/data/24/saf/msg/channels"
+# Work locally -- Martin 20090918
+SEVIRI_CHANNELS_IN_HDF5 = "/local_disk/data/24/saf/msg/channels"
+#SEVIRI_CHANNELS_IN_HDF5 = "/data/24/saf/msg/channels"
 #SEVIRI_CHANNELS_IN_HDF5 = "/data/prodtest/saf/msg/24/saf/msg/channels"
 
 
 FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
 FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
-FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
+#FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
+# Work locally -- Martin 20090918
+FSERVER_SYNC = 0 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
 SYNC = "/usr/bin/rsync -crzul"
 #SYNC = "/usr/bin/rsync -crzuln"
 
@@ -69,7 +75,9 @@ AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
 # List of areas:
-NWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv","scan","euro"]
+#NWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv","scan","euro"]
+# Misses a few areas to work properly
+NWCSAF_MSG_AREAS = ["mesanX","euro4","eurol","eurotv","scan","scan2","euro"]
 NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv","scan","euro"]
 NORDRAD_AREAS = ["euro4"]
 
@@ -132,7 +140,9 @@ for aid in NWCSAF_MSG_AREAS:
         PGE03_LEGEND_NAMES[aid] = ("standard",)
 
 #SIR_DIR="/data/24/sirux/sir/data"
-SIR_DIR="/data/prodtest/sirux/sir/data"
+#SIR_DIR="/data/prodtest/sirux/sir/data"
+# Work locally -- Martin 20090918
+SIR_DIR="/local_disk/data/prodtest/sirux/sir/data"
 LOCAL_SIR_DIR="/local_disk/data/sir"
 
 

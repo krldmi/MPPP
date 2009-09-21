@@ -2,7 +2,7 @@ include ./def.mk
 
 SHELL=/bin/sh
 
-SOURCE_DIRS=scr cfg cst etc
+SOURCE_DIRS=src scr cfg cst etc
 
 all:
 	@for i in $(SOURCE_DIRS) ; \
