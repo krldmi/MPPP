@@ -607,6 +607,8 @@ HDF5_LD_PATH
 SZLIB_LD_PATH
 ZLIB_LD_PATH
 N2_INSTALL_ROOT
+EXPORT_DIR
+MSG_INSTALL_ROOT
 ACPG_INSTALL_MKF
 ACPG_INSTALL_ROOT
 target_alias
@@ -650,7 +652,8 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_acpg
-with_n2
+with_msg
+with_export_dir
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1274,7 +1277,8 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
  --with-acpg=INSTALLROOT Need to specify the root of the acpg installation to be able to configure
- --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure
+ --with-msg=INSTALLROOT Need to specify the root of the msg installation to be able to configure
+ --with-export-dir=EXPORT_DIR Specify the data export directory
 
 _ACEOF
 ac_status=$?
@@ -1728,12 +1732,12 @@ fi
 
 ACPG_INSTALL_OK=no
 ACPG_INSTALL_ROOT=
-case $witval in
+case $withval in
   no)
     ACPG_INSTALL_OK=no
     ;;
   *)
-    tm_root="`echo $withval`"
+    tm_root="`echo ${withval}`"
     if test "X" != "$tm_root"; then
       THIS_CWD=`pwd`
       cd $tm_root
@@ -1756,38 +1760,63 @@ $as_echo "$as_me: error: \"You must run configure with --with-acpg=<acpg install
 fi
 
 
-
-# Check whether --with-n2 was given.
-if test "${with_n2+set}" = set; then
-  withval=$with_n2;
+# Check whether --with-msg was given.
+if test "${with_msg+set}" = set; then
+  withval=$with_msg;
 else
   withval=no
 fi
 
 
-N2_INSTALL_OK=no
-N2_INSTALL_ROOT=
-case $witval in
+MSG_INSTALL_OK=no
+MSG_INSTALL_ROOT=
+case $withval in
   no)
-    N2_INSTALL_OK=no
+    MSG_INSTALL_OK=no
+    ;;
+  yes)
+    MSG_INSTALL_OK=no
     ;;
   *)
-    tm_root="`echo $withval`"
-    if test "X" != "$tm_root"; then
-      THIS_CWD=`pwd`
-      cd $tm_root
-      N2_INSTALL_ROOT=`pwd`
-      N2_INSTALL_OK=yes
-      cd $THIS_CWD
-    fi
+    MSG_INSTALL_ROOT="`echo ${withval}`"
+    MSG_INSTALL_OK=yes
     ;;
 esac
 
-if [ "x$N2_INSTALL_OK" != "xyes" ]; then
-  { { $as_echo "$as_me:$LINENO: error: \"You must run configure with --with-n2=<n2 install root dir>\"" >&5
-$as_echo "$as_me: error: \"You must run configure with --with-n2=<n2 install root dir>\"" >&2;}
+if [ "x$MSG_INSTALL_OK" != "xyes" ]; then
+  { { $as_echo "$as_me:$LINENO: error: \"You must run configure with --with-msg=<msg install root dir>\"" >&5
+$as_echo "$as_me: error: \"You must run configure with --with-msg=<msg install root dir>\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
+
+# Check whether --with-export_dir was given.
+if test "${with_export_dir+set}" = set; then
+  withval=$with_export_dir;
+else
+  withval=no
+fi
+
+
+EXPORT_DIR_OK=no
+EXPORT_DIR="${prefix}/share"
+case $withval in
+  no)
+    EXPORT_DIR_OK=no
+    ;;
+  yes)
+    EXPORT_DIR_OK=no
+    ;;
+  *)
+    EXPORT_DIR="`echo ${withval}`"
+    EXPORT_DIR_OK=yes
+    ;;
+esac
+
+
+
+
+
 
 
 
@@ -1836,7 +1865,9 @@ PYLIBROOT=`echo $PYLIB_SITEPACK | sed -e "s/\/site-packages//g"`
 
 
 
-ac_config_files="$ac_config_files ./scr/Makefile ./scr/msg_remap_all.ksh ./scr/msg_remap_all_Oper.ksh ./scr/tm_msg_postproc.ksh ./scr/msg_n2inject.ksh ./cfg/Makefile ./cfg/.profile_msgpp ./cfg/msgpp_config.py ./setup.env ./def.mk"
+
+
+ac_config_files="$ac_config_files ./src/Makefile ./scr/Makefile ./scr/msg_remap_all.ksh ./scr/msg_remap_all_Oper.ksh ./scr/tm_msg_postproc.ksh ./scr/msg_n2inject.ksh ./cfg/Makefile ./cfg/.profile_msgpp ./cfg/msgpp_config.py ./setup.env ./def.mk"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2446,6 +2477,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "./src/Makefile") CONFIG_FILES="$CONFIG_FILES ./src/Makefile" ;;
     "./scr/Makefile") CONFIG_FILES="$CONFIG_FILES ./scr/Makefile" ;;
     "./scr/msg_remap_all.ksh") CONFIG_FILES="$CONFIG_FILES ./scr/msg_remap_all.ksh" ;;
     "./scr/msg_remap_all_Oper.ksh") CONFIG_FILES="$CONFIG_FILES ./scr/msg_remap_all_Oper.ksh" ;;
