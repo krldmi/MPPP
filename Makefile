@@ -36,7 +36,7 @@ distclean:
 		$(MAKE) distclean; \
 		cd $$TDIR; \
 	done
-	@\rm -f def.mk
+	@\rm -f def.mk setup.env
 
 install:
 	@for i in $(SOURCE_DIRS) ; \
