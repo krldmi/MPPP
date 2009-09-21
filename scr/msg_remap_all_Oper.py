@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 # **************************************************************************
 #
 #  COPYRIGHT   : SMHI
@@ -27,7 +27,10 @@
 #
 # $Log: msg_remap_all_Oper.py,v $
 # Revision 1.31  2009/05/30 21:47:39  Adam.Dybbroe
-# Using parameter list from config-file to search for suitable PGE output product: E.g. searching for parallax corrected first, and then ultimately if no parallax corrected files are available the original uncorrected fpge-output will be used.
+# Using parameter list from config-file to search for suitable PGE
+# output product: E.g. searching for parallax corrected first, and
+# then ultimately if no parallax corrected files are available the
+# original uncorrected fpge-output will be used.
 #
 # Revision 1.30  2009/05/29 23:28:23  Adam.Dybbroe
 # import shutil
@@ -35,11 +38,13 @@
 # Revision 1.29  2009/05/29 23:06:28  Adam.Dybbroe
 # No more use of swedish letters.
 # Added threading to the code. Added doOneArea function.
-# Adapted to new SIR, using /local_disk/data/sir saving as a local repository (to be able to debug).
+# Adapted to new SIR, using /local_disk/data/sir saving as a local
+# repository (to be able to debug).
 # Documented the code.
 #
 # Revision 1.28  2008/07/08 12:22:43  adybbroe
-# Excluding certain slots, known to have bad quality under certain conditions - equinox problems.
+# Excluding certain slots, known to have bad quality under certain
+# conditions - equinox problems.
 #
 # Revision 1.27  2008/04/29 09:38:16  adybbroe
 # Adapted to new naming convention as of NWCSAF/MSG version 2008. The
@@ -84,7 +89,7 @@ from pps_array2image import get_cms_modified
 from smhi_safnwc_legends import *
 
 from msg_rgb_remap_all_Oper import do_sir
-
+from misc_utils import ensure_dir
 
 MODULE_ID = "MSG_PROD_REMAP"
 
@@ -259,8 +264,10 @@ def doCloudType(covData,msgctype,areaid,satellite,year,month,day,hour,minute,cty
                     if PGE02_LEGENDS.has_key(key):
                         this = pps_array2image.cloudtype2image(ctype.cloudtype,PGE02_LEGENDS[key])
                         size=this.size
+                        ensure_dir(imagefile)
                         this.save(imagefile)
                         this.thumbnail((size[0]/3,size[1]/3))
+                        ensure_dir(thumbnail)
                         this.save(thumbnail)
                     else:
                         msgwrite_log("ERROR","Failed generating image file",moduleid=MODULE_ID)
@@ -367,8 +374,10 @@ def doCtth(covData,msgctth,areaid,satellite,year,month,day,hour,minute,ctth=None
                     if PGE03_LEGENDS.has_key(key):
                         this,arr = pps_array2image.ctth2image(ctth,PGE03_LEGENDS[key])
                         size=this.size
+                        ensure_dir(imagefile)
                         this.save(imagefile)
                         this.thumbnail((size[0]/3,size[1]/3))
+                        ensure_dir(thumbnail)
                         this.save(thumbnail)
                     else:
                         msgwrite_log("ERROR","Failed generating image file",moduleid=MODULE_ID)
@@ -465,9 +474,11 @@ def doCprod01(cov,areaid,satellite,year,month,day,hour,minute):
                 sir_stat = 0
                 try:
                     if sirname in ["msg_02b",] and areaid in ["scan","euro4"] and imformat == "jpg": # FIXME! Ad, 2006-09-27
-                        img_with_ovl.save(local_outname,FORMAT=imformat,quality=100)
+                       ensure_dir(local_outname)
+                       img_with_ovl.save(local_outname,FORMAT=imformat,quality=100)
                     else:
-                        this.save(local_outname,FORMAT=imformat,quality=100)
+                       ensure_dir(local_outname)
+                       this.save(local_outname,FORMAT=imformat,quality=100)
                     #this.save(outname,FORMAT=imformat,quality=100)
                 except:
                     msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
@@ -561,9 +572,11 @@ def doCprod02(cov,areaid,satellite,year,month,day,hour,minute):
                 sir_stat = 0
                 try:
                     if sirname in ["metirccj"]:
-                        img_with_ovl.save(local_outname,FORMAT=imformat,quality=100)
+                       ensure_dir(local_outname)
+                       img_with_ovl.save(local_outname,FORMAT=imformat,quality=100)
                     else:
-                        this.save(local_outname,FORMAT=imformat,quality=100)
+                       ensure_dir(local_outname)
+                       this.save(local_outname,FORMAT=imformat,quality=100)
                 except:
                     msgwrite_log("ERROR","Couldn't make image of specified format: ",imformat,moduleid=MODULE_ID)
                     sir_stat=-1
@@ -664,10 +677,13 @@ if __name__ == "__main__":
         nSlots = string.atoi(sys.argv[1])
 
     import msg_rgb_remap_all_Oper
+
+    ensure_dir(SIR_DIR+"data")
     
     start_date,end_date = msg_rgb_remap_all_Oper.get_times(nSlots)
+    start_date = "200812121030"
+    end_date = "200812121045"
     msgwrite_log("INFO","Start and End times: ",start_date,end_date,moduleid=MODULE_ID)
-
     import string,time
     in_aid=MSG_AREA
     MetSat=MSG_SATELLITE

@@ -26,4 +26,5 @@ fi
 python ${APPLDIR}/scr/msg_remap_all_Oper.py $1
 python ${APPLDIR}/scr/msg_rgb_remap_all_Oper.py $1
 #python ${APPLDIR}/scr/smhiPutProducts2ftpserver.py
-python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py
+# Work locally -- Martin 20090918
+#python ${APPLDIR}/scr/msg_PutProducts2ftpserver.py

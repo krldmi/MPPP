@@ -212,18 +212,18 @@ def convert_procflags2pps(data):
     the PPS format, in order to have consistency between
     PPS and MSG cloud type contents.
     """
-    import Numeric
+    import numpy
     
-    ones = Numeric.ones(data.shape,"s")
+    ones = numpy.ones(data.shape,"h")
 
     # msg illumination bit 0,1,2 (undefined,night,twilight,day,sunglint) maps
     # to pps bits 2, 3 and 4:
     is_bit0_set = get_bit_from_flags(data,0)    
     is_bit1_set = get_bit_from_flags(data,1)    
     is_bit2_set = get_bit_from_flags(data,2)
-    illum = is_bit0_set * Numeric.left_shift(ones,0) + \
-            is_bit1_set * Numeric.left_shift(ones,1) + \
-            is_bit2_set * Numeric.left_shift(ones,2)
+    illum = is_bit0_set * numpy.left_shift(ones,0) + \
+            is_bit1_set * numpy.left_shift(ones,1) + \
+            is_bit2_set * numpy.left_shift(ones,2)
     #print Numeric.minimum.reduce(is_bit0_set.flat),Numeric.maximum.reduce(is_bit0_set.flat)
     #print Numeric.minimum.reduce(is_bit1_set.flat),Numeric.maximum.reduce(is_bit1_set.flat)
     #print Numeric.minimum.reduce(is_bit2_set.flat),Numeric.maximum.reduce(is_bit2_set.flat)
@@ -236,11 +236,11 @@ def convert_procflags2pps(data):
     # If twilight in msg then set pps twilight bit and nothing else.
     # If day in msg then unset both the pps night and twilight bits.
     # If sunglint in msg unset both the pps night and twilight bits and set the pps sunglint bit.
-    arr = Numeric.where(Numeric.equal(illum,1),Numeric.left_shift(ones,2),0)
-    arr = Numeric.where(Numeric.equal(illum,2),Numeric.left_shift(ones,3),arr)
-    arr = Numeric.where(Numeric.equal(illum,3),0,arr)
-    arr = Numeric.where(Numeric.equal(illum,4),Numeric.left_shift(ones,4),arr)
-    retv = Numeric.array(arr)
+    arr = numpy.where(numpy.equal(illum,1),numpy.left_shift(ones,2),0)
+    arr = numpy.where(numpy.equal(illum,2),numpy.left_shift(ones,3),arr)
+    arr = numpy.where(numpy.equal(illum,3),0,arr)
+    arr = numpy.where(numpy.equal(illum,4),numpy.left_shift(ones,4),arr)
+    retv = numpy.array(arr)
     del illum
     #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
@@ -248,55 +248,55 @@ def convert_procflags2pps(data):
     # msg nwp-input bit 4 (low level inversion?) maps to pps bit 6:
     is_bit3_set = get_bit_from_flags(data,3)
     is_bit4_set = get_bit_from_flags(data,4)
-    nwp = is_bit3_set * Numeric.left_shift(ones,0) + \
-          is_bit4_set * Numeric.left_shift(ones,1)
+    nwp = is_bit3_set * numpy.left_shift(ones,0) + \
+          is_bit4_set * numpy.left_shift(ones,1)
     #print Numeric.minimum.reduce(is_bit3_set.flat),Numeric.maximum.reduce(is_bit3_set.flat)
     #print Numeric.minimum.reduce(is_bit4_set.flat),Numeric.maximum.reduce(is_bit4_set.flat)
     #print "Nwp flags: min,max=",Numeric.minimum.reduce(nwp.flat),Numeric.maximum.reduce(nwp.flat)
     del is_bit3_set
     del is_bit4_set
-    arr = Numeric.where(Numeric.equal(nwp,1),Numeric.left_shift(ones,7),0)
-    arr = Numeric.where(Numeric.equal(nwp,2),Numeric.left_shift(ones,7)+Numeric.left_shift(ones,6),arr)
-    arr = Numeric.where(Numeric.equal(nwp,3),0,arr)
-    retv = Numeric.add(arr,retv)
+    arr = numpy.where(numpy.equal(nwp,1),numpy.left_shift(ones,7),0)
+    arr = numpy.where(numpy.equal(nwp,2),numpy.left_shift(ones,7)+numpy.left_shift(ones,6),arr)
+    arr = numpy.where(numpy.equal(nwp,3),0,arr)
+    retv = numpy.add(arr,retv)
     del nwp
     #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg seviri-input bits 5&6 maps to pps bit 8:
     is_bit5_set = get_bit_from_flags(data,5)
     is_bit6_set = get_bit_from_flags(data,6)
-    seviri = is_bit5_set * Numeric.left_shift(ones,0) + \
-             is_bit6_set * Numeric.left_shift(ones,1)
+    seviri = is_bit5_set * numpy.left_shift(ones,0) + \
+             is_bit6_set * numpy.left_shift(ones,1)
     #print "Seviri flags: min,max=",Numeric.minimum.reduce(seviri.flat),Numeric.maximum.reduce(seviri.flat)
     del is_bit5_set
     del is_bit6_set
-    retv = Numeric.add(retv,
-                       Numeric.where(Numeric.logical_or(Numeric.equal(seviri,2),
-                                                        Numeric.equal(seviri,3)),Numeric.left_shift(ones,8),0))
+    retv = numpy.add(retv,
+                       numpy.where(numpy.logical_or(numpy.equal(seviri,2),
+                                                        numpy.equal(seviri,3)),numpy.left_shift(ones,8),0))
     del seviri
     #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg quality bits 7&8 maps to pps bit 9&10:
     is_bit7_set = get_bit_from_flags(data,7)
     is_bit8_set = get_bit_from_flags(data,8)
-    quality = is_bit7_set * Numeric.left_shift(ones,0) + \
-              is_bit8_set * Numeric.left_shift(ones,1)
+    quality = is_bit7_set * numpy.left_shift(ones,0) + \
+              is_bit8_set * numpy.left_shift(ones,1)
     #print "Quality flags: min,max=",Numeric.minimum.reduce(quality.flat),Numeric.maximum.reduce(quality.flat)   
     del is_bit7_set
     del is_bit8_set
-    arr = Numeric.where(Numeric.equal(quality,2),Numeric.left_shift(ones,9),0)
-    arr = Numeric.where(Numeric.equal(quality,3),Numeric.left_shift(ones,10),arr)
-    retv = Numeric.add(arr,retv)
+    arr = numpy.where(numpy.equal(quality,2),numpy.left_shift(ones,9),0)
+    arr = numpy.where(numpy.equal(quality,3),numpy.left_shift(ones,10),arr)
+    retv = numpy.add(arr,retv)
     del quality
     #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
     
     # msg bit 9 (stratiform-cumuliform distinction?) maps to pps bit 11:
     is_bit9_set = get_bit_from_flags(data,9)
-    retv = Numeric.add(retv,Numeric.where(is_bit9_set,Numeric.left_shift(ones,11),0))
+    retv = numpy.add(retv,numpy.where(is_bit9_set,numpy.left_shift(ones,11),0))
     del is_bit9_set
-    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+    #print Numeric.minimum.reduce(retv.flat),Numericx.maximum.reduce(retv.flat)
     
-    return retv.astype('s')
+    return retv.astype('h')
 
 # ------------------------------------------------------------------
 def pps_luts():

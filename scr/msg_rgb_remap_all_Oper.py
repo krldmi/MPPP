@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 # **************************************************************************
 #
 #  COPYRIGHT   : SMHI
@@ -27,8 +27,9 @@
 #
 # $Log: msg_rgb_remap_all_Oper.py,v $
 # Revision 1.19  2009/05/29 22:33:28  Adam.Dybbroe
-# Change of do_sir function: Adaptations to new SIR: Using /local_disk/data/sir as a temporary storage.
-# Moving much of the main part in under the new function doOneAreaRgbs.
+# Change of do_sir function: Adaptations to new SIR: Using
+# /local_disk/data/sir as a temporary storage.  Moving much of the
+# main part in under the new function doOneAreaRgbs.
 #
 # Revision 1.18  2007/10/31 20:01:35  adybbroe
 # Added for airmass RGB generation, if channel 8 is available.
@@ -48,15 +49,24 @@
 #
 #
 
-from msg_communications import *
+# Local modules
 
+from msg_communications import *
 from msgpp_config import *
 from msg_remap_util import *
 from msg_rgb_remap import *
-#
+from misc_utils import *
+
+# PPS modules
+
 import _satproj
 import area
-import glob,os
+
+# Global modules
+
+import math
+import glob
+import os
 import shutil
 
 MODULE_ID="MSG_RGB_REMAP"
@@ -118,18 +128,24 @@ def do_sir(imIn,prodid,year,month,day,hour,minute,areaid):
 
 # ------------------------------------------------------------------
 def get_times(nSlots):
-    # Get the start and end times for the slots, where the time of the last slot
-    # is close to now, and the start slot is nSlots earlier:
-    
+    """Get the start and end times for the slots, where the time of
+     the last slot is close to now, and the start slot is nSlots
+     earlier:
+     """
     import time
+
+    dmin_slots = DSEC_SLOTS * 60
+
     now = time.time()
     gmt_time = time.gmtime(now)
     day_hh = gmt_time[3]
     hour_mm = gmt_time[4]
     time_tup = gmt_time[0],gmt_time[1],gmt_time[2],0,0,0,0,0,0
-    end_slot_sec1970 = time.mktime(time_tup) - time.timezone + ((hour_mm+8)/15) * 15 * 60 + day_hh * 3600
+    end_slot_sec1970 = time.mktime(time_tup) - time.timezone + \
+                       ((hour_mm+math.ceil(dmin_slots/2))/dmin_slots) * \
+                       dmin_slots * 60 + day_hh * 3600
     end_time = time.gmtime(end_slot_sec1970)
-    start_time = time.gmtime(end_slot_sec1970 - 60*15*nSlots)
+    start_time = time.gmtime(end_slot_sec1970 - 60 * dmin_slots * nSlots)
 
     end_date = "%.4d%.2d%.2d%.2d%.2d"%(end_time[0],end_time[1],end_time[2],end_time[3],end_time[4])
     start_date = "%.4d%.2d%.2d%.2d%.2d"%(start_time[0],start_time[1],start_time[2],start_time[3],start_time[4])
@@ -312,56 +328,81 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute,filepr
 # ------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
+    import time
+    import string
+
     if len(sys.argv) < 2:
         print "Usage: %s <n-slots back in time>"%(sys.argv[0])
         sys.exit(-9)
     else:
-        import string
         nSlots = string.atoi(sys.argv[1])
 
     start_date,end_date = get_times(nSlots)
-    msgwrite_log("INFO","Start and End times: ",start_date,end_date,moduleid=MODULE_ID)
-
-    import os,time
-    in_aid=MSG_AREA
-    MetSat=MSG_SATELLITE
     
+    # Just for testing -- Martin, 20090918
+    #start_date = "200812121030"
+    #end_date = "200812121045"
+
+
+    msgwrite_log("INFO","Start and End times: ",
+                 start_date,end_date,
+                 moduleid=MODULE_ID)
+
+    input_area_id=MSG_AREA
+    MetSat=MSG_SATELLITE
+    file_prefix=RGBDIR_IN
+        
     lon = read_msg_lonlat(LONFILE)
     lat = read_msg_lonlat(LATFILE)
 
-    year=string.atoi(start_date[0:4])
-    month=string.atoi(start_date[4:6])
-    day=string.atoi(start_date[6:8])
-    hour=string.atoi(start_date[8:10])
-    minute=string.atoi(start_date[10:12])    
-    time_start = time.mktime((year,month,day,hour,minute,0,0,0,0)) - time.timezone
-
-    year=string.atoi(end_date[0:4])
-    month=string.atoi(end_date[4:6])
-    day=string.atoi(end_date[6:8])
-    hour=string.atoi(end_date[8:10])
-    minute=string.atoi(end_date[10:12])    
-    time_end = time.mktime((year,month,day,hour,minute,0,0,0,0)) - time.timezone
+    time_start = UTC_time_from_string(start_date)
+    time_end = UTC_time_from_string(end_date)
 
     if time_start > time_end:
-        msgwrite_log("INFO","Start time is later than end time!",moduleid=MODULE_ID)
+        msgwrite_log("INFO","Start time is later than end time!",
+                     moduleid=MODULE_ID)
+
+
         
     sec = time_start
-    while (sec < time_end + 1):
-        ttup = time.gmtime(sec)
-        year,month,day,hour,minute,dummy,dummy,dummy,dummy = ttup
-        fileprfx=RGBDIR_IN
-        fname = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"%(year,month,day,hour,minute,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
-        msgwrite_log("INFO","%s/*_%s*"%(fileprfx,fname),moduleid=MODULE_ID)
+    while (sec <= time_end):
+        current_time = time.gmtime(sec)
+
+        filename = "%.4d%.2d%.2d%.2d%.2d_C%.4d_%.4d_S%.4d_%.4d"\
+                   %(current_time.tm_year,
+                     current_time.tm_mon,
+                     current_time.tm_mday,
+                     current_time.tm_hour,
+                     current_time.tm_min,
+                     MSG_AREA_CENTER[0],
+                     MSG_AREA_CENTER[1],
+                     ROWS,
+                     COLS)
+
+        msgwrite_log("INFO","%s/*_%s*"%(file_prefix,filename),moduleid=MODULE_ID)
         
-        fl = glob.glob("%s/*_%s*"%(fileprfx,fname))
-        if len(fl) == 0:
-            msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute),moduleid=MODULE_ID)
+        file_list = glob.glob("%s/*_%s*"%(file_prefix,filename))
+        if len(file_list) == 0:
+            msgwrite_log("INFO","No files for this time: %.4d%.2d%.2d%.2d%.2d"
+                         %(current_time.tm_year,
+                           current_time.tm_mon,
+                           current_time.tm_mday,
+                           current_time.tm_hour,
+                           current_time.tm_min),
+                         moduleid=MODULE_ID)
             sec = sec + DSEC_SLOTS
             continue
         
         # Loop over areas:
-        for areaid in NWCSAF_MSG_AREAS:
-            doOneAreaRgbs(in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute,fileprfx,fname)
+        for output_area_id in NWCSAF_MSG_AREAS:
+            doOneAreaRgbs(input_area_id,output_area_id,
+                          lon,lat,
+                          MetSat,
+                          current_time.tm_year,
+                           current_time.tm_mon,
+                           current_time.tm_mday,
+                           current_time.tm_hour,
+                           current_time.tm_min,
+                          file_prefix,filename)
 
         sec = sec + DSEC_SLOTS

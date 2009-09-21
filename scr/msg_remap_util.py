@@ -106,21 +106,21 @@ def readCoverage(filename):
     colidx=c.data()
     
     retv = SatProjCov()
-    retv.coverage = coverage.astype('1')
-    retv.rowidx = rowidx.astype('s')
-    retv.colidx = colidx.astype('s')
+    retv.coverage = coverage.astype('b')
+    retv.rowidx = rowidx.astype('h')
+    retv.colidx = colidx.astype('h')
 
     return retv,info
 
 # ------------------------------------------------------------------
 def read_msg_lonlat(geofile):
-    import Numeric
+    import numpy
     
     fd = open(geofile,"r")
     s = fd.read()
     fd.close()
-    retv = Numeric.fromstring(s,"f")
-    retv = Numeric.reshape(retv,(ROWS,COLS))
+    retv = numpy.fromstring(s,"f")
+    retv = numpy.reshape(retv,(ROWS,COLS))
     del s
     return retv
 
