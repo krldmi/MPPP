@@ -681,8 +681,11 @@ if __name__ == "__main__":
     ensure_dir(SIR_DIR+"data")
     
     start_date,end_date = msg_rgb_remap_all_Oper.get_times(nSlots)
-    start_date = "200812121030"
-    end_date = "200812121045"
+
+    # Work locally, test data -- Martin, 20090921
+    start_date = "200909210945"
+    end_date = "200909211000"
+
     msgwrite_log("INFO","Start and End times: ",start_date,end_date,moduleid=MODULE_ID)
     import string,time
     in_aid=MSG_AREA

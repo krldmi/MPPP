@@ -340,8 +340,8 @@ if __name__ == "__main__":
     start_date,end_date = get_times(nSlots)
     
     # Just for testing -- Martin, 20090918
-    #start_date = "200812121030"
-    #end_date = "200812121045"
+    start_date = "200909210945"
+    end_date = "200909211000"
 
 
     msgwrite_log("INFO","Start and End times: ",
