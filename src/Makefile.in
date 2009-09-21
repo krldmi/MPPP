@@ -46,6 +46,9 @@ $(MOD_TARGET):  $(MOD_OBJECTS) $(LIB_TARGET)
 clean:
 	rm -f *~ *.o *.so
 
+distclean: clean
+	rm Makefile
+
 install: all
 	$(top_srcdir)/mkinstalldirs $(BIN_DIR)
 	$(top_srcdir)/mkinstalldirs $(LIB_DIR)
