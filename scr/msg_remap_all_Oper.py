@@ -73,7 +73,6 @@
 #
 from msgpp_config import *
 
-import _satproj
 import epshdf
 import area
 import glob,os,shutil
@@ -90,6 +89,7 @@ from smhi_safnwc_legends import *
 
 from msg_rgb_remap_all_Oper import do_sir
 from misc_utils import ensure_dir
+from msg_coverage import get_coverage
 
 MODULE_ID = "MSG_PROD_REMAP"
 
@@ -636,33 +636,21 @@ def doNordradCtype(covData,msgctype,areaid,satellite,year,month,day,hour,minute)
 
 # -----------------------------------------------------------------------
 def doOneArea(in_aid,areaid,lon,lat,MetSat,year,month,day,hour,minute):
-    import area
-    areaObj=area.area(areaid)
 
-    # Check for existing coverage file for the area:
-    covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
-    CoverageData = None
+    coverage_data = get_coverage(in_aid, areaid, lon, lat)
     
-    if not CoverageData and not os.path.exists(covfilename):
-        msgwrite_log("INFO","Generate MSG coverage and store in file...",moduleid=MODULE_ID)
-        CoverageData = _satproj.create_coverage(areaObj,lon,lat,1)
-        writeCoverage(CoverageData,covfilename,in_aid,areaid)
-    elif not CoverageData:
-        msgwrite_log("INFO","Read the MSG coverage from file...",moduleid=MODULE_ID)
-        CoverageData,info = readCoverage(covfilename)
-
     if msgctype:
-        doCloudType(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
+        doCloudType(coverage_data,msgctype,areaid,MetSat,year,month,day,hour,minute)
         if areaid in NORDRAD_AREAS:
-            doNordradCtype(CoverageData,msgctype,areaid,MetSat,year,month,day,hour,minute)
+            doNordradCtype(coverage_data,msgctype,areaid,MetSat,year,month,day,hour,minute)
         if areaid in NWCSAF_PRODUCTS["PGE02b"] or areaid in NWCSAF_PRODUCTS["PGE02bj"]:
-            doCprod01(CoverageData,areaid,MetSat,year,month,day,hour,minute)
+            doCprod01(coverage_data,areaid,MetSat,year,month,day,hour,minute)
         if areaid in NWCSAF_PRODUCTS["PGE02c"]:
-            doCprod02(CoverageData,areaid,MetSat,year,month,day,hour,minute)
+            doCprod02(coverage_data,areaid,MetSat,year,month,day,hour,minute)
 
     if msgctth:
         if areaid not in ["euro","eurotv","scan"]:
-            doCtth(CoverageData,msgctth,areaid,MetSat,year,month,day,hour,minute)
+            doCtth(coverage_data,msgctth,areaid,MetSat,year,month,day,hour,minute)
 
     return
 

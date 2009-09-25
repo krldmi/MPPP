@@ -7,34 +7,32 @@
 
 /*
  *
- * MSG_read_channel
+ * MSG_read_channels
  *
  * Uses the MSG library to read channels from METEOSAT (Seviri
  * instrument).
  *
  * The user should provide a date, region and seviri struct in MSG
- * formats, and a channel.
+ * formats, and a channel bitmask describing the required channels.
  *
  */
 
-int
-MSG_read_channel(YYYYMMDDhhmm sev_date,
-		 Psing_region region, 
-		 Seviri_struct *seviri,
-		 int channel)
-{
-  int i,j;
-  Band_mask bands;
 
-  for(j=0;j<NUM_BANDS;j++)
-    bands[j]=FALSE;
-  bands[channel]=TRUE;
-  
+int
+MSG_read_channels(YYYYMMDDhhmm sev_date,
+		  Psing_region region, 
+		  Seviri_struct *seviri,
+		  Band_mask bands,
+		  int with_radiance)
+{
+  int i;
+  int channel;
+
    /*
    **   Initialise 
    */   
 
-   if(channel==HRVIS)
+   if(bands[HRVIS])
      {
        if (SevHRVInit(sev_date,region,seviri)!=OK)
 	 {
@@ -56,10 +54,11 @@ MSG_read_channel(YYYYMMDDhhmm sev_date,
    /*
    **   Read
    */
-   if(channel == (HRVIS))
+   if(bands[HRVIS])
      {
        if ((i=SevReadHRV(region, seviri)) > (WARNING))
 	 {
+	   error(0,0,"SevReadHRV failed");
 	   SevFree(*seviri);
 	   return EXIT_FAILURE;
 	 }
@@ -68,6 +67,7 @@ MSG_read_channel(YYYYMMDDhhmm sev_date,
      {
        if ((i=SevRead(region, seviri,bands)) > (WARNING))
 	 {
+	   error(0,0,"SevRead failed");
 	   SevFree(*seviri);
 	   return EXIT_FAILURE;
 	 }
@@ -77,245 +77,53 @@ MSG_read_channel(YYYYMMDDhhmm sev_date,
    **   Convert into reflectances, radiances and bt
    */
 
-
-   if(channel==HRVIS || channel==VIS06 || 
-      channel==VIS08 || channel==IR16 ||
-      channel==IR39 || channel==WV62 ||
-      channel==WV73 || channel==IR87 || 
-      channel==IR97 || channel==IR108 ||
-      channel==IR120 || channel==IR134)
-     SevCalibrate(seviri,channel);
-
-   if(channel==HRVIS || channel==VIS06 || 
-      channel==VIS08 || channel==IR16)
-     SevCalRefl(seviri,channel);
-
-   if(channel==IR39 || channel==WV62 ||
-      channel==WV73 || channel==IR87 ||
-      channel==IR97 || channel==IR108 ||
-      channel==IR120 || channel==IR134)
-     SevConvert(seviri,channel);
+   for(channel = 0; channel < NUM_BANDS; channel++)
+     {
+       if(bands[channel])
+	 {
+	   if(with_radiance)
+	     SevCalibrate(seviri,channel);
+	   
+	   if(channel==HRVIS || channel==VIS06 || 
+	      channel==VIS08 || channel==IR16)
+	     SevCalRefl(seviri,channel);
+	   else
+	     SevConvert(seviri,channel);
+	 }
+     }
 
    return EXIT_SUCCESS;
 }
 
-
 /*
  *
- * HL_add_string_attribute
+ * MSG_read_channel
  *
- * Uses HLHDF library to write a string attribute to a hdf5 file.
- * 
- */
-
-int 
-HL_add_string_attribute(HL_NodeList* aList,char* attribute, char* value)
-{
-  HL_Node* aNode=NULL;
-  int status;
-  
-  status=HLNodeList_addNode(aList, (aNode = HLNode_newAttribute(attribute)));
-
-  if(status != 1)
-    {
-      HLNodeList_free(aList);
-      exit(FAILURE);
-    }
-  
-  status=HLNode_setScalarValue(aNode,strlen(value),(unsigned char*)value,"string",-1);
-  
-  if(status != 1)
-    {
-      HLNodeList_free(aList);
-      exit(FAILURE);
-    }
-  
-  return EXIT_SUCCESS;
-}
-
-
-/*
+ * Uses the MSG library to read a channel from METEOSAT (Seviri
+ * instrument).
  *
- * save_valid_data_mask
+ * The user should provide a date, region and seviri struct in MSG
+ * formats, and a channel.
  *
- * Stores a boolean mask discriminating invalid measurements in an
- * HDF5 file.
- * 
- */
-
-
-int
-save_valid_data_mask(HL_NodeList* aList, char * nodename,Float_32** msg_data, int nb_lines, int nb_cols)
-{
-  HL_Node* aNode=NULL;
-  hsize_t dims[2];
-  char nodestring[256];
-  unsigned char *data;
-  int i,j;
-  
-  if (msg_data == NULL) 
-    {
-      fprintf(stdout,"No %s to save for this channel... skipping\n",nodename);
-      fflush(stdout);
-      return EXIT_SUCCESS;
-    } 
-  else 
-    {
-      sprintf(nodestring,"/%s",nodename);
-      HLNodeList_addNode(aList,(aNode = HLNode_newDataset(nodestring)));
-                  
-      if(!(data=calloc(nb_lines*nb_cols,sizeof(Float_32))))
-	{
-	  HLNodeList_free(aList);
-	  error(0,0,"Could not allocate memory.\n");
-	  return EXIT_FAILURE;
-	}
-
-    for(i=0; i<nb_lines; i++)
-      {
-	for (j=0; j<nb_cols; j++)
-	  {
-	    if(msg_data[i][j]==SEVIRI_MISSING_VALUE)
-	      data[i*nb_cols+j]=0;
-	    else
-	      data[i*nb_cols+j]=1;
-	  }
-      }
-    
-    dims[0]=nb_lines;
-    dims[1]=nb_cols;
-    HLNode_setArrayValue(aNode,sizeof(unsigned char),2,dims,(unsigned char*)data,"uchar",-1);
-    
-    return EXIT_SUCCESS;
-  }
-
-}
-
-
-/*
- *
- * save_data_as_image
- *
- * Stores data as an image in an HDF5 file.
- * 
  */
 
 int
-save_data_as_image(HL_NodeList* aList, char * nodename,Float_32** msg_data, int nb_lines, int nb_cols)
+MSG_read_channel(YYYYMMDDhhmm sev_date,
+		 Psing_region region, 
+		 Seviri_struct *seviri,
+		 int channel,
+		 int with_radiance)
 {
-  HL_Node* aNode=NULL;
-  hsize_t dims[2];
-  char nodestring[256];
-  Float_32 zero=0.0;
-  Float_32 *data;
-  Float_32 max=0.0;
-  Float_32 minmaxrange[2];
-  hsize_t minmaxdim[1]={2};
-  int i,j;
+  Band_mask bands;
+  int j = 0;
   
-  if (msg_data == NULL) 
-    {
-      fprintf(stdout,"No %s to save for this channel... skipping\n",nodename);
-      fflush(stdout);
-      return EXIT_SUCCESS;
-    } 
-  else 
-    {
-      sprintf(nodestring,"/%s",nodename);
-      HLNodeList_addNode(aList,(aNode = HLNode_newDataset(nodestring)));
-      
-      if(!(data=(Float_32 *)malloc(nb_lines*nb_cols*sizeof(Float_32))))
-	{
-	  HLNodeList_free(aList);
-	  error(0,0,"Could not allocate memory.\n");
-	  return EXIT_FAILURE;
-	}
-      
-      for(i=0; i<nb_lines; i++)
-	{
-	  for (j=0; j<nb_cols; j++)
-	    {
-	      data[i*nb_cols+j]=msg_data[i][j];
-	      if(max<msg_data[i][j])
-		max=msg_data[i][j];
-	    }
-	}
-      
-      dims[0]=nb_lines;
-      dims[1]=nb_cols;
-      HLNode_setArrayValue(aNode,sizeof(Float_32),2,dims,(unsigned char*)data,"float",-1);
-      
-      sprintf(nodestring,"/%s/CLASS",nodename);
-      HL_add_string_attribute(aList, nodestring, "IMAGE");
-      
-      sprintf(nodestring,"/%s/IMAGE_VERSION",nodename);
-      HL_add_string_attribute(aList, nodestring, "1.2");
-      
-      sprintf(nodestring,"/%s/IMAGE_SUBCLASS",nodename);
-      HL_add_string_attribute(aList, nodestring, "IMAGE_GRAYSCALE");
-      
-      sprintf(nodestring,"/%s/IMAGE_WHITE_IS_ZERO",nodename);
-      HLNodeList_addNode(aList,(aNode = HLNode_newAttribute(nodestring)));
-      HLNode_setScalarValue(aNode, sizeof(Float_32),(unsigned char*)&zero,"uchar",-1);
-      
-      minmaxrange[0]=0.0;
-      minmaxrange[1]=max*2+1;
-      sprintf(nodestring,"/%s/IMAGE_MINMAXRANGE",nodename);
-      HLNodeList_addNode(aList,(aNode = HLNode_newAttribute(nodestring)));
-      HLNode_setArrayValue(aNode, sizeof(Float_32),1,minmaxdim,(unsigned char*)minmaxrange,"float",-1);
-      
-      return EXIT_SUCCESS;
-
-    } 
+  for(j = 0; j < NUM_BANDS; j++)
+    bands[j]=FALSE;
+  bands[channel]=TRUE;
+  
+  return MSG_read_channels(sev_date, region, seviri, bands, with_radiance);
 }
 
-
-/*
- *
- * save2h5
- *
- * Saves a MSG channel to hdf5 format.
- * 
- */
-
-int
-save2h5(Psing_region region,Seviri_struct *seviri,char* time_slot,int channel)
-{
-  HL_NodeList* aList=NULL;
-  HL_Compression compression;
-  char filename[256];
-
-  /* Initialize the HL-HDF library */
-  HL_init();  
-
-  /* Activate debugging */
-  HL_setDebugMode(2); 
-
-  if(!(aList = HLNodeList_new())) {
-    error(0,0,"Failed to allocate HL nodelist");
-    goto fail;
-  }
-
-  save_valid_data_mask(aList,"MASK",SevBand(*seviri,channel,RAD),region.nb_lines,region.nb_cols);
-
-  save_data_as_image(aList,"RAD",SevBand(*seviri,channel,RAD),region.nb_lines,region.nb_cols);
-  save_data_as_image(aList,"REFL",SevBand(*seviri,channel,REFL),region.nb_lines,region.nb_cols);
-  save_data_as_image(aList,"BT",SevBand(*seviri,channel,BT),region.nb_lines,region.nb_cols);
-
-  sprintf(filename,"%s_%02d.h5",time_slot,channel);
-  HLNodeList_setFileName(aList, filename);
-  
-  HLCompression_init(&compression, CT_ZLIB);
-  compression.level = 6;
-  HLNodeList_write(aList,NULL,&compression);
-
-  HLNodeList_free(aList);
-  return EXIT_SUCCESS; 
- fail:
-  HLNodeList_free(aList);
-  return EXIT_FAILURE;
-
-}
 
 /*
  *
@@ -362,6 +170,109 @@ allocate_uchar_array(int lines, int cols)
 }
 
 /*
+ *
+ * allocate_3D_float_array
+ *
+ * Allocates memory for a 3D array of floats.
+ * 
+ */
+
+float ***
+allocate_3D_float_array(int lines, int cols)
+{
+  float *** out;
+  int i = 0;
+  int j = 0;
+
+  out = (float***)malloc(sizeof(float**)*(NUM_BANDS-1));
+  for(j = 0; j < NUM_BANDS - 1; j++)
+    {
+        out[j] = (float**)malloc(sizeof(float*)*lines);
+	
+	for(i = 0; i < lines; i++)
+	  {
+	    out[j][i] = (float*)malloc(sizeof(float)*cols);
+	  }
+    }
+  return out;
+}
+
+/*
+ *
+ * allocate_3D_uchar_array
+ *
+ * Allocates memory for a 3D array of unsigned chars.
+ * 
+ */
+
+unsigned char ***
+allocate_3D_uchar_array(int lines, int cols)
+{
+  unsigned char *** out;
+  int i = 0;
+  int j = 0;
+
+  out = (unsigned char***)malloc(sizeof(unsigned char**)*(NUM_BANDS-1));
+  for(j = 0; j < NUM_BANDS - 1; j++)
+    {
+      out[j] = (unsigned char**)malloc(sizeof(unsigned char*)*lines);
+      for(i = 0; i < lines; i++)
+	{
+	  out[j][i] = (unsigned char*)malloc(sizeof(unsigned char)*cols);
+	}
+    }
+  return out;
+}
+
+void
+free_2D_float_array(float ** array, int lines)
+{
+  int i = 0;
+  for(i = 0; i < lines; i++)
+    free(array[i]);
+  free(array);
+}
+
+void
+free_2D_uchar_array(unsigned char ** array, int lines)
+{
+  int i = 0;
+  for(i = 0; i < lines; i++)
+    free(array[i]);
+  free(array);
+}
+
+void
+free_3D_float_array(float *** array, int lines)
+{
+  int i = 0;
+  int j = 0;
+
+  for(j = 0; j < NUM_BANDS - 1; j++)
+    {
+      for(i = 0; i < lines; i++)
+	free(array[j][i]);
+      free(array[j]);
+    }
+  free(array);
+}
+
+void
+free_3D_uchar_array(unsigned char *** array, int lines)
+{
+  int i = 0;
+  int j = 0;
+
+  for(j = 0; j < NUM_BANDS - 1; j++)
+    {
+      for(i = 0; i < lines; i++)
+	free(array[j][i]);
+      free(array[j]);
+    }
+  free(array);
+}
+
+/*
  * copy_and_cast
  *
  * Copies and casts a array from MSG’s Float_32 to regular floats.
@@ -398,7 +309,29 @@ make_mask(Float_32 ** in, unsigned char ** out, int lines, int cols)
   for(i=0; i<lines; i++)
     for(j=0; j<cols; j++)
       {
-	out[i][j] = (in[i][j] != SEVIRI_MISSING_VALUE);
+	out[i][j] = (in[i][j] == SEVIRI_MISSING_VALUE);
+      }
+  
+  
+}
+
+/*
+ * make_blank_mask
+ *
+ * Creates a boolean mask discriminating an entire channel.
+ * 
+ */
+
+void
+make_blank_mask(unsigned char ** out, int lines, int cols)
+{
+  int i = 0;
+  int j = 0;
+
+  for(i=0; i<lines; i++)
+    for(j=0; j<cols; j++)
+      {
+	out[i][j] = FALSE;
       }
   
   
@@ -445,6 +378,59 @@ channel_number(char * channel_string)
 
   return channel;
 
+}
+
+/*
+ * channel_name_string
+ *
+ * Sets a channel name (string) from its number.
+ * 
+ */
+
+void
+channel_name_string(int channel, char * channel_string)
+{
+  if(channel == VIS06)
+    sprintf(channel_string,"VIS06");
+  if(channel == VIS08)
+    sprintf(channel_string,"VIS08");
+  if(channel == IR16)
+    sprintf(channel_string,"IR16");
+  if(channel == IR39)
+    sprintf(channel_string,"IR39");
+  if(channel == WV62)
+    sprintf(channel_string,"WV62");
+  if(channel == WV73)
+    sprintf(channel_string,"WV73");
+  if(channel == IR87)
+    sprintf(channel_string,"IR87");
+  if(channel == IR97)
+    sprintf(channel_string,"IR97");
+  if(channel == IR108)
+    sprintf(channel_string,"IR108");
+  if(channel == IR120)
+    sprintf(channel_string,"IR120");
+  if(channel == IR134)
+    sprintf(channel_string,"IR134");
+  if(channel == HRVIS)
+    sprintf(channel_string,"HRVIS");
+
+}
+
+/*
+ *
+ * missing_value
+ *
+ * Gets the fill value for missing data. 
+ * 
+ */
+
+
+
+float
+missing_value()
+{
+  return (float)SEVIRI_MISSING_VALUE;
 }
 
 /*
@@ -496,14 +482,14 @@ get_channel_dims(char * region_file, char * channel_string, int * dims)
  *
  * Gets a channel from MSG data. It fills in the radiance "rad" and
  * the other array of values "ref_or_bt", which is reflectance or
- * brightness temperature depending on the channel. "is_ref" tells if
- * it is reflectance or not. "mask" is an array of booleans for the
- * validity of the values (typically false in space).
+ * brightness temperature depending on the channel. "mask" is an array
+ * of booleans for the validity of the values (typically false in
+ * space).
  * 
  */
 
-void
-get_channel(char* c_time_slot, char* region_file, char* channel_string, float** rad, float** ref_or_bt, int * is_ref, unsigned char ** mask)
+int
+get_channel(char* c_time_slot, char* region_file, char* channel_string, float** rad, float** ref_or_bt, unsigned char ** mask)
 {
   Psing_region region;
   Seviri_struct seviri;
@@ -517,7 +503,6 @@ get_channel(char* c_time_slot, char* region_file, char* channel_string, float** 
   channel = channel_number(channel_string);
   if(channel==-1)
     {
-      SevFree(seviri);
       error(0,0,"Invalid channel.");
       exit(EXIT_FAILURE);
     }
@@ -528,7 +513,6 @@ get_channel(char* c_time_slot, char* region_file, char* channel_string, float** 
     {
       if (SetRegion(&region,region_file,HRV) > WARNING ) 
 	{
-	  SevFree(seviri);
 	  error(0,0,"Could not initialize HR region...");
 	  exit(EXIT_FAILURE);
 	}
@@ -537,79 +521,187 @@ get_channel(char* c_time_slot, char* region_file, char* channel_string, float** 
     {
       if (SetRegion(&region,region_file,VIS_IR) > WARNING ) 
 	{
-	  SevFree(seviri);
 	  error(0,0,"Could not initialize region...");
 	  exit(EXIT_FAILURE);
 	}
     }
+  if(rad != NULL)
+    MSG_read_channel(time_slot,region,&seviri,channel,TRUE);
+  else
+    MSG_read_channel(time_slot,region,&seviri,channel,FALSE);
 
-  MSG_read_channel(time_slot,region,&seviri,channel);
   if(CheckSevBand(&seviri)!=pow(2,channel))
     {
       SevFree(seviri);
-      error(0,0,"Unable to read channel");
-      exit(EXIT_FAILURE);
+      fprintf(stderr, 
+	      "Unable to read channel %s for %s at %s\n", 
+	      channel_string, 
+	      region_file, 
+	      c_time_slot);
+      return EXIT_FAILURE;
     }
-  copy_and_cast(SevBand(seviri,channel,RAD),rad,region.nb_lines,region.nb_cols);
+
+  if(rad != NULL)
+    copy_and_cast(SevBand(seviri,channel,RAD),rad,region.nb_lines,region.nb_cols);
   if(SevBand(seviri,channel,REFL)!=NULL)
     {
       copy_and_cast(SevBand(seviri,channel,REFL),ref_or_bt,region.nb_lines,region.nb_cols);
-      *is_ref = 1;
+      make_mask(SevBand(seviri,channel,REFL),mask,region.nb_lines,region.nb_cols);
     }
   else
     {
       copy_and_cast(SevBand(seviri,channel,BT),ref_or_bt,region.nb_lines,region.nb_cols);
-      *is_ref = 0;
+      make_mask(SevBand(seviri,channel,BT),mask,region.nb_lines,region.nb_cols);
     }
-  make_mask(SevBand(seviri,channel,RAD),mask,region.nb_lines,region.nb_cols);
+  
   SevFree(seviri);
+  return EXIT_SUCCESS;
 }
 
 
-void
-print_usage(char *prog_name)
-{
-  fprintf(stderr,"Usage: %s YYYYMMDDhhmm region_conf_file channel\nchannel should be one of HRVIS, VIS06, VIS08, IR16, IR39, WV62, WV73, IR87, IR97, IR108, IR120, IR134, or 1 to 12.\n",prog_name);
-  fflush(stderr);
-}
-
+/*
+ * get_all_channels
+ *
+ * Gets all non HR channels from MSG data. It fills in the radiance
+ * "rad" and the other array of values "ref_or_bt", which is
+ * reflectance or brightness temperature depending on the
+ * channel. "mask" is an array of booleans for the validity of the
+ * values (typically false in space).
+ * 
+ */
 
 int
-main(int argc, char* argv[])
+get_all_channels(char* c_time_slot, char* region_file, float*** rad, float*** ref_or_bt, unsigned char *** mask)
 {
+  Band_mask bands;
   Psing_region region;
   Seviri_struct seviri;
 
   YYYYMMDDhhmm time_slot;
-  char* region_file;
-  char* channel_string;
   int channel;
+  int channel_id;
+  int band_check;
+  int band_res;
+  char channel_string[10];
 
-  if (argc!=4) 
-    {
-      print_usage(argv[0]);
-      exit(FAILURE);
-    }
-
+  for(channel = 0; channel < NUM_BANDS; channel++)
+    bands[channel]=TRUE;
+  bands[HRVIS]=FALSE;
+  
+  band_check = pow(2,NUM_BANDS) - 1 - pow(2,HRVIS);
 
   /* Parse options */
-  strcpy(time_slot,argv[1]);
+  strcpy(time_slot,c_time_slot);
 
-  region_file = (char *)malloc((strlen(argv[2])+1)*sizeof(char));
-  strcpy(region_file,argv[2]);
-
-  channel_string = (char *)malloc((strlen(argv[3])+1)*sizeof(char));
-  strcpy(channel_string,argv[3]);
+  /* Initialize regions */
   
+  if (SetRegion(&region,region_file,VIS_IR) > WARNING ) 
+    {
+      error(0,0,"Could not initialize region...");
+      exit(EXIT_FAILURE);
+    }
+  
+  if(rad != NULL)
+    MSG_read_channels(time_slot,region,&seviri,bands,TRUE);
+  else
+    MSG_read_channels(time_slot,region,&seviri,bands,FALSE);
+  band_res = CheckSevBand(&seviri) ^ band_check;
+  
+  for(channel = 0; channel < NUM_BANDS - 1; channel++)
+    {
+      switch(channel)
+	{
+	case 0:
+	  channel_id = VIS06;
+	  break;
+	case 1:
+	  channel_id = VIS08;
+	  break;
+	case 2:
+	  channel_id = IR16;
+	  break;
+	case 3:
+	  channel_id = IR39;
+	  break;
+	case 4:
+	  channel_id = WV62;
+	  break;
+	case 5:
+	  channel_id = WV73;
+	  break;
+	case 6:
+	  channel_id = IR87;
+	  break;
+	case 7:
+	  channel_id = IR97;
+	  break;
+	case 8:
+	  channel_id = IR108;
+	  break;
+	case 9:
+	  channel_id = IR120;
+	  break;
+	case 10:
+	  channel_id = IR134;
+	  break;
+	}
+
+
+      if(band_res & (int)(pow(2,channel)))
+	{
+	  channel_name_string(channel,channel_string);
+	  fprintf(stderr,
+		  "Unable to read channel %s for %s at %s\n",
+		  channel_string,
+		  region_file,
+		  c_time_slot);
+	  make_blank_mask(mask[channel],region.nb_lines,region.nb_cols);
+	}
+      else
+	{
+	  if(rad != NULL)
+	    copy_and_cast(SevBand(seviri,channel_id,RAD),rad[channel],region.nb_lines,region.nb_cols);
+	  if(SevBand(seviri,channel_id,REFL)!=NULL)
+	    {
+	      copy_and_cast(SevBand(seviri,channel_id,REFL),ref_or_bt[channel],region.nb_lines,region.nb_cols);
+	      make_mask(SevBand(seviri,channel_id,REFL),mask[channel],region.nb_lines,region.nb_cols);
+	    }
+	  else
+	    {
+	      copy_and_cast(SevBand(seviri,channel_id,BT),ref_or_bt[channel],region.nb_lines,region.nb_cols);
+	      make_mask(SevBand(seviri,channel_id,BT),mask[channel],region.nb_lines,region.nb_cols);
+	    }
+	}
+    }
+  SevFree(seviri);
+
+  return NUM_BANDS - 1;
+}
+
+/*
+ *
+ * lat_lon_from_region
+ *
+ */
+
+void
+lat_lon_from_region(char * region_file, char * channel_string, float ** lat, float ** lon)
+{
+
+  Float_32 ** MSG_lat;
+  Float_32 ** MSG_lon;
+  
+  Psing_region region;
+
+  int channel;
+
   channel = channel_number(channel_string);
   if(channel==-1)
     {
-      SevFree(seviri);
       error(0,0,"Invalid channel.");
       exit(EXIT_FAILURE);
     }
 
-  /* Initialize regions */
   if(channel==HRVIS)
     {
       if (SetRegion(&region,region_file,HRV) > WARNING ) 
@@ -617,6 +709,7 @@ main(int argc, char* argv[])
 	  error(0,0,"Could not initialize HR region...");
 	  exit(EXIT_FAILURE);
 	}
+      GetLatLon(region, HRVIS, &MSG_lat, &MSG_lon);
     }
   else
     {
@@ -625,17 +718,12 @@ main(int argc, char* argv[])
 	  error(0,0,"Could not initialize region...");
 	  exit(EXIT_FAILURE);
 	}
+      GetLatLon(region, VIS_IR, &MSG_lat, &MSG_lon);
     }
 
-  MSG_read_channel(time_slot,region,&seviri,channel);
-  if(CheckSevBand(&seviri)==pow(2,channel))
-    save2h5(region,&seviri,time_slot,channel);
-  SevFree(seviri);
-  if(CheckSevBand(&seviri)!=pow(2,channel))
-    {
-      error(0,0,"Unable to read channel");
-      exit(EXIT_FAILURE);
-    }
+  copy_and_cast(MSG_lat, lat, region.nb_lines, region.nb_cols);
+  copy_and_cast(MSG_lon, lon, region.nb_lines, region.nb_cols);
 
-  return EXIT_SUCCESS;
+  FreeLatLon(region, MSG_lat, MSG_lon);
+
 }

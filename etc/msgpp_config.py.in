@@ -153,7 +153,7 @@ PGE03_SIR_NAMES={"standard":"msg_03a"}
 RGB_IMAGE = {}
 for aid in NWCSAF_MSG_AREAS:
     RGB_IMAGE[aid] = {"ir9":0,"watervapour_low":0,"watervapour_high":0,
-                      "overview":0,"cloudtop":0,"nightfog":0,
+                      "overview":0,"hr_overview":0,"cloudtop":0,"nightfog":0,
                       "fog":0,"convection":0,"greensnow":0
 		      }
 
@@ -230,6 +230,7 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
 			 "watervapour_low":[("msg_ir6","tif"),],
 			 "watervapour_high":[("msg_ir5","tif"),],
 			 "overview":[("msg_ovw","tif"),("msg_ovwp","png"),],
+                         "hr_overview":[("msg_hrw","tif"),("msg_hrwp","png"),],
 			 "cloudtop":[("msg_clt","tif"),("msg_cltp","png"),],
 			 "nightfog":[("msg_nfog","tif"),("msg_nfop","png"),],
 			 "fog":[("msg_fog","tif"),("msg_fogp","png"),],
@@ -239,7 +240,7 @@ for aid in NWCSAF_MSG_AREAS_SIRPROD:
 
     SIR_SIGNAL[aid] = {"PGE02":1,"PGE03":1,"PGE02b":1,"PGE02c":1,
 		       "ir9":1,"watervapour_low":1,"watervapour_high":1,
-		       "overview":1,"cloudtop":1,"nightfog":1,
+		       "overview":1,"hr_overview":1,"cloudtop":1,"nightfog":1,
 		       "fog":1,"convection":1,"greensnow":1
 		      }
 

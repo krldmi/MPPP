@@ -76,10 +76,10 @@ case $withval in
     ;;
 esac
 
-
+dnl This seems to be uneeded - 20090925, Martin
 
 dnl AC_ARG_WITH(n2,[ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure],
-dnl 	,withval=no)
+dnl 	,withval=yes)
 
 dnl N2_INSTALL_OK=no
 dnl N2_INSTALL_ROOT=
@@ -95,11 +95,12 @@ dnl       cd $tm_root
 dnl       N2_INSTALL_ROOT=`pwd`
 dnl       N2_INSTALL_OK=yes
 dnl       cd $THIS_CWD
+dnl       AC_SUBST(N2_INSTALL_ROOT)
 dnl     fi
 dnl     ;;
 dnl esac
 
-dnl if [[ "x$N2_INSTALL_OK" != "xyes" ]]; then
+dnl if [[ "x$withval" == "xyes" ]]; then
 dnl   AC_MSG_ERROR("You must run configure with --with-n2=<n2 install root dir>")
 dnl fi
 
@@ -144,13 +145,12 @@ AC_SUBST(ACPG_INSTALL_ROOT)
 AC_SUBST(ACPG_INSTALL_MKF)
 AC_SUBST(MSG_INSTALL_ROOT)
 AC_SUBST(EXPORT_DIR)
-AC_SUBST(N2_INSTALL_ROOT)
 AC_SUBST(ZLIB_LD_PATH)
 AC_SUBST(SZLIB_LD_PATH)
 AC_SUBST(HDF5_LD_PATH)
 AC_SUBST(HLHDF_ROOTDIR)
 AC_SUBST(PYLIBROOT)
 
-AC_CONFIG_FILES([./src/Makefile ./scr/Makefile ./scr/msg_remap_all.ksh ./scr/msg_remap_all_Oper.ksh ./scr/tm_msg_postproc.ksh ./scr/msg_n2inject.ksh ./cfg/Makefile ./cfg/.profile_msgpp ./cfg/msgpp_config.py ./setup.env ./def.mk])
+AC_CONFIG_FILES([./src/Makefile ./scr/Makefile ./scr/msg_remap_all.ksh ./scr/msg_remap_all_Oper.ksh ./scr/tm_msg_postproc.ksh ./scr/msg_n2inject.ksh ./etc/Makefile ./etc/.profile_msgpp ./etc/msgpp_config.py ./setup.env ./def.mk])
 AC_OUTPUT()
 
