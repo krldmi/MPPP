@@ -4,6 +4,9 @@ SHELL=/bin/sh
 
 SOURCE_DIRS=init.d
 
+INSTALL_FILES=.profile_msgpp \
+	msgpp_config.py
+
 all:
 	@for i in $(SOURCE_DIRS) ; \
 	do \
@@ -15,7 +18,7 @@ all:
 	done;
 
 clean:
-	@\rm -f *~ core
+	@\rm -f core *.pyc *~
 	@for i in $(SOURCE_DIRS) ; \
 	do \
 		echo "--------Cleaning directory $$i----------"; \
@@ -26,8 +29,9 @@ clean:
 	done;
 
 distclean:
-	@\rm -f *~ core config.* a.out
-	@\rm -f setup.env
+	@\rm -f core *.pyc *~
+	@\rm -f Makefile
+	@\rm -f .profile_msgpp msgpp_config.py
 	@for i in $(SOURCE_DIRS) ; \
 	do \
 		echo "-----Distcleaning directory $$i-------"; \
@@ -36,14 +40,31 @@ distclean:
 		$(MAKE) distclean; \
 		cd $$TDIR; \
 	done
-	@\rm -f def.mk
 
 install:
+	@for i in $(INSTALL_FILES) ; \
+	do \
+		$(HLHDF_INSTALL_BIN) -f -o -m644 -C $$i @prefix@/etc/$$i; \
+	done
 	@for i in $(SOURCE_DIRS) ; \
 	do \
 		echo "--------Installing from directory $$i-------"; \
 		TDIR=`pwd`; \
 		cd $$i; \
 		$(MAKE) install; \
+		cd $$TDIR; \
+	done
+
+uninstall:
+	@for i in $(INSTALL_FILES) ; \
+	do \
+		rm -f @prefix@/etc/$$i; \
+	done
+	@for i in $(SOURCE_DIRS) ; \
+	do \
+		echo "--------Uninstalling from directory $$i-------"; \
+		TDIR=`pwd`; \
+		cd $$i; \
+		$(MAKE) uninstall; \
 		cd $$TDIR; \
 	done

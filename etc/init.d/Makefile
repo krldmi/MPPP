@@ -15,3 +15,9 @@ install:
 	do \
 		$(HLHDF_INSTALL_BIN) -f -o -m755 -C $$i $(MSGPP_INSTALL_PATH)/etc/init.d/$$i; \
 	done
+
+uninstall:
+	@for i in $(INSTALL_FILES) ; \
+	do \
+		rm -f $(MSGPP_INSTALL_PATH)/etc/init.d/$$i; \
+	done

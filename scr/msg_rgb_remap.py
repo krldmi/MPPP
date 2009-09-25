@@ -711,6 +711,123 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     return imcopy
 
 # ------------------------------------------------------------------
+def makergb_hrovw(vis1,vis2,ch9,ch12,outprfx,**options):
+    """
+    Make HR Overview RGB image composite from SEVIRI channels.
+    """
+    import sm_display_util
+    import numpy,Image
+    nodata=0
+    missingdata = 0
+    delta_max = 1.0
+    
+    if options.has_key("gamma"):
+        gamma_red,gamma_green,gamma_blue=options["gamma"]
+    else:
+        gamma_red = 1.0
+        gamma_green = 1.0
+        gamma_blue = 1.0
+
+    not_missing_data = numpy.greater(ch9,0.0).astype('B')
+    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
+
+    #red = vis1
+    #green = vis2
+    blue = numpy.where(not_missing_data,-ch9,nodata)
+
+    # Use PPS library function to check range in SEVIRI vis/nir channels.
+    # The PPS function was made for avhrr data, but works more general.
+    # Adam Dybbroe, 2007-10-31
+    import pps_imagelib
+    seviri_ch = SeviriChObj()
+    seviri_ch.data = vis1
+    seviri_ch.gain = 1.0
+    seviri_ch.intercept = 0.0
+    red,min_red,max_red = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
+
+    seviri_ch.data = vis2
+    green,min_green,max_green = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
+
+    #min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
+    #                  numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
+    #min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
+    #                      numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
+    min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
+                        numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
+
+    if options.has_key("rgbrange"):
+        range_red = options["rgbrange"][0]
+        range_green = options["rgbrange"][1]
+        range_blue = options["rgbrange"][2]
+        min_red,max_red = range_red[0],range_red[1]
+        min_green,max_green = range_green[0],range_green[1]
+        min_blue,max_blue = range_blue[0],range_blue[1]
+
+    msgwrite_log("INFO","R: min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","G: min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
+
+    rgb=[None,None,None]
+    if (max_red - min_red) > delta_max:
+        newred = (red-min_red) * 255.0/(max_red-min_red)
+        rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
+    else:
+        rgb[0] = red
+
+    if (max_green - min_green) > delta_max:
+        newgreen = (green-min_green) * 255.0/(max_green-min_green)
+        rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
+    else:
+        rgb[1] = green
+
+    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
+    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
+
+    # Gamma correction:
+    rgb[0]=numpy.array(numpy.round(gamma_corr(gamma_red,rgb[0]) * not_missing_data),numpy.uint8)
+    rgb[2]=numpy.array(numpy.round(gamma_corr(gamma_blue,rgb[2]) * not_missing_data),numpy.uint8)
+    rgb[1]=numpy.array(numpy.round(gamma_corr(gamma_green,rgb[1]) * not_missing_data),numpy.uint8)
+
+    Y =  16.0 + 1.0/256.0 * (65.738 * rgb[0] + 129.057 * rgb[1] + 25.064 * rgb[2])
+
+    vmin = numpy.amin(Y[numpy.where(not_missing_data)])
+    vmax = numpy.amax(Y[numpy.where(not_missing_data)])
+
+    red=Image.fromarray(rgb[0], "L")
+    green=Image.fromarray(rgb[1], "L")
+    blue=Image.fromarray(rgb[2], "L")
+    
+    that=Image.merge("RGB",(red,green,blue))
+
+    Y = ch12
+
+    Ymax = numpy.amax(Y[Y>0])
+    Ymin = numpy.amin(Y[Y>0])
+
+    normY = (Y-Ymin)*255.0/(Ymax-Ymin)
+    gammaY = gamma_corr(1.8,normY[Y>0])
+    normY[Y>0] = gammaY
+    normY[Y<=0] = nodata
+
+    v = that.convert('YCbCr').split()
+
+    coeff = (vmax - vmin) * 1.0
+
+    Y = numpy.array(numpy.round(normY),numpy.uint8)
+    hrv = Image.fromarray(Y, "L")
+
+    that = Image.merge('YCbCr',(hrv,v[1].resize(hrv.size),v[2].resize(hrv.size))).convert('RGB')
+    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+
+    imcopy = that.copy()
+    that.thumbnail((imsize[0]/2,imsize[1]/2))
+    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    
+    return imcopy
+
+# ------------------------------------------------------------------
 def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
     """
     Make Red snow RGB image composite from SEVIRI channels.
@@ -1000,6 +1117,18 @@ def get_ch_projected(ch_file,cov):
     ch_proj = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,ch_raw,missingdata)
 
     return ch_proj,1
+
+def project_array(coverage, a):
+    import _satproj
+
+    if (a is None):
+        return None
+
+    return _satproj.project(coverage.coverage,
+                            coverage.rowidx,
+                            coverage.colidx,
+                            a.filled(),
+                            int(a.fill_value))
 
 # ------------------------------------------------------------------
 # CO2 correction of the MSG 3.9 um channel:

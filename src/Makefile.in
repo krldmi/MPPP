@@ -1,5 +1,7 @@
-HLHDF_INC_DIR = /local_disk/usr/src/hlhdf-v0.7.7/hlhdf
-HLHDF_LIB_DIR = /local_disk/usr/src/hlhdf-v0.7.7/hlhdf
+include @top_srcdir@/def.mk
+
+#HLHDF_INC_DIR = /local_disk/usr/src/hlhdf-v0.7.7/hlhdf
+#HLHDF_LIB_DIR = /local_disk/usr/src/hlhdf-v0.7.7/hlhdf
 
 NWCLIB_INC_DIR = @MSG_INSTALL_ROOT@/include/NWCLIB
 NWCLIB_LIB_DIR = @MSG_INSTALL_ROOT@/bin
@@ -14,7 +16,7 @@ LIB_DIR = $(INSTALL_DIR)/lib
 PY_LIB_DIR = $(INSTALL_DIR)/lib/python2.5
 
 
-CFLAGS = -Wall -O3 -I/usr/include -I$(HLHDF_INC_DIR) -I$(NWCLIB_INC_DIR) -I/usr/include/python2.5 -I$(NUMPY_INC_DIR)
+CFLAGS = -Wall -g3 -I/usr/include -I$(HLHDF_INC_DIR) -I$(NWCLIB_INC_DIR) -I/usr/include/python2.5 -I$(NUMPY_INC_DIR)
 LFLAGS = -L/usr/lib64 -L$(HLHDF_LIB_DIR) -L$(NWCLIB_LIB_DIR)
 LIBS = -Xlinker -Bstatic -lnwclib -lmsg -Xlinker -Bdynamic -lhlhdf -lm -lhdf5
 
@@ -55,10 +57,12 @@ install: all
 	$(top_srcdir)/mkinstalldirs $(PY_LIB_DIR)
 	$(top_srcdir)/mkinstalldirs $(INC_DIR)
 	$(INSTALL) $(MOD_TARGET) $(PY_LIB_DIR)/
+	$(INSTALL) msg_data.py $(PY_LIB_DIR)/
 	$(INSTALL) $(LIB_TARGET) $(LIB_DIR)/
 	$(INSTALL) $(LIB_HEADER) $(INC_DIR)/
 
 uninstall:
 	rm $(PY_LIB_DIR)/$(MOD_TARGET)
+	rm $(PY_LIB_DIR)/msg_data.py
 	rm $(LIB_DIR)/$(LIB_TARGET)
 	rm $(INC_DIR)/$(LIB_HEADER)
