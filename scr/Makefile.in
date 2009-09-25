@@ -11,7 +11,10 @@ INSTALL_FILES=msg_remap_all.py msg_remap_all_Oper.py \
 	      msg_ctype_products.py msg_ctype_prod01.py \
 	      msg_communications.py msg_ctype2radar.py \
 	      msg_write2hdf.py \
-	      msg_cmask_remap.py
+	      msg_cmask_remap.py \
+	      misc_utils.py \
+	      msg_coverage.py \
+	      msg_image_manipulation.py
 
 BIN_INSTALL_FILES=msg_remap_all.ksh msg_remap_all_Oper.ksh msg_rgb_remap_all_Oper.ksh \
 	tm_msg_postproc.ksh msg_PutProducts2ftpserver.ksh msg_n2inject.ksh

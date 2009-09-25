@@ -64,6 +64,7 @@ from msg_communications import *
 from msgpp_config import *
 from msg_remap_util import *
 from misc_utils import ensure_dir
+from msg_image_manipulation import gamma_corr
 
 MODULE_ID = "MSG_RGB_REMAP"
 
@@ -81,34 +82,6 @@ class SeviriChObj:
 
 
 # ------------------------------------------------------------------
-def gamma_corr(g,arr):
-    """
-    Applies gamma correction to an array, which is assumed to be in
-    the range 0 to 256.
-
-    @type g: float scalar
-    @param g: The gamma correction factor 
-    @type arr: numpy array
-    @param arr: Array with values assumed to be in the range 0 to 256.
-    @rtype: numpy array
-    @return: One-byte (uchar) array after gamma correction
-    """
-    import numpy
-
-    # Assume array to be between 0 and 255: Put the array between 0 and 1:
-    arr = numpy.where(numpy.equal(arr,0),0.0001,arr/255.0)
-    
-    retv=numpy.exp(1./g*numpy.log(arr))
-    maxarr= numpy.maximum.reduce(retv.flat)
-    minarr= numpy.minimum.reduce(retv.flat)
-    msgwrite_log("INFO","minarr,maxarr = ",minarr,maxarr,moduleid=MODULE_ID)
-    if maxarr-minarr > 0.001:
-        retv = (255*(retv-minarr)/(maxarr-minarr)).astype('B')
-    else:
-        msgwrite_log("WARNING","maxarr-minarr <=0.001",maxarr-minarr,moduleid=MODULE_ID)
-        retv = numpy.zeros(retv.shape,'B')
-    
-    return retv
 
 # ------------------------------------------------------------------
 # Doing either a gamma correction or a linear contrast stretch:
@@ -1119,6 +1092,8 @@ def get_ch_projected(ch_file,cov):
     return ch_proj,1
 
 def project_array(coverage, a):
+    """Project the array *a* given the *coverage*
+    """
     import _satproj
 
     if (a is None):
