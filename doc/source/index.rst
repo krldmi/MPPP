@@ -55,3 +55,17 @@ MSG_rgb_remap
    :members:
    :undoc-members:
 
+MSG_rgb_remap_all_Oper
+======================
+
+.. automodule:: msg_rgb_remap_all_Oper
+   :members:
+   :undoc-members:
+
+MSG_remap_all_Oper
+======================
+
+.. automodule:: msg_remap_all_Oper
+   :members:
+   :undoc-members:
+
