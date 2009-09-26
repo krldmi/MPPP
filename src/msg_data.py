@@ -1,4 +1,9 @@
+"""This module acts as an interface to the MSG software package. In
+particular, it allows the retrieval of data from raw Seviri data.
+"""
+
 import os
+import msgpp_config
 
 os.environ['SAFNWC'] = os.environ['HOME']+"/usr/src/msg"
 os.environ['SAFNWC_BIN'] = os.environ['SAFNWC']+"/bin"
@@ -14,6 +19,9 @@ import py_msg
 import area
 
 class MSGSeviriChannels:
+    """This class defines a container to Seviri data. It holds 12
+    slots for the 12 Seviri channels.
+    """
     def __init__(self, time_slot, area_id, hr = True,rad = True):
         area_filename = "safnwc_" + area_id + ".cfg"
         self.time_slot = time_slot

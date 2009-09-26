@@ -1092,7 +1092,7 @@ def get_ch_projected(ch_file,cov):
     return ch_proj,1
 
 def project_array(coverage, a):
-    """Project the array *a* given the *coverage*
+    """Project the masked array *a* given the *coverage*
     """
     import _satproj
 

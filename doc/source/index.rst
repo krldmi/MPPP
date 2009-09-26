@@ -63,9 +63,44 @@ MSG_rgb_remap_all_Oper
    :undoc-members:
 
 MSG_remap_all_Oper
-======================
+==================
 
 .. automodule:: msg_remap_all_Oper
+   :members:
+   :undoc-members:
+
+MSG_communications
+==================
+
+.. automodule:: msg_communications
+   :members:
+   :undoc-members:
+
+MSG_ctype_remap
+===============
+
+.. automodule:: msg_ctype_remap
+   :members:
+   :undoc-members:
+
+MSG_ctth_remap
+==============
+
+.. automodule:: msg_ctth_remap
+   :members:
+   :undoc-members:
+
+MSG_remap_util
+==============
+
+.. automodule:: msg_remap_util
+   :members:
+   :undoc-members:
+
+misc_utils
+==========
+
+.. automodule:: misc_utils
    :members:
    :undoc-members:
 
