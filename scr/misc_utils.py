@@ -12,3 +12,6 @@ def ensure_dir(f):
     d = os.path.dirname(f)
     if not os.path.isdir(d):
         os.makedirs(d)
+
+def extrema(a):
+    return a.min(),a.max()

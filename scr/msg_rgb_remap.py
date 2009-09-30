@@ -60,10 +60,14 @@
 #
 # *************************************************************************
 #
+import numpy
+
 from msg_communications import *
 from msgpp_config import *
 from msg_remap_util import *
+import misc_utils
 from misc_utils import ensure_dir
+import msg_image_manipulation
 from msg_image_manipulation import gamma_corr
 
 MODULE_ID = "MSG_RGB_REMAP"
@@ -102,8 +106,6 @@ def get_bw_array(ch,**options):
     @rtype: numpy array
     @return: 8-bit scaled and stretched image data layer
     """
-    import numpy
-    import pps_imagelib # From PPS/ACPG
     
     if options.has_key("missingdata"):
         missingdata = options["missingdata"]
@@ -132,28 +134,19 @@ def get_bw_array(ch,**options):
         inverse = 0
         
     not_missing_data = numpy.greater(ch,0.0).astype('B')
-    #not_missing_data = numpy.logical_and(numpy.not_equal(ch,missingdata),
-    #                                       numpy.not_equal(ch,nodata)).astype('b')
-    #not_missing_data = numpy.logical_and(numpy.not_equal(ch,NODATA),
-    #                                       numpy.not_equal(ch,MISSINGDATA)).astype('b')
-    #if inverse:
-    #    ch=-ch
     
     if options.has_key("bwrange"):
         ch_range = options["bwrange"]
         min_ch,max_ch = ch_range[0],ch_range[1]
-        #if inverse:
-        #    tmp = max_ch
-        #    max_ch = -min_ch
-        #    min_ch = -tmp
     else:
-        min_ch,max_ch = numpy.minimum.reduce(numpy.where(not_missing_data.flat,ch.flat,99999)),\
-                        numpy.maximum.reduce(numpy.where(not_missing_data.flat,ch.flat,-99999))
+        min_ch,max_ch = ch.min(), ch.max()
         
     msgwrite_log("INFO","min & max: ",min_ch,max_ch,moduleid=MODULE_ID)
 
     newch = (ch-min_ch) * 255.0/(max_ch-min_ch)
-    layer8bit = numpy.where(numpy.greater(newch,255),255,numpy.where(numpy.less(newch,0),0,newch))
+    layer8bit = numpy.where(newch < 0, 0, newch)
+    layer8bit = numpy.where(newch > 255, 255, newch)
+
     if gamma:
         # Gamma correction:
         msgwrite_log("INFO","Do gamma correction: gamma = %f"%gamma,moduleid=MODULE_ID)
@@ -161,19 +154,18 @@ def get_bw_array(ch,**options):
     elif stretch=="linear":
         # Linear contrast stretch:
         msgwrite_log("INFO","Do a linear contrast stretch: ",moduleid=MODULE_ID)
-        #layer = pps_imagelib.stretch_linear(newch,0,0,cutoffs) * not_missing_data
-        layer8bit = pps_imagelib.stretch_linear(ch,nodata,missingdata,cutoffs)
+        layer8bit = msg_image_manipulation.stretch_linear(ch,cutoffs)
     elif stretch == "histogram":
         msgwrite_log("INFO","Do a histogram equalized contrast stretch: ",moduleid=MODULE_ID)
-        layer8bit = pps_imagelib.stretch_hist_equalize(newch,0,0)
+        layer8bit = msg_image_manipulation.stretch_hist_equalize(newch)
     elif stretch == "crude-linear":
         msgwrite_log("INFO","Crude linear contrast stretch done!",moduleid=MODULE_ID)
         
     if inverse:
         msgwrite_log("INFO","Invert the data! ",moduleid=MODULE_ID)
-        layer8bit = ((255-layer8bit) * not_missing_data).astype('B')
+        layer8bit = (255-layer8bit).astype(numpy.uint8)
     else:
-        layer8bit=(layer8bit * not_missing_data).astype('B')
+        layer8bit=layer8bit.astype(numpy.uint8)
     
     return layer8bit
 
@@ -194,34 +186,36 @@ def make_bw(ch,outprfx,**options):
     @return: 8-bit scaled and stretched image data layer
     """
     import Image
+    nodata = 0
+#     if options.has_key("stretch"):
+#         stretch=options["stretch"]
+#     else:
+#         stretch=None
+#     gamma = None
+#     if not stretch:
+#         if options.has_key("gamma"):
+#             gamma=options["gamma"]
 
-    if options.has_key("stretch"):
-        stretch=options["stretch"]
-    else:
-        stretch=None
-    gamma = None
-    if not stretch:
-        if options.has_key("gamma"):
-            gamma=options["gamma"]
+#     if options.has_key("inverse"):
+#         inverse=options["inverse"]
+#     else:
+#         inverse = 0
 
-    if options.has_key("inverse"):
-        inverse=options["inverse"]
-    else:
-        inverse = 0
+#     if options.has_key("bwrange"):
+#         if gamma:
+#             layer = get_bw_array(ch,gamma=gamma,inverse=inverse,bwrange=options["bwrange"])
+#         else:
+#             layer = get_bw_array(ch,inverse=inverse,bwrange=options["bwrange"])
+#     else:
+#         if gamma:
+#             layer = get_bw_array(ch,gamma=gamma,inverse=inverse)
+#         else:
+#             layer = get_bw_array(ch,inverse=inverse,stretch=stretch)
 
-    if options.has_key("bwrange"):
-        if gamma:
-            layer = get_bw_array(ch,gamma=gamma,inverse=inverse,bwrange=options["bwrange"])
-        else:
-            layer = get_bw_array(ch,inverse=inverse,bwrange=options["bwrange"])
-    else:
-        if gamma:
-            layer = get_bw_array(ch,gamma=gamma,inverse=inverse)
-        else:
-            layer = get_bw_array(ch,inverse=inverse,stretch=stretch)
+    layer = get_bw_array(ch,**options)
             
     imsize = ch.shape[1],ch.shape[0]
-    that=Image.fromstring("P", imsize, layer.tostring())    
+    that=Image.fromarray(layer.filled(nodata).astype(numpy.uint8))    
     ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
     that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
     imcopy = that.copy()
@@ -230,6 +224,89 @@ def make_bw(ch,outprfx,**options):
     that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
+
+
+
+def makergb_template(rgb,outprfx,**options):
+
+    import numpy
+    import Image
+
+    nodata = 0
+
+    if options.has_key("gamma"):
+        gamma_red,gamma_green,gamma_blue=options["gamma"]
+    else:
+        gamma_red = 1.0
+        gamma_green = 1.0
+        gamma_blue = 1.0
+
+    red = rgb[0]
+    green = rgb[1]
+    blue = rgb[2]
+
+    if options.has_key("rgbrange"):
+        range_red = options["rgbrange"][0]
+        range_green = options["rgbrange"][1]
+        range_blue = options["rgbrange"][2]
+        min_red,max_red = range_red[0],range_red[1]
+        min_green,max_green = range_green[0],range_green[1]
+        min_blue,max_blue = range_blue[0],range_blue[1]
+    else:
+        min_red,max_red = misc_utils.extrema(red)
+        min_green,max_green = misc_utils.extrema(green)
+        min_blue,max_blue = misc_utils.extrema(blue)
+
+
+    rgb=[None,None,None]
+
+    if (options.has_key("stretch") and options["stretch"] == "linear"):
+        rgb[0] = msg_image_manipulation.stretch_linear(red)
+        rgb[1] = msg_image_manipulation.stretch_linear(green)
+        rgb[2] = msg_image_manipulation.stretch_linear(blue)
+    elif (options.has_key("stretch") and options["stretch"] == "histogram"):
+        rgb[0] = msg_image_manipulation.stretch_hist_equalize(red)
+        rgb[1] = msg_image_manipulation.stretch_hist_equalize(green)
+        rgb[2] = msg_image_manipulation.stretch_hist_equalize(blue)
+    else:
+        rgb[0] = msg_image_manipulation.crude_stretch(red,255,min_red,max_red)
+        rgb[1] = msg_image_manipulation.crude_stretch(green,255,min_green,max_green)
+        rgb[2] = msg_image_manipulation.crude_stretch(blue,255,min_blue,max_blue)
+
+                
+                                
+
+    # Gamma correction:
+#     rgb[0]=gamma_corr(gamma_red,rgb[0])
+#     rgb[1]=gamma_corr(gamma_green,rgb[1])
+#     rgb[2]=gamma_corr(gamma_blue,rgb[2])
+    
+#     red=Image.fromarray(rgb[0].filled(nodata))
+#     green=Image.fromarray(rgb[1].filled(nodata))
+#     blue=Image.fromarray(rgb[2].filled(nodata))
+
+    rgb[0]=gamma_corr(gamma_red,rgb[0].filled(nodata))
+    rgb[1]=gamma_corr(gamma_green,rgb[1].filled(nodata))
+    rgb[2]=gamma_corr(gamma_blue,rgb[2].filled(nodata))
+    
+    red=Image.fromarray(rgb[0])
+    green=Image.fromarray(rgb[1])
+    blue=Image.fromarray(rgb[2])
+
+    
+    imsize = rgb[0].shape[1],rgb[0].shape[0]
+
+    that=Image.merge("RGB",(red,green,blue))
+    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
+    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    imcopy = that.copy()
+    that.thumbnail((imsize[0]/2,imsize[1]/2))
+    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
+    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+
+    return imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue
+
+
 
 
 # ------------------------------------------------------------------
@@ -257,70 +334,16 @@ def makergb_airmass(ch5,ch6,ch8,ch9,outprfx,**options):
     @rtype: Image instance
     @return: Result image instance
     """
-    import sm_display_util
-    import numpy
-    import Image
-    nodata = 0
-    
-    if options.has_key("gamma"):
-        gamma_red,gamma_green,gamma_blue=options["gamma"]
-    else:
-        gamma_red = 1.0
-        gamma_green = 1.0
-        gamma_blue = 1.0
-
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
 
     red = ch5-ch6
     green = ch8-ch9
     blue = ch5
 
-    if options.has_key("rgbrange"):
-        range_red = options["rgbrange"][0]
-        range_green = options["rgbrange"][1]
-        range_blue = options["rgbrange"][2]
-        min_red,max_red = range_red[0],range_red[1]
-        min_green,max_green = range_green[0],range_green[1]
-        min_blue,max_blue = range_blue[0],range_blue[1]
-    else:
-        min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
-                          numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
-        min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
-                              numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
-        min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
-                            numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
 
     msgwrite_log("INFO","Ch5-Ch6 min & max: ",min_red,max_red,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch8-Ch9 min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch5 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
-
-    rgb=[None,None,None]
-    newred = (red-min_red) * 255.0/(max_red-min_red)
-    rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
-
-    newgreen = (green-min_green) * 255.0/(max_green-min_green)
-    rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-
-    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
-
-    # Gamma correction:
-    rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
-    rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
-    rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
-    
-    red=Image.fromstring("L", imsize, rgb[0].tostring())
-    green=Image.fromstring("L", imsize, rgb[1].tostring())
-    blue=Image.fromstring("L", imsize, rgb[2].tostring())
-    
-    that=Image.merge("RGB",(red,green,blue))
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
@@ -338,70 +361,16 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
     @rtype: Image instance
     @return: Result image instance
     """
-    import sm_display_util
-    import numpy
-    import Image
-    nodata = 0
-    
-    if options.has_key("gamma"):
-        gamma_red,gamma_green,gamma_blue=options["gamma"]
-    else:
-        gamma_red = 1.0
-        gamma_green = 1.0
-        gamma_blue = 1.0
-
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
 
     red = ch10-ch9
     green = ch9-ch4r
-    blue = numpy.where(not_missing_data,ch9,nodata)    
+    blue = ch9
 
-    if options.has_key("rgbrange"):
-        range_red = options["rgbrange"][0]
-        range_green = options["rgbrange"][1]
-        range_blue = options["rgbrange"][2]
-        min_red,max_red = range_red[0],range_red[1]
-        min_green,max_green = range_green[0],range_green[1]
-        min_blue,max_blue = range_blue[0],range_blue[1]
-    else:
-        min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
-                          numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
-        min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
-                              numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
-        min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
-                            numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
 
     msgwrite_log("INFO","Ch10-Ch9 min & max: ",min_red,max_red,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch9-Ch4r min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch9 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
-
-    rgb=[None,None,None]
-    newred = (red-min_red) * 255.0/(max_red-min_red)
-    rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
-
-    newgreen = (green-min_green) * 255.0/(max_green-min_green)
-    rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-
-    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
-
-    # Gamma correction:
-    rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
-    rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
-    rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
-    
-    red=Image.fromstring("L", imsize, rgb[0].tostring())
-    green=Image.fromstring("L", imsize, rgb[1].tostring())
-    blue=Image.fromstring("L", imsize, rgb[2].tostring())
-    
-    that=Image.merge("RGB",(red,green,blue))
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     return imcopy
 
@@ -411,73 +380,16 @@ def makergb_fog(ch7,ch9,ch10,outprfx,**options):
     Make Fog RGB image composite from SEVIRI channels.
     """
     
-    #import sm_display_util
-    import numpy,Image
-    nodata = 0
-    
-    if options.has_key("gamma"):
-        gamma_red,gamma_green,gamma_blue=options["gamma"]
-    else:
-        gamma_red = 1.0
-        gamma_green = 1.0
-        gamma_blue = 1.0
-
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
-
     red = ch10-ch9
     green = ch9-ch7
-    blue = numpy.where(not_missing_data,ch9,nodata)
+    blue = ch9
 
-    min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
-                      numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
-    min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
-                          numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
-    min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
-                        numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
-    msgwrite_log("INFO","Ch10-Ch9 min & max: ",min_red,max_red,moduleid=MODULE_ID)
-    msgwrite_log("INFO","Ch9-Ch7 min & max: ",min_green,max_green,moduleid=MODULE_ID)
-    msgwrite_log("INFO","Ch9 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
-
-    if options.has_key("rgbrange"):
-        range_red = options["rgbrange"][0]
-        range_green = options["rgbrange"][1]
-        range_blue = options["rgbrange"][2]
-        min_red,max_red = range_red[0],range_red[1]
-        min_green,max_green = range_green[0],range_green[1]
-        min_blue,max_blue = range_blue[0],range_blue[1]
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
 
     msgwrite_log("INFO","Ch10-Ch9 min & max: ",min_red,max_red,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch9-Ch7 min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch9 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
-        
-    rgb=[None,None,None]
-    newred = (red-min_red) * 255.0/(max_red-min_red)
-    rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
 
-    newgreen = (green-min_green) * 255.0/(max_green-min_green)
-    rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-
-    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
-
-    # Gamma correction:
-    rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
-    rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
-    rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
-    
-    red=Image.fromstring("L", imsize, rgb[0].tostring())
-    green=Image.fromstring("L", imsize, rgb[1].tostring())
-    blue=Image.fromstring("L", imsize, rgb[2].tostring())
-    
-    that=Image.merge("RGB",(red,green,blue))
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    
     return imcopy
 
 # ------------------------------------------------------------------
@@ -485,110 +397,16 @@ def makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outprfx,**options):
     """
     Make Severe convection RGB image composite from SEVIRI channels.
     """
-    import sm_display_util
-    import numpy,Image
-    nodata = 0
-    missingdata = 0
-    delta_max = 1.0
-    
-    if options.has_key("gamma"):
-        gamma_red,gamma_green,gamma_blue=options["gamma"]
-    else:
-        gamma_red = 1.0
-        gamma_green = 1.0
-        gamma_blue = 1.0
-
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
-
     red = ch5-ch6
     green = ch4-ch9
-
-    # Use PPS library function to check range in SEVIRI vis/nir channels.
-    # The PPS function was made for avhrr data, but works more general.
-    # Adam Dybbroe, 2007-10-31
-    import pps_imagelib
-    seviri_ch = SeviriChObj()
-    seviri_ch.data = ch1
-    seviri_ch.gain = 1.0
-    seviri_ch.intercept = 0.0
-    ch1,min_ch1,max_ch1 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
-    seviri_ch.data = ch3
-    ch3,min_ch3,max_ch3 = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
-
     blue = ch3-ch1
     
-    if options.has_key("rgbrange"):
-        range_red = options["rgbrange"][0]
-        range_green = options["rgbrange"][1]
-        range_blue = options["rgbrange"][2]
-        min_red,max_red = range_red[0],range_red[1]
-        min_green,max_green = range_green[0],range_green[1]
-        min_blue,max_blue = range_blue[0],range_blue[1]
-
-        rgb=[None,None,None]
-        newred = (red-min_red) * 255.0/(max_red-min_red)
-        rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
-
-        newgreen = (green-min_green) * 255.0/(max_green-min_green)
-        rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-
-        newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-        rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
-
-        # Gamma correction:
-        rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
-        rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
-        rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
-    
-        red=Image.fromstring("L", imsize, rgb[0].tostring())
-        green=Image.fromstring("L", imsize, rgb[1].tostring())
-        blue=Image.fromstring("L", imsize, rgb[2].tostring())
-    
-        that=Image.merge("RGB",(red,green,blue))
-        
-    else:
-        min_red,max_red = numpy.minimum.reduce(red.flat),numpy.maximum.reduce(red.flat)
-        min_green,max_green = numpy.minimum.reduce(green.flat),numpy.maximum.reduce(green.flat)
-        min_blue,max_blue = numpy.minimum.reduce(blue.flat),numpy.maximum.reduce(blue.flat)
-        min_ir = min(min_red,min_green)
-        max_ir = max(max_red,max_green)
-        min_vis = min_blue
-        max_vis = max_blue
-    
-        # Be sure to have the values inside the range [0,255]:
-        red_gain=255.0/(max_red-min_red)
-        red_icept=-1.*min_red*red_gain
-        msgwrite_log("INFO","Red channel: Gain,Intercept = %f,%f"%(red_gain,red_icept),moduleid=MODULE_ID)
-        
-        green_gain=255.0/(max_green-min_green)
-        green_icept=-1.*min_green*green_gain
-        print "Green channel: Gain,Intercept = %f,%f"%(green_gain,green_icept)
-
-        if (max_blue - min_blue) > delta_max:
-            blue_gain=255.0/(max_blue-min_blue)
-            blue_icept=-1.*min_blue*blue_gain
-        else:
-            blue_gain=1.0
-            blue_icept=0.0
-        msgwrite_log("INFO","Blue channel: Gain,Intercept = %f,%f"%(blue_gain,blue_icept),moduleid=MODULE_ID)
-
-        gl=[red_gain,green_gain,blue_gain]
-        il=[red_icept,green_icept,blue_icept]
-        
-        that = sm_display_util.make_rgb([red,green,blue],gl,il,not_missing_data)
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
 
     msgwrite_log("INFO","Ch5-Ch6 min & max: ",min_red,max_red,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch4-Ch9 min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","Ch3-Ch1 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
     
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-
     return imcopy
 
 # ------------------------------------------------------------------
@@ -596,99 +414,22 @@ def makergb_visvisir(vis1,vis2,ch9,outprfx,**options):
     """
     Make Overview RGB image composite from SEVIRI channels.
     """
-    import sm_display_util
-    import numpy,Image
-    nodata=0
-    missingdata = 0
-    delta_max = 1.0
-    
-    if options.has_key("gamma"):
-        gamma_red,gamma_green,gamma_blue=options["gamma"]
-    else:
-        gamma_red = 1.0
-        gamma_green = 1.0
-        gamma_blue = 1.0
+    red = vis1
+    green = vis2
+    blue = -ch9
 
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
-
-    #red = vis1
-    #green = vis2
-    blue = numpy.where(not_missing_data,-ch9,nodata)
-
-    # Use PPS library function to check range in SEVIRI vis/nir channels.
-    # The PPS function was made for avhrr data, but works more general.
-    # Adam Dybbroe, 2007-10-31
-    import pps_imagelib
-    seviri_ch = SeviriChObj()
-    seviri_ch.data = vis1
-    seviri_ch.gain = 1.0
-    seviri_ch.intercept = 0.0
-    red,min_red,max_red = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
-
-    seviri_ch.data = vis2
-    green,min_green,max_green = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
-
-    #min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
-    #                  numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
-    #min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
-    #                      numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
-    min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
-                        numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
-
-    if options.has_key("rgbrange"):
-        range_red = options["rgbrange"][0]
-        range_green = options["rgbrange"][1]
-        range_blue = options["rgbrange"][2]
-        min_red,max_red = range_red[0],range_red[1]
-        min_green,max_green = range_green[0],range_green[1]
-        min_blue,max_blue = range_blue[0],range_blue[1]
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
 
     msgwrite_log("INFO","R: min & max: ",min_red,max_red,moduleid=MODULE_ID)
     msgwrite_log("INFO","G: min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
-    rgb=[None,None,None]
-    if (max_red - min_red) > delta_max:
-        newred = (red-min_red) * 255.0/(max_red-min_red)
-        rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
-    else:
-        rgb[0] = red
-
-    if (max_green - min_green) > delta_max:
-        newgreen = (green-min_green) * 255.0/(max_green-min_green)
-        rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-    else:
-        rgb[1] = green
-
-    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
-
-    # Gamma correction:
-    rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
-    rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
-    rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
-    
-    red=Image.fromstring("L", imsize, rgb[0].tostring())
-    green=Image.fromstring("L", imsize, rgb[1].tostring())
-    blue=Image.fromstring("L", imsize, rgb[2].tostring())
-    
-    that=Image.merge("RGB",(red,green,blue))
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    
     return imcopy
 
 # ------------------------------------------------------------------
 def makergb_hrovw(vis1,vis2,ch9,ch12,outprfx,**options):
+    """Make HR Overview RGB image composite from SEVIRI channels.
     """
-    Make HR Overview RGB image composite from SEVIRI channels.
-    """
-    import sm_display_util
     import numpy,Image
     nodata=0
     missingdata = 0
@@ -701,32 +442,10 @@ def makergb_hrovw(vis1,vis2,ch9,ch12,outprfx,**options):
         gamma_green = 1.0
         gamma_blue = 1.0
 
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
+    red = vis1
+    green = vis2
+    blue = -ch9
 
-    #red = vis1
-    #green = vis2
-    blue = numpy.where(not_missing_data,-ch9,nodata)
-
-    # Use PPS library function to check range in SEVIRI vis/nir channels.
-    # The PPS function was made for avhrr data, but works more general.
-    # Adam Dybbroe, 2007-10-31
-    import pps_imagelib
-    seviri_ch = SeviriChObj()
-    seviri_ch.data = vis1
-    seviri_ch.gain = 1.0
-    seviri_ch.intercept = 0.0
-    red,min_red,max_red = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
-
-    seviri_ch.data = vis2
-    green,min_green,max_green = pps_imagelib.check_physicalrange(seviri_ch,nodata,missingdata,delta_max)
-
-    #min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
-    #                  numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
-    #min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
-    #                      numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
-    min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
-                        numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
 
     if options.has_key("rgbrange"):
         range_red = options["rgbrange"][0]
@@ -735,58 +454,45 @@ def makergb_hrovw(vis1,vis2,ch9,ch12,outprfx,**options):
         min_red,max_red = range_red[0],range_red[1]
         min_green,max_green = range_green[0],range_green[1]
         min_blue,max_blue = range_blue[0],range_blue[1]
+    else:
+        min_red,max_red = misc_utils.extrema(red)
+        min_green,max_green = misc_utils.extrema(green)
+        min_blue,max_blue = misc_utils.extrema(blue)
 
     msgwrite_log("INFO","R: min & max: ",min_red,max_red,moduleid=MODULE_ID)
     msgwrite_log("INFO","G: min & max: ",min_green,max_green,moduleid=MODULE_ID)
     msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     rgb=[None,None,None]
-    if (max_red - min_red) > delta_max:
-        newred = (red-min_red) * 255.0/(max_red-min_red)
-        rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
-    else:
-        rgb[0] = red
 
-    if (max_green - min_green) > delta_max:
-        newgreen = (green-min_green) * 255.0/(max_green-min_green)
-        rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-    else:
-        rgb[1] = green
+    rgb[0] = msg_image_manipulation.crude_stretch(red,255,min_red,max_red)
+    rgb[1] = msg_image_manipulation.crude_stretch(green,255,min_green,max_green)
+    rgb[2] = msg_image_manipulation.crude_stretch(blue,255,min_blue,max_blue)
 
-    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
 
     # Gamma correction:
-    rgb[0]=numpy.array(numpy.round(gamma_corr(gamma_red,rgb[0]) * not_missing_data),numpy.uint8)
-    rgb[2]=numpy.array(numpy.round(gamma_corr(gamma_blue,rgb[2]) * not_missing_data),numpy.uint8)
-    rgb[1]=numpy.array(numpy.round(gamma_corr(gamma_green,rgb[1]) * not_missing_data),numpy.uint8)
-
-    Y =  16.0 + 1.0/256.0 * (65.738 * rgb[0] + 129.057 * rgb[1] + 25.064 * rgb[2])
-
-    vmin = numpy.amin(Y[numpy.where(not_missing_data)])
-    vmax = numpy.amax(Y[numpy.where(not_missing_data)])
-
-    red=Image.fromarray(rgb[0], "L")
-    green=Image.fromarray(rgb[1], "L")
-    blue=Image.fromarray(rgb[2], "L")
+    rgb[0]=gamma_corr(gamma_red,rgb[0].filled(nodata))
+    rgb[1]=gamma_corr(gamma_green,rgb[1].filled(nodata))
+    rgb[2]=gamma_corr(gamma_blue,rgb[2].filled(nodata))
     
+    red=Image.fromarray(rgb[0])
+    green=Image.fromarray(rgb[1])
+    blue=Image.fromarray(rgb[2])
+    
+
     that=Image.merge("RGB",(red,green,blue))
 
     Y = ch12
 
-    Ymax = numpy.amax(Y[Y>0])
-    Ymin = numpy.amin(Y[Y>0])
+    Ymax = Y.max()
+    Ymin = Y.min()
 
-    normY = (Y-Ymin)*255.0/(Ymax-Ymin)
-    gammaY = gamma_corr(1.8,normY[Y>0])
-    normY[Y>0] = gammaY
-    normY[Y<=0] = nodata
+    normY = msg_image_manipulation.crude_stretch(Y,255,Ymin,Ymax)
+    gammaY = gamma_corr(1.8,normY)
 
     v = that.convert('YCbCr').split()
 
-    coeff = (vmax - vmin) * 1.0
-
-    Y = numpy.array(numpy.round(normY),numpy.uint8)
+    Y = numpy.array(numpy.round(gammaY),numpy.uint8)
     hrv = Image.fromarray(Y, "L")
 
     that = Image.merge('YCbCr',(hrv,v[1].resize(hrv.size),v[2].resize(hrv.size))).convert('RGB')
@@ -794,6 +500,7 @@ def makergb_hrovw(vis1,vis2,ch9,ch12,outprfx,**options):
     that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
 
     imcopy = that.copy()
+    imsize = imcopy.size
     that.thumbnail((imsize[0]/2,imsize[1]/2))
     ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
     that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
@@ -805,29 +512,17 @@ def makergb_redsnow(ch1,ch3,ch9,outprfx,**options):
     """
     Make Red snow RGB image composite from SEVIRI channels.
     """
-    import sm_display_util
-    import numpy
 
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    size = not_missing_data.shape[1],not_missing_data.shape[0]
+    red = ch1
+    green = ch3
+    blue = -ch9 + 330.66
 
-    ir_gain=1.0
-    ir_intercept=0.0
-    vis_gain=1.0
-    vis_intercept=0.0
-    irgain = -2.0 * ir_gain
-    iricept = 2.0 * (330.66 - ir_intercept)
-    visgain = 2.55 * vis_gain
-    visicept = 2.55 * vis_intercept
-    gl=[visgain,visgain,irgain]
-    il=[visicept,visicept,iricept]
-    that = sm_display_util.make_rgb([ch1,ch3,ch9],gl,il,not_missing_data)
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((size[0]/2,size[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    options["stretch"] = "linear"
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
+
+    msgwrite_log("INFO","Ch1 min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","Ch3 min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","-Ch9 + 330.66 min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     return imcopy
 
@@ -836,69 +531,16 @@ def makergb_cloudtop(ch4,ch9,ch10,outprfx,**options):
     """
     Make Cloudtop RGB image composite from SEVIRI channels.
     """
-    import sm_display_util
-    import numpy,Image
-    nodata=0
 
-    if options.has_key("gamma"):
-        gamma_red,gamma_green,gamma_blue=options["gamma"]
-    else:
-        gamma_red = 1.0
-        gamma_green = 1.0
-        gamma_blue = 1.0
+    red = -ch4
+    green = -ch9
+    blue = -ch10
 
-    not_missing_data = numpy.greater(ch9,0.0).astype('B')
-    imsize = not_missing_data.shape[1],not_missing_data.shape[0]
+    imcopy,min_red,max_red,min_green,max_green,min_blue,max_blue = makergb_template((red,green,blue),outprfx,**options)
 
-    red = numpy.where(not_missing_data,-ch4,nodata)
-    green = numpy.where(not_missing_data,-ch9,nodata)
-    blue = numpy.where(not_missing_data,-ch10,nodata)
-
-    min_red,max_red = numpy.minimum.reduce(numpy.where(not_missing_data.flat,red.flat,99999)),\
-                      numpy.maximum.reduce(numpy.where(not_missing_data.flat,red.flat,-99999))
-    min_green,max_green = numpy.minimum.reduce(numpy.where(not_missing_data.flat,green.flat,99999)),\
-                          numpy.maximum.reduce(numpy.where(not_missing_data.flat,green.flat,-99999))
-    min_blue,max_blue = numpy.minimum.reduce(numpy.where(not_missing_data.flat,blue.flat,99999)),\
-                        numpy.maximum.reduce(numpy.where(not_missing_data.flat,blue.flat,-99999))
-
-    if options.has_key("rgbrange"):
-        range_red = options["rgbrange"][0]
-        range_green = options["rgbrange"][1]
-        range_blue = options["rgbrange"][2]
-        min_red,max_red = range_red[0],range_red[1]
-        min_green,max_green = range_green[0],range_green[1]
-        min_blue,max_blue = range_blue[0],range_blue[1]
-
-    msgwrite_log("INFO","R: min & max: ",min_red,max_red,moduleid=MODULE_ID)
-    msgwrite_log("INFO","G: min & max: ",min_green,max_green,moduleid=MODULE_ID)
-    msgwrite_log("INFO","B: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
-
-    rgb=[None,None,None]
-    newred = (red-min_red) * 255.0/(max_red-min_red)
-    rgb[0] = numpy.where(numpy.greater(newred,255),255,numpy.where(numpy.less(newred,0),0,newred))
-
-    newgreen = (green-min_green) * 255.0/(max_green-min_green)
-    rgb[1] = numpy.where(numpy.greater(newgreen,255),255,numpy.where(numpy.less(newgreen,0),0,newgreen))
-
-    newblue = (blue-min_blue) * 255.0/(max_blue-min_blue)
-    rgb[2] = numpy.where(numpy.greater(newblue,255),255,numpy.where(numpy.less(newblue,0),0,newblue))
-
-    # Gamma correction:
-    rgb[0]=gamma_corr(gamma_red,rgb[0]) * not_missing_data
-    rgb[1]=gamma_corr(gamma_green,rgb[1]) * not_missing_data
-    rgb[2]=gamma_corr(gamma_blue,rgb[2]) * not_missing_data
-    
-    red=Image.fromstring("L", imsize, rgb[0].tostring())
-    green=Image.fromstring("L", imsize, rgb[1].tostring())
-    blue=Image.fromstring("L", imsize, rgb[2].tostring())
-    
-    that=Image.merge("RGB",(red,green,blue))
-    ensure_dir(outprfx+".%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+".%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
-    imcopy = that.copy()
-    that.thumbnail((imsize[0]/2,imsize[1]/2))
-    ensure_dir(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT)
-    that.save(outprfx+"_thumbnail.%s"%RGB_IMAGE_FORMAT,format=RGB_IMAGE_FORMAT,quality=RGB_IMAGE_QUALITY)
+    msgwrite_log("INFO","-ch4: min & max: ",min_red,max_red,moduleid=MODULE_ID)
+    msgwrite_log("INFO","-ch9: min & max: ",min_green,max_green,moduleid=MODULE_ID)
+    msgwrite_log("INFO","-ch10: min & max: ",min_blue,max_blue,moduleid=MODULE_ID)
 
     return imcopy
 
@@ -1091,19 +733,6 @@ def get_ch_projected(ch_file,cov):
 
     return ch_proj,1
 
-def project_array(coverage, a):
-    """Project the masked array *a* given the *coverage*
-    """
-    import _satproj
-
-    if (a is None):
-        return None
-
-    return _satproj.project(coverage.coverage,
-                            coverage.rowidx,
-                            coverage.colidx,
-                            a.filled(),
-                            int(a.fill_value))
 
 # ------------------------------------------------------------------
 # CO2 correction of the MSG 3.9 um channel:
@@ -1127,21 +756,25 @@ def co2corr_bt39(bt039,bt108,bt134):
     import numpy
     epsilon = 0.001
     
-    not_missing_data = numpy.greater(bt108,0.00).astype('B')
-    dt_co2 = numpy.where(not_missing_data,(bt108-bt134)/4.0,0)
-    a = numpy.where(not_missing_data,bt108*bt108*bt108*bt108,0)
-    b = numpy.where(not_missing_data,(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2),0)
-    print numpy.minimum.reduce(a.flat),numpy.maximum.reduce(a.flat)
-    print numpy.minimum.reduce(b.flat),numpy.maximum.reduce(b.flat)
+    #not_missing_data = numpy.greater(bt108,0.00).astype('B')
+    #dt_co2 = numpy.where(not_missing_data,(bt108-bt134)/4.0,0)
+    #a = numpy.where(not_missing_data,bt108*bt108*bt108*bt108,0)
+    #b = numpy.where(not_missing_data,(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2),0)
+    dt_co2 = (bt108-bt134)/4.0
+    a = bt108*bt108*bt108*bt108
+    b = (bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)
+
+    #print numpy.minimum.reduce(a.flat),numpy.maximum.reduce(a.flat)
+    #print numpy.minimum.reduce(b.flat),numpy.maximum.reduce(b.flat)
     Rcorr = a - b
 
-    a = numpy.where(not_missing_data,bt039*bt039*bt039*bt039,0)
-    x = numpy.where(numpy.logical_and(not_missing_data,numpy.greater(a+Rcorr,0.0)),(a + Rcorr),epsilon)
-    print "x: ",numpy.minimum.reduce(x.flat),numpy.maximum.reduce(x.flat)
+    a = bt039*bt039*bt039*bt039
+    x = numpy.where(a+Rcorr > 0.0,(a + Rcorr), 0)
+    print "x: ",x.min(),x.max()
     #print "a: ",numpy.minimum.reduce(a.flat),numpy.maximum.reduce(a.flat)
     #print "Rcorr: ",numpy.minimum.reduce(Rcorr.flat),numpy.maximum.reduce(Rcorr.flat)
     
-    retv = numpy.where(not_missing_data,numpy.exp(0.25*numpy.log(x)),0)
+    retv = x ** 0.25
     
     return retv
 

@@ -58,7 +58,6 @@ import shutil
 
 # PPS modules
 
-import _satproj
 import area
 
 # Local modules
@@ -68,7 +67,7 @@ from msgpp_config import *
 from msg_remap_util import *
 from msg_rgb_remap import *
 from misc_utils import *
-from msg_coverage import get_coverage
+import msg_coverage
 import msg_data
 
 seviri_data = None
@@ -159,27 +158,35 @@ def get_times(nSlots):
 
 
 # ------------------------------------------------------------------
-def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour,minute,fileprfx):
+def doOneAreaRgbs(in_aid,areaid,MetSat,year,month,day,hour,minute,fileprfx):
 
-    coverage_data = get_coverage(in_aid, areaid, lon, lat)
-    
-    hr_coverage_data = get_coverage(in_aid, areaid, hr_lon, hr_lat,hr=True)
+## This looks wrong
 
-    outname_nf = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,MetSat,
-                                                               year,month,day,hour,minute,areaid)
-    outname_f = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,MetSat,
-                                                         year,month,day,hour,minute,areaid)
-    outname_ctop = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MetSat,
-                                                                         year,month,day,hour,minute,areaid)
+#     outname_nf = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,MetSat,
+#                                                                year,month,day,hour,minute,areaid)
+#     outname_f = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,MetSat,
+#                                                          year,month,day,hour,minute,areaid)
+#     outname_ctop = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MetSat,
+#                                                                          year,month,day,hour,minute,areaid)
 
-    if os.path.exists(outname_nf+".png") and os.path.exists(outname_f+".png") and os.path.exists(outname_ctop+".png"):
-        msgwrite_log("INFO","All rgb's have been done previously",moduleid=MODULE_ID)
-        return
-            
-    msgwrite_log("INFO","Try make RGBs for this time: %.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute),moduleid=MODULE_ID)
+#     if os.path.exists(outname_nf+".png") and os.path.exists(outname_f+".png") and os.path.exists(outname_ctop+".png"):
+#         msgwrite_log("INFO","All rgb's have been done previously",moduleid=MODULE_ID)
+#         return
 
+
+    print in_aid
+        
+
+
+    coverage = msg_coverage.SatProjCov(in_aid, areaid, False)
+    hr_coverage = msg_coverage.SatProjCov(in_aid, areaid, True)
 
     time_slot = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute)
+
+            
+    msgwrite_log("INFO","Try make RGBs for this time: %s"%(time_slot),moduleid=MODULE_ID)
+
+
 
     global seviri_data 
     if ((seviri_data is None) or (seviri_data.area_id != in_aid)):
@@ -198,18 +205,18 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
     ch11 = seviri_data["11"]["CAL"]
     ch12 = seviri_data["12"]["CAL"]
 
-    ch1 = project_array(coverage_data, ch1)
-    ch2 = project_array(coverage_data, ch2)
-    ch3 = project_array(coverage_data, ch3)
-    ch4 = project_array(coverage_data, ch4)
-    ch5 = project_array(coverage_data, ch5)
-    ch6 = project_array(coverage_data, ch6)
-    ch7 = project_array(coverage_data, ch7)
-    ch8 = project_array(coverage_data, ch8)
-    ch9 = project_array(coverage_data, ch9)
-    ch10 = project_array(coverage_data, ch10)
-    ch11 = project_array(coverage_data, ch11)
-    ch12 = project_array(hr_coverage_data, ch12)
+    ch1 = coverage.project_array(ch1)
+    ch2 = coverage.project_array(ch2)
+    ch3 = coverage.project_array(ch3)
+    ch4 = coverage.project_array(ch4)
+    ch5 = coverage.project_array(ch5)
+    ch6 = coverage.project_array(ch6)
+    ch7 = coverage.project_array(ch7)
+    ch8 = coverage.project_array(ch8)
+    ch9 = coverage.project_array(ch9)
+    ch10 = coverage.project_array(ch10)
+    ch11 = coverage.project_array(ch11)
+    ch12 = hr_coverage.project_array(ch12)
     
     ok1 = (ch1 is not None)
     ok2 = (ch2 is not None)
@@ -224,6 +231,7 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
     ok11 = (ch11 is not None)
     ok12 = (ch12 is not None)
 
+
     ok4r=0
     if ok4 and ok9 and ok11:
         ch4r = co2corr_bt39(ch4,ch9,ch11)
@@ -231,8 +239,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
                     
     # IR - channel 9:
     if ok9 and RGB_IMAGE[areaid]["ir9"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_bw_ch9"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)                
+        outname = "%s/%s_%s_%s_bw_ch9"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_bw_ch9"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)                
         #this = make_bw(ch9,outname,inverse=1,gamma=1.6,stretch="gamma")
         #this = make_bw(ch9,outname,inverse=1,stretch="linear")
         this = make_bw(ch9,outname,inverse=1,stretch="no",bwrange=[-70+273.15,57.5+273.15])
@@ -244,8 +252,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
                     
     # Water vapour - channel 5:
     if ok5 and RGB_IMAGE[areaid]["watervapour_high"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch5"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_bw_ch5"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)                
+        outname = "%s/%s_%s_%s_bw_ch5"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_bw_ch5"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)                
         #this = make_bw(ch5,outname,inverse=1,gamma=1.6,stretch="gamma")
         this = make_bw(ch5,outname,inverse=1,stretch="linear")
         # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
@@ -256,8 +264,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # Water vapour - channel 6:
     if ok6 and RGB_IMAGE[areaid]["watervapour_low"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_bw_ch6"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_bw_ch6"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)                
+        outname = "%s/%s_%s_%s_bw_ch6"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_bw_ch6"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)                
         #this = make_bw(ch6,outname,inverse=1,gamma=1.6,stretch="gamma")
         this = make_bw(ch6,outname,inverse=1,stretch="linear")
         # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
@@ -268,8 +276,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # Daytime overview:
     if ok1 and ok2 and ok9 and RGB_IMAGE[areaid]["overview"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_overview"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         this = makergb_visvisir(ch1,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
@@ -278,8 +286,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # Daytime "green snow":
     if ok3 and ok2 and ok9 and RGB_IMAGE[areaid]["greensnow"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_greensnow"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_greensnow"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_greensnow"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_greensnow"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         this = makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
@@ -288,8 +296,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # Daytime convection:
     if ok1 and ok3 and ok4 and ok5 and ok6 and ok9 and RGB_IMAGE[areaid]["convection"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_severe_convection"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_severe_convection"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_severe_convection"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         this = makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
@@ -299,8 +307,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
     # New since October 31, 2007. Adam Dybbroe
     # Airmass - IR/WV:
     if ok5 and ok6 and ok8 and ok9 and RGB_IMAGE[areaid]["convection"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_airmass"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_airmass"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_airmass"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_airmass"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         # WV6.2 - WV7.3	                -25 till   0 K	gamma 1
         # IR9.7 - IR10.8		-40 till  +5 K	gamma 1
         # WV6.2		               +243 till 208 K	gamma 1
@@ -310,8 +318,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # Fog and low clouds
     if ok4r and ok9 and ok10 and RGB_IMAGE[areaid]["nightfog"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_nightfog"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_nightfog"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_nightfog"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         this=makergb_nightfog(ch4r,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,293)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
@@ -319,8 +327,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
         do_sir(this,"nightfog",year,month,day,hour,minute,areaid)
                 
     if ok7 and ok9 and ok10 and RGB_IMAGE[areaid]["fog"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_fog"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_fog"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_fog"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         this = makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
@@ -329,8 +337,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # "cloudtop": Low clouds, thin cirrus, nighttime
     if ok4r and ok9 and ok10 and RGB_IMAGE[areaid]["cloudtop"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_cloudtop_co2corr"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_cloudtop_co2corr"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         #this = makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.2,1.2,1.2))
         this = makergb_cloudtop(ch4r,ch9,ch10,outname,stretch="linear")
         if FSERVER_SYNC:
@@ -340,8 +348,8 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
 
     # High resolution daytime overview
     if ok1 and ok2 and ok9 and ok12 and RGB_IMAGE[areaid]["hr_overview"]:
-        outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_hr_overview"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,areaid)
-        msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_hr_overview"%(MSG_SATELLITE,year,month,day,hour,minute,areaid),moduleid=MODULE_ID)
+        outname = "%s/%s_%s_%s_rgb_hr_overview"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_hr_overview"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
         
         this = makergb_hrovw(ch1, ch2, ch9, ch12, outname, gamma=(1.6,1.6,1.6))
         if FSERVER_SYNC:
@@ -353,20 +361,11 @@ def doOneAreaRgbs(in_aid,areaid,lon,lat,hr_lon,hr_lat,MetSat,year,month,day,hour
     return
 
 
-def get_msg_lonlat(area_id,hr = False):
-    import numpy
-    import py_msg
-    
-    if(hr):
-        return py_msg.lat_lon_from_region("safnwc_" + area_id + ".cfg", "12")
-    else:
-        return py_msg.lat_lon_from_region("safnwc_" + area_id + ".cfg", "1")
-
-def doGlobe(year,month,day,hour,minute):
+def doGlobe(time_slot):
     import Image
     
-    outname = "%s/%s_%.4d%.2d%.2d%.2d%.2d_%s_rgb_overview.png"%(RGBDIR_OUT,MSG_SATELLITE,year,month,day,hour,minute,"globe")
-    msgwrite_log("INFO","%s product: %.4d%.2d%.2d%.2d%.2d_%s_rgb_overview"%(MSG_SATELLITE,year,month,day,hour,minute,"globe"),moduleid=MODULE_ID)
+    outname = "%s/%s_%s_%s_rgb_overview.png"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,"globe")
+    msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MSG_SATELLITE,time_slot,"globe"),moduleid=MODULE_ID)
     
     ch1 = msg_data.MSGChannel(start_date, "globe","1",rad = False)
     ch2 = msg_data.MSGChannel(start_date, "globe","2",rad = False)
@@ -418,12 +417,6 @@ if __name__ == "__main__":
     MetSat=MSG_SATELLITE
     file_prefix=RGBDIR_IN
         
-    lon = read_msg_lonlat(LONFILE)
-    lat = read_msg_lonlat(LATFILE)
-
-    # This is ugly. We should use masked arrays instead.
-    hr_lat, hr_lon = get_msg_lonlat(input_area_id, True)
-
     time_start = UTC_time_from_string(start_date)
     time_end = UTC_time_from_string(end_date)
 
@@ -431,23 +424,22 @@ if __name__ == "__main__":
         msgwrite_log("INFO","Start time is later than end time!",
                      moduleid=MODULE_ID)
 
-
         
     sec = time_start
     while (sec <= time_end):
         current_time = time.gmtime(sec)
 
-        doGlobe(current_time.tm_year,
-                current_time.tm_mon,
-                current_time.tm_mday,
-                current_time.tm_hour,
-                current_time.tm_min)
+        time_slot = "%.4d%.2d%.2d%.2d%.2d"%(current_time.tm_year,
+                                            current_time.tm_mon,
+                                            current_time.tm_mday,
+                                            current_time.tm_hour,
+                                            current_time.tm_min)
+
+        #doGlobe(time_slot)
 
         # Loop over areas:
         for output_area_id in NWCSAF_MSG_AREAS:
             doOneAreaRgbs(input_area_id,output_area_id,
-                          lon,lat,
-                          hr_lon,hr_lat,
                           MetSat,
                           current_time.tm_year,
                           current_time.tm_mon,
