@@ -36,6 +36,8 @@ class SatProjCov:
         if((in_area_id is None) or (out_area_id is None)):
             return
         
+        msgwrite_log("INFO","Getting coverage: ",in_area_id, out_area_id,moduleid=MODULE_ID)
+
         if(hr):
             channel = "12"
             covfilename = "%s/cst/msg_coverage_%s_hr.%s.hdf"\

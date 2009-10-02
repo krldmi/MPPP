@@ -15,8 +15,12 @@ os.environ['LOCAL_DEFINITION_TEMPLATES'] = os.environ['SAFNWC']+"/src/gribex_000
 
 import Image
 import numpy
+import copy
 import py_msg
 import area
+import time_utils
+import msg_coverage
+
 
 class MSGSeviriChannels:
     """This class defines a container to Seviri data. It holds 12
@@ -26,7 +30,8 @@ class MSGSeviriChannels:
         area_filename = "safnwc_" + area_id + ".cfg"
         self.time_slot = time_slot
         self.area_id = area_id
-        _data = py_msg.get_all_channels(time_slot, area_filename, rad)
+        self.nb_channels = 12
+        _data = py_msg.get_all_channels(time_utils.time_string(time_slot), area_filename, rad)
         if(hr):
             _hrdata = MSGChannel(time_slot, area_id, "HRVIS",rad = rad)
         else:
@@ -78,30 +83,67 @@ class MSGSeviriChannels:
                          _hrdata]
 
     def __getitem__(self,key):
-        if(key == "1" or key == "VIS06"):
+        if(key == "1" or key == "VIS06" or key == 1):
             return self.channels[0]
-        if(key == "2" or key == "VIS08"):
+        if(key == "2" or key == "VIS08" or key == 2):
             return self.channels[1]
-        if(key == "3" or key == "IR16"):
+        if(key == "3" or key == "IR16" or key == 3):
             return self.channels[2]
-        if(key == "4" or key == "IR39"):
+        if(key == "4" or key == "IR39" or key == 4):
             return self.channels[3]
-        if(key == "5" or key == "WV62"):
+        if(key == "5" or key == "WV62" or key == 5):
             return self.channels[4]
-        if(key == "6" or key == "WV73"):
+        if(key == "6" or key == "WV73" or key == 6):
             return self.channels[5]
-        if(key == "7" or key == "IR87"):
+        if(key == "7" or key == "IR87" or key == 7):
             return self.channels[6]
-        if(key == "8" or key == "IR97"):
+        if(key == "8" or key == "IR97" or key == 8):
             return self.channels[7]
-        if(key == "9" or key == "IR108"):
+        if(key == "9" or key == "IR108" or key == 9):
             return self.channels[8]
-        if(key == "10" or key == "IR120"):
+        if(key == "10" or key == "IR120" or key == 10):
             return self.channels[9]
-        if(key == "11" or key == "IR134"):
+        if(key == "11" or key == "IR134" or key == 11):
             return self.channels[10]
-        if(key == "12" or key == "HRVIS"):
+        if(key == "12" or key == "HRVIS" or key == 12):
             return self.channels[11]
+
+    def project(self,dest_area):
+        """Make a projected copy of the object to
+        *dest_area*. Available areas are defined in the main
+        configuration file.
+        """
+        if(dest_area == self.area_id):
+            return self
+
+        res = copy.copy(self)
+        coverage = msg_coverage.SatProjCov(self.area_id, dest_area, False)
+        res.area_id = dest_area
+        res.channels = []
+        for ch in self.channels:
+            if(ch["RAD"] is not None or ch["CAL"] is not None):
+                if(ch.channel_id == "HRVIS"):
+                    hr_coverage = msg_coverage.SatProjCov(self.area_id, dest_area, True)
+                    res.channels.append(ch.project(dest_area,hr_coverage))
+                else:
+                    res.channels.append(ch.project(dest_area,coverage))
+            else:
+                res.channels.append(None)
+        return res
+
+    def strip(self,key,shift = True):
+        """Strip the channels for a given *key* to a list. If *shift*
+        is true the data arrays are available in the range
+        [1:nb_channels], and in the range [0:nb_channels - 1]
+        otherwise.
+        """
+        ch = map(_getkey,self.channels,[key,key,key,key,key,key,key,key,key,key,key,key])
+        if shift:
+            ch.insert(0,None)
+        return ch
+
+def _getkey(item,key):
+    return item[key]
 
 class MSGChannel:
     def __init__(self, time_slot, area_id, channel_id, data = None, rad = True):
@@ -110,7 +152,10 @@ class MSGChannel:
         self.area_id = area_id
         self.channel_id = channel_id
         if (data is None):
-            data = py_msg.get_channel(time_slot, area_filename, channel_id, rad)
+            data = py_msg.get_channel(time_utils.time_string(time_slot), 
+                                      area_filename, 
+                                      channel_id, 
+                                      rad)
 
         if((data["RAD"] is None) and (data["CAL"] is None)):
             self._rad = None
@@ -185,7 +230,30 @@ class MSGChannel:
     def calibrated_data(self, inverted = False):
         return self.component("CAL", inverted)
    
+    def project(self, dest_area, coverage = None):
+        """Make a projected copy of the current channel onto
+        *dest_area*. If *coverage* is povided it is used instead of
+        computing it on the fly, usefull in case of multiple channels
+        projected onto the same area.
+        """
+        if(dest_area == self.area_id):
+            return self
 
+        res = copy.copy(self)
+        res.area_id = dest_area
+        if(not coverage):
+            if(channel_id == "HRVIS" or channel_id == "12"):
+                coverage = msg_coverage.SatProjCov(self.area_id, dest_area, True)            
+            else:
+                coverage = msg_coverage.SatProjCov(self.area_id, dest_area, False)
+        if(self._rad is not None):
+            res._rad = coverage.project_array(self._rad)
+        if(self._refl is not None):
+            res._refl = coverage.project_array(self._refl)
+        if(self._bt is not None):
+            res._bt = coverage.project_array(self._bt)
+
+        return res
 
 # -----------------------------------------------------------------------------
 # Test the current module

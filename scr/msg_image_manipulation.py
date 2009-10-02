@@ -30,7 +30,7 @@ def gamma_corr(g,arr):
 
 def stretch_hist_equalize(arr):
     """Stretch a monochromatic masked array *arr* by performing
-    histogram equalization.
+    histogram equalization. The stretched array is returned.
     """
     msg_communications.msgwrite_log("INFO",
                                     "Perform a histogram equalized contrast stretch of one image layer",moduleid=MODULE_ID)
@@ -95,14 +95,14 @@ def stretch_linear(arr,cutoffs=[0.005,0.005]):
     return res
 
 def crude_stretch(arr, norm = 255, min = None, max = None):
-    """Perform simple linear stretching without any cutoff and normalize."""
+    """Perform simple linear stretching (without any cutoff) and normalize."""
 
     if(min is None):
         min = arr.min()
     if(max is None):
         max = arr.max()
 
-    res = (arr-min) * norm * 1.0/(max - min)
+    res = (arr-min) * (norm * 1.0)/(max - min)
     res = numpy.where(res > norm, norm, res)
     res = numpy.where(res < 0, 0, res)
 

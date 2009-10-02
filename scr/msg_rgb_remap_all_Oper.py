@@ -55,6 +55,7 @@ import math
 import glob
 import os
 import shutil
+import time_utils
 
 # PPS modules
 
@@ -76,20 +77,19 @@ MODULE_ID="MSG_RGB_REMAP"
 
 # ------------------------------------------------------------------
 
-def do_sir(imIn,prodid,year,month,day,hour,minute,areaid):
+def do_sir(imIn,prodid,time_slot,areaid):
     import string
     import tempfile,os
     
-    if SIR_SIGNAL[areaid].has_key(prodid) and not SIR_SIGNAL[areaid][prodid] or \
-       not SIR_SIGNAL[areaid].has_key(prodid):
+    if (SIR_SIGNAL[areaid].has_key(prodid) and not SIR_SIGNAL[areaid][prodid]) or \
+            not SIR_SIGNAL[areaid].has_key(prodid):
         msgwrite_log("INFO","No product requested for SIR",moduleid=MODULE_ID)
         return
     
     msgwrite_log("INFO","Product requested for SIR: %s"%SIR_DIR,moduleid=MODULE_ID)
 
     import msg_remap_all_Oper
-    yystr = ("%.4d"%year)[2:4]
-    timestamp = "%s%.2d%.2d%.2d%.2d"%(yystr,month,day,hour,minute)
+    timestamp = time_utils.short_time_string(time_slot)
                     
     for name_format in SIR_PRODUCTS[areaid][prodid]:
         prodname=name_format[0]
@@ -130,22 +130,28 @@ def do_sir(imIn,prodid,year,month,day,hour,minute,areaid):
     return
 
 # ------------------------------------------------------------------
+
 def get_times(nSlots):
     """Get the start and end times for the slots, where the time of
      the last slot is close to now, and the start slot is nSlots
      earlier:
      """
     import time
+    import math
 
-    dmin_slots = DSEC_SLOTS * 60
+    dmin_slots = DSEC_SLOTS / 60.0
 
     now = time.time()
     gmt_time = time.gmtime(now)
     day_hh = gmt_time[3]
     hour_mm = gmt_time[4]
     time_tup = gmt_time[0],gmt_time[1],gmt_time[2],0,0,0,0,0,0
+
+    print int(math.ceil(dmin_slots/2.0))
+    print "Hez"
+
     end_slot_sec1970 = time.mktime(time_tup) - time.timezone + \
-                       ((hour_mm+math.ceil(dmin_slots/2))/dmin_slots) * \
+                       ((hour_mm+math.ceil(dmin_slots/2.0))//dmin_slots) * \
                        dmin_slots * 60 + day_hh * 3600
     end_time = time.gmtime(end_slot_sec1970)
     start_time = time.gmtime(end_slot_sec1970 - 60 * dmin_slots * nSlots)
@@ -156,9 +162,8 @@ def get_times(nSlots):
     return start_date,end_date
 
 
-
 # ------------------------------------------------------------------
-def doOneAreaRgbs(in_aid,areaid,MetSat,year,month,day,hour,minute,fileprfx):
+def doOneAreaRgbs(seviri_data,areaid,MetSat,time_slot,fileprfx):
 
 ## This looks wrong
 
@@ -174,188 +179,140 @@ def doOneAreaRgbs(in_aid,areaid,MetSat,year,month,day,hour,minute,fileprfx):
 #         return
 
 
-    print in_aid
-        
 
+    #coverage = msg_coverage.SatProjCov(in_aid, areaid, False)
+    #hr_coverage = msg_coverage.SatProjCov(in_aid, areaid, True)
 
-    coverage = msg_coverage.SatProjCov(in_aid, areaid, False)
-    hr_coverage = msg_coverage.SatProjCov(in_aid, areaid, True)
-
-    time_slot = "%.4d%.2d%.2d%.2d%.2d"%(year,month,day,hour,minute)
-
-            
     msgwrite_log("INFO","Try make RGBs for this time: %s"%(time_slot),moduleid=MODULE_ID)
 
+    channels = seviri_data.project(areaid)
+    time_string = time_utils.time_string(time_slot)
 
+    ch = channels.strip("CAL")
 
-    global seviri_data 
-    if ((seviri_data is None) or (seviri_data.area_id != in_aid)):
-        seviri_data = msg_data.MSGSeviriChannels(time_slot, in_aid, rad = False)
-
-    ch1 = seviri_data["1"]["CAL"]
-    ch2 = seviri_data["2"]["CAL"]
-    ch3 = seviri_data["3"]["CAL"]
-    ch4 = seviri_data["4"]["CAL"]
-    ch5 = seviri_data["5"]["CAL"]
-    ch6 = seviri_data["6"]["CAL"]
-    ch7 = seviri_data["7"]["CAL"]
-    ch8 = seviri_data["8"]["CAL"]
-    ch9 = seviri_data["9"]["CAL"]
-    ch10 = seviri_data["10"]["CAL"]
-    ch11 = seviri_data["11"]["CAL"]
-    ch12 = seviri_data["12"]["CAL"]
-
-    ch1 = coverage.project_array(ch1)
-    ch2 = coverage.project_array(ch2)
-    ch3 = coverage.project_array(ch3)
-    ch4 = coverage.project_array(ch4)
-    ch5 = coverage.project_array(ch5)
-    ch6 = coverage.project_array(ch6)
-    ch7 = coverage.project_array(ch7)
-    ch8 = coverage.project_array(ch8)
-    ch9 = coverage.project_array(ch9)
-    ch10 = coverage.project_array(ch10)
-    ch11 = coverage.project_array(ch11)
-    ch12 = hr_coverage.project_array(ch12)
-    
-    ok1 = (ch1 is not None)
-    ok2 = (ch2 is not None)
-    ok3 = (ch3 is not None)
-    ok4 = (ch4 is not None)
-    ok5 = (ch5 is not None)
-    ok6 = (ch6 is not None)
-    ok7 = (ch7 is not None)
-    ok8 = (ch8 is not None)
-    ok9 = (ch9 is not None)
-    ok10 = (ch10 is not None)
-    ok11 = (ch11 is not None)
-    ok12 = (ch12 is not None)
-
-
-    ok4r=0
-    if ok4 and ok9 and ok11:
-        ch4r = co2corr_bt39(ch4,ch9,ch11)
+    ch4r = None
+    if (ch[4] is not None and 
+        ch[9] is not None and 
+        ch[11] is not None):
+        ch4r = co2corr_bt39(ch[4],ch[9],ch[11])
         ok4r = 1
-                    
+
     # IR - channel 9:
-    if ok9 and RGB_IMAGE[areaid]["ir9"]:
-        outname = "%s/%s_%s_%s_bw_ch9"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_bw_ch9"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)                
-        #this = make_bw(ch9,outname,inverse=1,gamma=1.6,stretch="gamma")
-        #this = make_bw(ch9,outname,inverse=1,stretch="linear")
-        this = make_bw(ch9,outname,inverse=1,stretch="no",bwrange=[-70+273.15,57.5+273.15])
+    if ch[9] is not None and RGB_IMAGE[areaid]["ir9"]:
+        outname = "%s/%s_%s_%s_bw_ch9"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_bw_ch9"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)                
+        this = make_bw(ch[9],outname,inverse=1,stretch="no",bwrange=[-70+273.15,57.5+273.15])
         # Sync the output with fileserver:
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
             
-        do_sir(this,"ir9",year,month,day,hour,minute,areaid)
+        do_sir(this,"ir9",time_slot,areaid)
                     
     # Water vapour - channel 5:
-    if ok5 and RGB_IMAGE[areaid]["watervapour_high"]:
-        outname = "%s/%s_%s_%s_bw_ch5"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_bw_ch5"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)                
+    if ch[5] is not None and RGB_IMAGE[areaid]["watervapour_high"]:
+        outname = "%s/%s_%s_%s_bw_ch5"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_bw_ch5"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)                
         #this = make_bw(ch5,outname,inverse=1,gamma=1.6,stretch="gamma")
-        this = make_bw(ch5,outname,inverse=1,stretch="linear")
+        this = make_bw(ch[5],outname,inverse=1,stretch="linear")
         # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
                     
-        do_sir(this,"watervapour_high",year,month,day,hour,minute,areaid)
+        do_sir(this,"watervapour_high",time_slot,areaid)
 
     # Water vapour - channel 6:
-    if ok6 and RGB_IMAGE[areaid]["watervapour_low"]:
-        outname = "%s/%s_%s_%s_bw_ch6"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_bw_ch6"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)                
+    if ch[6] is not None and RGB_IMAGE[areaid]["watervapour_low"]:
+        outname = "%s/%s_%s_%s_bw_ch6"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_bw_ch6"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)                
         #this = make_bw(ch6,outname,inverse=1,gamma=1.6,stretch="gamma")
-        this = make_bw(ch6,outname,inverse=1,stretch="linear")
+        this = make_bw(ch[6],outname,inverse=1,stretch="linear")
         # Sync the output with fileserver: /data/proj/saftest/nwcsafmsg
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
-        do_sir(this,"watervapour_low",year,month,day,hour,minute,areaid)
+        do_sir(this,"watervapour_low",time_slot,areaid)
 
     # Daytime overview:
-    if ok1 and ok2 and ok9 and RGB_IMAGE[areaid]["overview"]:
-        outname = "%s/%s_%s_%s_rgb_overview"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
-        this = makergb_visvisir(ch1,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
+    if ch[1] is not None and ch[2] is not None and ch[9] is not None and RGB_IMAGE[areaid]["overview"]:
+        outname = "%s/%s_%s_%s_rgb_overview"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
+        this = makergb_visvisir(ch[1],ch[2],ch[9],outname,gamma=(1.6,1.6,1.6))
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
-        do_sir(this,"overview",year,month,day,hour,minute,areaid)
+        do_sir(this,"overview",time_slot,areaid)
 
     # Daytime "green snow":
-    if ok3 and ok2 and ok9 and RGB_IMAGE[areaid]["greensnow"]:
-        outname = "%s/%s_%s_%s_rgb_greensnow"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_greensnow"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
-        this = makergb_visvisir(ch3,ch2,ch9,outname,gamma=(1.6,1.6,1.6))
+    if ch[3] is not None and ch[2] is not None and ch[9] is not None and RGB_IMAGE[areaid]["greensnow"]:
+        outname = "%s/%s_%s_%s_rgb_greensnow"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_greensnow"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
+        this = makergb_visvisir(ch[3],ch[2],ch[9],outname,gamma=(1.6,1.6,1.6))
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
-        do_sir(this,"greensnow",year,month,day,hour,minute,areaid)
+        do_sir(this,"greensnow",time_slot,areaid)
 
     # Daytime convection:
-    if ok1 and ok3 and ok4 and ok5 and ok6 and ok9 and RGB_IMAGE[areaid]["convection"]:
-        outname = "%s/%s_%s_%s_rgb_severe_convection"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_severe_convection"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
-        this = makergb_severe_convection(ch1,ch3,ch4,ch5,ch6,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
+    if ch[1] is not None and ch[3] is not None and ch[4] is not None and ch[5] is not None and ch[6] is not None and ch[9] is not None and RGB_IMAGE[areaid]["convection"]:
+        outname = "%s/%s_%s_%s_rgb_severe_convection"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_severe_convection"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
+        this = makergb_severe_convection(ch[1],ch[3],ch[4],ch[5],ch[6],ch[9],outname,gamma=(1.0,1.0,1.0),rgbrange=[(-30,0),(0,55.0),(-70.0,20.0)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
-        do_sir(this,"convection",year,month,day,hour,minute,areaid)
+        do_sir(this,"convection",time_slot,areaid)
 
     # New since October 31, 2007. Adam Dybbroe
     # Airmass - IR/WV:
-    if ok5 and ok6 and ok8 and ok9 and RGB_IMAGE[areaid]["convection"]:
-        outname = "%s/%s_%s_%s_rgb_airmass"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_airmass"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
+    if ch[5] is not None and ch[6] is not None and ch[8] is not None and ch[9] is not None and RGB_IMAGE[areaid]["convection"]:
+        outname = "%s/%s_%s_%s_rgb_airmass"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_airmass"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
         # WV6.2 - WV7.3	                -25 till   0 K	gamma 1
         # IR9.7 - IR10.8		-40 till  +5 K	gamma 1
         # WV6.2		               +243 till 208 K	gamma 1
-        this = makergb_airmass(ch5,ch6,ch8,ch9,outname,gamma=(1.0,1.0,1.0),rgbrange=[(-25,0),(-40,5.0),(243-70.0,208+20.0)])
+        this = makergb_airmass(ch[5],ch[6],ch[8],ch[9],outname,gamma=(1.0,1.0,1.0),rgbrange=[(-25,0),(-40,5.0),(243-70.0,208+20.0)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
     # Fog and low clouds
-    if ok4r and ok9 and ok10 and RGB_IMAGE[areaid]["nightfog"]:
-        outname = "%s/%s_%s_%s_rgb_nightfog"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_nightfog"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
-        this=makergb_nightfog(ch4r,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,293)])
+    if ch4r is not None and ch[9] is not None and ch[10] is not None and RGB_IMAGE[areaid]["nightfog"]:
+        outname = "%s/%s_%s_%s_rgb_nightfog"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_nightfog"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
+        this=makergb_nightfog(ch4r,ch[9],ch[10],outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,293)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
             
-        do_sir(this,"nightfog",year,month,day,hour,minute,areaid)
+        do_sir(this,"nightfog",time_slot,areaid)
                 
-    if ok7 and ok9 and ok10 and RGB_IMAGE[areaid]["fog"]:
-        outname = "%s/%s_%s_%s_rgb_fog"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_fog"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
-        this = makergb_fog(ch7,ch9,ch10,outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
+    if ch[7] is not None and ch[9] is not None and ch[10] is not None and RGB_IMAGE[areaid]["fog"]:
+        outname = "%s/%s_%s_%s_rgb_fog"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_fog"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
+        this = makergb_fog(ch[7],ch[9],ch[10],outname,gamma=(1.0,2.0,1.0),rgbrange=[(-4,2),(0,6),(243,283)])
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
                 
-        do_sir(this,"fog",year,month,day,hour,minute,areaid)
+        do_sir(this,"fog",time_slot,areaid)
 
     # "cloudtop": Low clouds, thin cirrus, nighttime
-    if ok4r and ok9 and ok10 and RGB_IMAGE[areaid]["cloudtop"]:
-        outname = "%s/%s_%s_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_cloudtop_co2corr"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
-        #this = makergb_cloudtop(ch4r,ch9,ch10,outname,gamma=(1.2,1.2,1.2))
-        this = makergb_cloudtop(ch4r,ch9,ch10,outname,stretch="linear")
+    if ch4r is not None and ch[9] is not None and ch[10] is not None and RGB_IMAGE[areaid]["cloudtop"]:
+        outname = "%s/%s_%s_%s_rgb_cloudtop_co2corr"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_cloudtop_co2corr"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
+        this = makergb_cloudtop(ch4r,ch[9],ch[10],outname,stretch="linear")
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
-        do_sir(this,"cloudtop",year,month,day,hour,minute,areaid)
+        do_sir(this,"cloudtop",time_slot,areaid)
 
     # High resolution daytime overview
-    if ok1 and ok2 and ok9 and ok12 and RGB_IMAGE[areaid]["hr_overview"]:
-        outname = "%s/%s_%s_%s_rgb_hr_overview"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,areaid)
-        msgwrite_log("INFO","%s product: %s_%s_rgb_hr_overview"%(MSG_SATELLITE,time_slot,areaid),moduleid=MODULE_ID)
+    if ch[1] is not None and ch[2] is not None and ch[9] is not None and ch[12] is not None and RGB_IMAGE[areaid]["hr_overview"]:
+        outname = "%s/%s_%s_%s_rgb_hr_overview"%(RGBDIR_OUT,MetSat,time_string,areaid)
+        msgwrite_log("INFO","%s product: %s_%s_rgb_hr_overview"%(MetSat,time_slot,areaid),moduleid=MODULE_ID)
         
-        this = makergb_hrovw(ch1, ch2, ch9, ch12, outname, gamma=(1.6,1.6,1.6))
+        this = makergb_hrovw(ch[1], ch[2], ch[9], ch[12], outname, gamma=(1.6,1.6,1.6))
         if FSERVER_SYNC:
             os.system("%s %s/%s* %s/."%(SYNC,RGBDIR_OUT,os.path.basename(outname),FSERVER_RGBDIR_OUT))
 
-        do_sir(this,"hr_overview",year,month,day,hour,minute,areaid)
+        do_sir(this,"hr_overview",time_slot,areaid)
 
 
     return
@@ -363,13 +320,17 @@ def doOneAreaRgbs(in_aid,areaid,MetSat,year,month,day,hour,minute,fileprfx):
 
 def doGlobe(time_slot):
     import Image
+
+    time_string = time_utils.time_string(time_slot)
+
+    print time_string
+
+    outname = "%s/%s_%s_%s_rgb_overview.png"%(RGBDIR_OUT,MSG_SATELLITE,time_string,"globe")
+    msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MSG_SATELLITE,time_string,"globe"),moduleid=MODULE_ID)
     
-    outname = "%s/%s_%s_%s_rgb_overview.png"%(RGBDIR_OUT,MSG_SATELLITE,time_slot,"globe")
-    msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MSG_SATELLITE,time_slot,"globe"),moduleid=MODULE_ID)
-    
-    ch1 = msg_data.MSGChannel(start_date, "globe","1",rad = False)
-    ch2 = msg_data.MSGChannel(start_date, "globe","2",rad = False)
-    ch9 = msg_data.MSGChannel(start_date, "globe","9",rad = False)
+    ch1 = msg_data.MSGChannel(time_slot, "globe","1",rad = False)
+    ch2 = msg_data.MSGChannel(time_slot, "globe","2",rad = False)
+    ch9 = msg_data.MSGChannel(time_slot, "globe","9",rad = False)
 
     if((ch1 is None) or (ch2 is None) or (ch9 is None)):
         return
@@ -400,14 +361,12 @@ if __name__ == "__main__":
         print "Usage: %s <n-slots back in time>"%(sys.argv[0])
         sys.exit(-9)
     else:
-        nSlots = string.atoi(sys.argv[1])
+        n_slots = string.atoi(sys.argv[1])
 
-    start_date,end_date = get_times(nSlots)
-    
-    # Just for testing -- Martin, 20090918
-    start_date = "200909141200"
-    end_date = "200909141200"
+    time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
 
+    start_date = time_slots[0]
+    end_date = time_slots[-1]
 
     msgwrite_log("INFO","Start and End times: ",
                  start_date,end_date,
@@ -417,35 +376,20 @@ if __name__ == "__main__":
     MetSat=MSG_SATELLITE
     file_prefix=RGBDIR_IN
         
-    time_start = UTC_time_from_string(start_date)
-    time_end = UTC_time_from_string(end_date)
+    for time_slot in time_slots:
 
-    if time_start > time_end:
-        msgwrite_log("INFO","Start time is later than end time!",
-                     moduleid=MODULE_ID)
-
+        doGlobe(time_slot)
         
-    sec = time_start
-    while (sec <= time_end):
-        current_time = time.gmtime(sec)
+        seviri_data = msg_data.MSGSeviriChannels(time_slot, 
+                                                 input_area_id, 
+                                                 rad = False)
 
-        time_slot = "%.4d%.2d%.2d%.2d%.2d"%(current_time.tm_year,
-                                            current_time.tm_mon,
-                                            current_time.tm_mday,
-                                            current_time.tm_hour,
-                                            current_time.tm_min)
-
-        #doGlobe(time_slot)
 
         # Loop over areas:
         for output_area_id in NWCSAF_MSG_AREAS:
-            doOneAreaRgbs(input_area_id,output_area_id,
+            doOneAreaRgbs(seviri_data,
+                          output_area_id,
                           MetSat,
-                          current_time.tm_year,
-                          current_time.tm_mon,
-                          current_time.tm_mday,
-                          current_time.tm_hour,
-                          current_time.tm_min,
+                          time_slot,
                           file_prefix)
 
-        sec = sec + DSEC_SLOTS

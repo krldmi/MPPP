@@ -1,4 +1,4 @@
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8 -*-
 # **************************************************************************
 #
 #  COPYRIGHT   : SMHI
@@ -62,7 +62,7 @@ from msg_rgb_remap import *
 def make_ctype_prod01(irch,ctypefile,areaid,**options):
     import acpgimage,_acpgpilext
     import smhi_safnwc_legends
-    import Numeric
+    import numpy
     import Image
     import pps_array2image
     
@@ -89,19 +89,19 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
     # Read the Cloud Type product:
     that = epshdf.read_cloudtype(ctypefile,1,0,0)
     legend = smhi_safnwc_legends.get_vv_legend()
-    arr = Numeric.where(Numeric.logical_and(Numeric.less_equal(that.cloudtype,8),
-                                            Numeric.greater_equal(that.cloudtype,5)),that.cloudtype-2,bw)
-    arr = Numeric.where(Numeric.less_equal(that.cloudtype,2),that.cloudtype,arr).astype('b')
+    arr = numpy.where(numpy.logical_and(numpy.less_equal(that.cloudtype,8),
+                                        numpy.greater_equal(that.cloudtype,5)),that.cloudtype-2,bw)
+    arr = numpy.where(numpy.less_equal(that.cloudtype,2),that.cloudtype,arr).astype('B')
     # Put the snow&ice as cloudfree land/sea:
-    #arr = Numeric.where(Numeric.logical_and(Numeric.less_equal(that.cloudtype,4),
-    #                                        Numeric.greater_equal(that.cloudtype,3)),that.cloudtype-2,arr)
+    #arr = numpy.where(numpy.logical_and(numpy.less_equal(that.cloudtype,4),
+    #                                        numpy.greater_equal(that.cloudtype,3)),that.cloudtype-2,arr)
     # The above was in before (version 0.27) but seems to have been lost - but knowone has complained!
     # Check with Claes Brundin!
     # Adam Dybbroe, 2007-10-30
     #
     shape = that.cloudtype.shape    
     size=shape[1],shape[0]
-    this = Image.fromstring("P",size,arr.tostring())
+    this = Image.fromarray(arr)
     newleg=[]
     for i in legend:    
 	newleg = newleg + list(i)
@@ -113,7 +113,7 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
         msgwrite_log("INFO","Add coastlines and political borders to image. Area = %s"%(areaid),moduleid=MODULE_ID)
         rimg = acpgimage.image(areaid)
         rimg.info["nodata"]=255
-        rimg.data = arr.astype('b')
+        rimg.data = arr.astype('B')
         area_overlayfile = "%s/coastlines_%s.asc"%(AUX_DIR,areaid)
         msgwrite_log("INFO","Read overlay. Try find something prepared on the area...",moduleid=MODULE_ID)
         try:
@@ -147,7 +147,7 @@ def make_ctype_prod01(irch,ctypefile,areaid,**options):
 def make_ctype_prod02(irch,ctypefile,areaid,**options):
     import acpgimage,_acpgpilext
     import smhi_safnwc_legends
-    import Numeric
+    import numpy
     import Image
     import pps_array2image
     nodata = 0 # Should check this and make a better solution for future relases, Ad 2007-10-30
@@ -175,7 +175,7 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
     legend = smhi_safnwc_legends.get_tv_legend()
 
     # Stretching ir-channel only on the cloudy pixels!
-    #irch = Numeric.where(Numeric.less_equal(that.cloudtype,4),0,irch)
+    #irch = numpy.where(numpy.less_equal(that.cloudtype,4),0,irch)
 
     # Generate bw IR image:
     if options.has_key("gamma"):
@@ -185,13 +185,13 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
         msgwrite_log("INFO","Using stretch = crude-linear with temp-range = [205.0,295.0]",moduleid=MODULE_ID)
         bw = get_bw_array(irch,stretch="crude-linear",bwrange=[205.0,295.0],inverse=1,missingdata=0,nodata=nodata)
 
-    bw = Numeric.where(Numeric.less(bw,5),5,bw).astype('b')
+    bw = numpy.where(numpy.less(bw,5),5,bw).astype('B')
 
-    arr = Numeric.where(Numeric.less_equal(that.cloudtype,4),that.cloudtype,bw).astype('b')
+    arr = numpy.where(numpy.less_equal(that.cloudtype,4),that.cloudtype,bw).astype('B')
 
     shape = that.cloudtype.shape    
     size=shape[1],shape[0]
-    this = Image.fromstring("P",size,arr.tostring())
+    this = Image.fromarray(arr)
     newleg=[]
     for i in legend:    
 	newleg = newleg + list(i)
@@ -204,7 +204,7 @@ def make_ctype_prod02(irch,ctypefile,areaid,**options):
         msgwrite_log("INFO","Add coastlines and political borders to image. Area = %s"%(areaid),moduleid=MODULE_ID)
         rimg = acpgimage.image(areaid)
         rimg.info["nodata"]=255
-        rimg.data = arr.astype('b')
+        rimg.data = arr.astype('B')
         area_overlayfile = "%s/coastlines_%s.asc"%(AUX_DIR,areaid)
         msgwrite_log("INFO","Read overlay. Try find something prepared on the area...",moduleid=MODULE_ID)
         try:
@@ -244,7 +244,7 @@ if __name__ == "__main__":
         areaid = sys.argv[5]
 
     import time
-    import Image, Numeric
+    import Image, numpy
     import _satproj
     import epshdf
     import area
