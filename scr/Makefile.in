@@ -14,8 +14,9 @@ INSTALL_FILES=msg_remap_all.py msg_remap_all_Oper.py \
 	      msg_cmask_remap.py \
 	      misc_utils.py \
 	      msg_coverage.py \
-	      msg_image_manipulation.py \
-	      time_utils.py
+	      image_processing.py \
+	      time_utils.py \
+	      geo_image.py
 
 BIN_INSTALL_FILES=msg_remap_all.ksh msg_remap_all_Oper.ksh msg_rgb_remap_all_Oper.ksh \
 	tm_msg_postproc.ksh msg_PutProducts2ftpserver.ksh msg_n2inject.ksh

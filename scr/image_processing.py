@@ -1,11 +1,10 @@
 import numpy
 import msg_communications
 
-MODULE_ID = "MSG IMAGE PROCESSING"
+MODULE_ID = "IMAGE PROCESSING"
 
 def gamma_corr(g,arr):
-    """
-    Perform gamma correction *g* to an array *arr*, which is assumed
+    """Perform gamma correction *g* to an array *arr*, which is assumed
     to be in the range [0,255], and return the resulting array (same
     range). The values of the array are also stretched to range.
     """
@@ -27,6 +26,12 @@ def gamma_corr(g,arr):
     
     return retv
 
+def gamma_correction(arr,g):
+    """Perform gamma correction *g* to an array *arr*, which is assumed
+    to be in the range [0.0,1.0], and return the resulting array (same
+    range). 
+    """
+    return arr ** (1.0 / g)
 
 def stretch_hist_equalize(arr):
     """Stretch a monochromatic masked array *arr* by performing

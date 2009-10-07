@@ -89,7 +89,7 @@ from smhi_safnwc_legends import *
 
 from msg_rgb_remap_all_Oper import do_sir
 from misc_utils import ensure_dir
-from msg_coverage import get_coverage
+import msg_coverage
 
 import time_utils
 import msg_data

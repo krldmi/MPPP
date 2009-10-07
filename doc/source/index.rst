@@ -11,6 +11,10 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   msg_coverage
+   geo_image
+   time_utils
+
 Indices and tables
 ==================
 
@@ -26,24 +30,17 @@ MSG_data
    :undoc-members:
 
 py_msg
-========
+======
 
 .. automodule:: py_msg
    :members:
    :undoc-members:
 
 
-MSG_image_manipulation
+image_processing
 ======================
 
-.. automodule:: msg_image_manipulation
-   :members:
-   :undoc-members:
-
-MSG_coverage
-============
-
-.. automodule:: msg_coverage
+.. automodule:: image_processing
    :members:
    :undoc-members:
 

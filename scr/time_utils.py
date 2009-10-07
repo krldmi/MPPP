@@ -1,6 +1,11 @@
 import datetime
 import numpy
 
+
+"""This module adds a few time utilities to MSGPP. It is base on the
+datetime.datetime object.
+"""
+
 def time_slots(n_slots, dt = 15):
     """Returns an array of time slots for the previous satellite
      shots, where the time of the last slot is close to now, and the

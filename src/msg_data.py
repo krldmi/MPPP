@@ -20,6 +20,8 @@ import py_msg
 import area
 import time_utils
 import msg_coverage
+import geo_image
+import image_processing
 
 
 class MSGSeviriChannels:
@@ -82,6 +84,8 @@ class MSGSeviriChannels:
                                      "MASK":_data["MASK"][10]}),
                          _hrdata]
 
+        self._co2corr_bt39
+
     def __getitem__(self,key):
         if(key == "1" or key == "VIS06" or key == 1):
             return self.channels[0]
@@ -107,6 +111,8 @@ class MSGSeviriChannels:
             return self.channels[10]
         if(key == "12" or key == "HRVIS" or key == 12):
             return self.channels[11]
+        if(key == "CAL" or key == "REFL" or key == "BT" or key == "RAD"):
+            return self.strip(key)
 
     def project(self,dest_area):
         """Make a projected copy of the object to
@@ -127,6 +133,7 @@ class MSGSeviriChannels:
                     res.channels.append(ch.project(dest_area,hr_coverage))
                 else:
                     res.channels.append(ch.project(dest_area,coverage))
+
             else:
                 res.channels.append(None)
         return res
@@ -142,6 +149,289 @@ class MSGSeviriChannels:
             ch.insert(0,None)
         return ch
 
+    def _co2corr_bt39(self):
+        """CO2 correction of the brightness temperature of the MSG 3.9 um
+        channel:
+        
+        T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
+        Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
+        dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
+        
+        """
+        epsilon = 0.001
+        bt039 = self[4]["BT"]
+        bt108 = self[9]["BT"]
+        bt134 = self[11]["BT"]
+        
+        dt_co2 = (bt108-bt134)/4.0
+        a = bt108*bt108*bt108*bt108
+        b = (bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)
+        
+        Rcorr = a - b
+        
+        a = bt039*bt039*bt039*bt039
+        x = numpy.where(a+Rcorr > 0.0,(a + Rcorr), 0)
+                
+        self.channels[3]._bt = x ** 0.25
+    
+
+    def cloudtype(self):
+        return
+
+    def ctth(self):
+        return
+
+    def cloudmask(self):
+        return
+
+    def airmass(self):
+        """Make an Airmass RGB image composite from SEVIRI channels.
+        
+        +--------------------+--------------------+--------------------+
+        | Channels           | Temp               | Gamma              |
+        +====================+====================+====================+
+        | WV6.2 - WV7.3      |     -25 to 0 K     | gamma 1            |
+        +--------------------+--------------------+--------------------+
+        | IR9.7 - IR10.8     |     -40 to 5 K     | gamma 1            |
+        +--------------------+--------------------+--------------------+
+        | WV6.2              |   243 to 208 K     | gamma 1            |
+        +--------------------+--------------------+--------------------+
+        """
+        if(self[5] is None or
+           self[6] is None or
+           self[8] is None or
+           self[9] is None):
+            return None
+
+        im = geo_image.GeoImage((self[5]["BT"]-self[6]["BT"],
+                                 self[8]["BT"]-self[9]["BT"],
+                                 self[5]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB",
+                                range = ((-25,0),
+                                         (-40,5),
+                                         (243 - 70, 208 + 20)))
+        return im
+            
+    def ir9(self):
+        """Make a black and white image of SEVIRI channel 9."""
+        if(self[9] is not None):
+            im = geo_image.GeoImage(self[9]["BT"],
+                                    self.area_id,
+                                    self.time_slot,
+                                    mode = "L",
+                                    range = (-70+273.15,57.5+273.15))
+            
+            im.enhance(inverse = True)
+            return im
+        else:
+            return None
+
+    def wv_high(self):
+        """Make a black and white image of SEVIRI channel 5."""
+        if(self[5] is not None):
+            im =  geo_image.GeoImage(self[5]["BT"],
+                                     self.area_id,
+                                     self.time_slot,
+                                     mode = "L")
+            im.enhance(inverse = True, stretch = "linear")
+            return im
+        else:
+            return None
+
+    def wv_low(self):
+        """Make a black and white image of SEVIRI channel 6."""
+        if(self[6] is not None):
+            im = geo_image.GeoImage(self[6]["BT"],
+                                    self.area_id,
+                                    self.time_slot,
+                                    mode = "L")
+
+            im.enhance(inverse = True, stretch = "linear")
+            return im
+        else:
+            return None
+        
+    def overview(self):
+        """Make an Overview RGB image composite from SEVIRI channels.
+        """
+        if(self[1] is None or
+           self[2] is None or
+           self[9] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[1]["REFL"],
+                                 self[2]["REFL"],
+                                 -self[9]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB")
+
+        im.enhance(stretch = "crude")
+        im.enhance(gamma = 1.6)
+
+        return im
+
+    def hr_overview(self):
+        """Make a High Resolution Overview RGB image composite from SEVIRI
+        channels.
+        """
+        if(self[1] is None or
+           self[2] is None or
+           self[9] is None or
+           self[12] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[1]["REFL"],
+                                 self[2]["REFL"],
+                                 -self[9]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB")
+
+        im.enhance(stretch = "crude")
+        im.enhance(gamma = 1.6)
+        
+        luminance = self[12]["REFL"]
+
+        luminance = geo_image.crude_stretch(luminance)
+
+        luminance = image_processing.gamma_correction(luminance,1.5)
+
+        im.replace_luminance(luminance)
+        
+        return im
+    
+
+
+    def green_snow(self):
+        """Make a Green Snow RGB image composite from SEVIRI channels.
+        """
+        if(self[3] is None or
+           self[2] is None or
+           self[9] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[3]["REFL"],
+                                 self[2]["REFL"],
+                                 -self[9]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB")
+
+        im.enhance(stretch = "crude")
+        im.enhance(gamma = 1.6)
+
+        return im
+
+    def red_snow(self):
+        """Make a Red Snow RGB image composite from SEVIRI channels.
+        """
+        if(self[1] is None or
+           self[3] is None or
+           self[9] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[1]["REFL"],
+                                 self[3]["REFL"],
+                                 -self[9]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB")
+
+        im.enhance(stretch = "crude")
+
+        return im
+
+
+    def convection(self):
+        """Make a Severe Convection RGB image composite from SEVIRI channels.
+        """
+        if(self[1] is None or
+           self[3] is None or
+           self[4] is None or
+           self[5] is None or
+           self[6] is None or
+           self[9] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[5]["BT"] - self[6]["BT"],
+                                 self[4]["BT"] - self[9]["BT"],
+                                 self[3]["REFL"] - self[1]["REFL"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB",
+                                range = ((-30, 0),
+                                         (0, 55),
+                                         (- 70, 20)))
+
+        return im
+
+
+    def fog(self):
+        """Make a Fog RGB image composite from SEVIRI channels.
+        """
+        if(self[7] is None or
+           self[9] is None or
+           self[10] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[10]["BT"] - self[9]["BT"],
+                                 self[9]["BT"] - self[7]["BT"],
+                                 self[9]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB",
+                                range = ((-4, 2),
+                                         (0, 6),
+                                         (243, 283)))
+
+        im.enhance(gamma = (1.0, 2.0, 1.0))
+        
+        return im
+
+    def night_fog(self):
+        """Make a Night Fog RGB image composite from SEVIRI channels.
+        """
+        if(self[4] is None or
+           self[9] is None or
+           self[10] is None):
+            return None
+        
+        im = geo_image.GeoImage((self[10]["BT"] - self[9]["BT"],
+                                 self[9]["BT"] - self[4]["BT"],
+                                 self[9]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB",
+                                range = ((-4, 2),
+                                         (0, 6),
+                                         (243, 293)))
+
+        im.enhance(gamma = (1.0, 2.0, 1.0))
+
+        return im
+
+    def cloudtop(self):
+        """Make a Cloudtop RGB image composite from SEVIRI channels.
+        """
+        if(self[4] is None or
+           self[9] is None or
+           self[10] is None):
+            return None
+        
+        im = geo_image.GeoImage((- self[4]["BT"],
+                                 - self[9]["BT"],
+                                 - self[10]["BT"]),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB")
+
+        im.enhance(stretch = (0.005,0.005))
+
+        return im
+        
 def _getkey(item,key):
     return item[key]
 
@@ -151,6 +441,7 @@ class MSGChannel:
         self.time_slot = time_slot
         self.area_id = area_id
         self.channel_id = channel_id
+        self.wavelength = None
         if (data is None):
             data = py_msg.get_channel(time_utils.time_string(time_slot), 
                                       area_filename, 
@@ -167,7 +458,7 @@ class MSGChannel:
             self._rad = None
         else:
             self._rad = numpy.ma.array(data["RAD"],
-                                       mask=data["MASK"],
+                                       mask = data["MASK"],
                                        fill_value = py_msg.missing_value())
 
         if (channel_id == "HRVIS" or
@@ -184,7 +475,7 @@ class MSGChannel:
             self._bt = None
         else:
             self._bt = numpy.ma.array(data["CAL"],
-                                      mask=data["MASK"],
+                                      mask = data["MASK"],
                                       fill_value = py_msg.missing_value())
             self._refl = None
 
@@ -241,7 +532,7 @@ class MSGChannel:
 
         res = copy.copy(self)
         res.area_id = dest_area
-        if(not coverage):
+        if(coverage is None):
             if(channel_id == "HRVIS" or channel_id == "12"):
                 coverage = msg_coverage.SatProjCov(self.area_id, dest_area, True)            
             else:
@@ -252,7 +543,6 @@ class MSGChannel:
             res._refl = coverage.project_array(self._refl)
         if(self._bt is not None):
             res._bt = coverage.project_array(self._bt)
-
         return res
 
 # -----------------------------------------------------------------------------

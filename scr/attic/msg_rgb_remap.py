@@ -309,19 +309,23 @@ def makergb_template(rgb,outprfx,**options):
 
 
 
-# ------------------------------------------------------------------
-# This rgb (airmass) is not yet possible, as we do not have any channel 8 as a by-product
-# from the NWCSAF-package! FIXME!
-# This is the recipe from EUMETSAT:
-# WV6.2 - WV7.3	                -25 till   0 K	gamma 1
-# IR9.7 - IR10.8		-40 till  +5 K	gamma 1
-# WV6.2		               +243 till 208 K	gamma 1
-#
-# Adam Dybbroe 2007-10-30
-#
+
+
+
+
 def makergb_airmass(ch5,ch6,ch8,ch9,outprfx,**options):
-    """
-    Make Airmass RGB image composite from SEVIRI channels.
+    """Make Airmass RGB image composite from SEVIRI channels.
+
+    +--------------------+--------------------+--------------------+
+    | Channels           | Temp               | Gamma              |
+    +====================+====================+====================+
+    | WV6.2 - WV7.3      |     -25 to 0 K     | gamma 1            |
+    +--------------------+--------------------+--------------------+
+    | IR9.7 - IR10.8     |     -40 to 5 K     | gamma 1            |
+    +--------------------+--------------------+--------------------+
+    | WV6.2              |   243 to 208 K     | gamma 1            |
+    +--------------------+--------------------+--------------------+
+
     
     @type ch5: Array of floats
     @param ch5: SEVIRI channel 5 calibrated Tbs on area (remapped)
@@ -349,8 +353,7 @@ def makergb_airmass(ch5,ch6,ch8,ch9,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
-    """
-    Make Nightfog RGB image composite from SEVIRI channels.
+    """Make Nightfog RGB image composite from SEVIRI channels.
     
     @type ch4r: Array of floats
     @param ch4r: CO2-corrected SEVIRI channel 4 calibrated Tbs on area (remapped)
@@ -376,8 +379,7 @@ def makergb_nightfog(ch4r,ch9,ch10,outprfx,**options):
 
 # ------------------------------------------------------------------
 def makergb_fog(ch7,ch9,ch10,outprfx,**options):
-    """
-    Make Fog RGB image composite from SEVIRI channels.
+    """Make Fog RGB image composite from SEVIRI channels.
     """
     
     red = ch10-ch9
@@ -734,49 +736,6 @@ def get_ch_projected(ch_file,cov):
     return ch_proj,1
 
 
-# ------------------------------------------------------------------
-# CO2 correction of the MSG 3.9 um channel:
-#
-# T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
-# Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
-# dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
-#
-def co2corr_bt39(bt039,bt108,bt134):
-    """
-    CO2 correction of the MSG 3.9 um channel:
-    
-    T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
-    Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
-    dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
-
-    @type bt039: Array
-    @param bt039: Channel 4 (3.9um) brightness temperatures
-
-    """
-    import numpy
-    epsilon = 0.001
-    
-    #not_missing_data = numpy.greater(bt108,0.00).astype('B')
-    #dt_co2 = numpy.where(not_missing_data,(bt108-bt134)/4.0,0)
-    #a = numpy.where(not_missing_data,bt108*bt108*bt108*bt108,0)
-    #b = numpy.where(not_missing_data,(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2),0)
-    dt_co2 = (bt108-bt134)/4.0
-    a = bt108*bt108*bt108*bt108
-    b = (bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)
-
-    #print numpy.minimum.reduce(a.flat),numpy.maximum.reduce(a.flat)
-    #print numpy.minimum.reduce(b.flat),numpy.maximum.reduce(b.flat)
-    Rcorr = a - b
-
-    a = bt039*bt039*bt039*bt039
-    x = numpy.where(a+Rcorr > 0.0,(a + Rcorr), 0)
-    print "x: ",x.min(),x.max()
-    #print "a: ",numpy.minimum.reduce(a.flat),numpy.maximum.reduce(a.flat)
-    #print "Rcorr: ",numpy.minimum.reduce(Rcorr.flat),numpy.maximum.reduce(Rcorr.flat)
-    
-    retv = x ** 0.25
-    
-    return retv
 
 # ------------------------------------------------------------------
 if __name__ == "__main__":

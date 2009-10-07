@@ -1,14 +1,7 @@
 include ../def.mk
 
 INSTALL_FILES=C0429_1999_S0700_0900.LAT C0429_1999_S0700_0900.LON \
-	msg_coverage_CEuro.euro.hdf msg_coverage_CEuro.mesanX.hdf \
-	msg_coverage_CEuro.nswe.hdf msg_coverage_CEuro.scan.hdf msg_coverage_CEuro.sswe.hdf \
-	msg_coverage_CEuro.euro4.hdf \
 	C0450_2099_S0900_2300.LAT C0450_2099_S0900_2300.LON \
-	msg_coverage_Europe.euro4.hdf msg_coverage_Europe.scan2.hdf msg_coverage_Europe.sswe.hdf \
-	msg_coverage_Europe.mesanX.hdf msg_coverage_Europe.scan.hdf \
-	msg_coverage_EuropeCanary.euro.hdf msg_coverage_EuropeCanary.eurotv.hdf msg_coverage_EuropeCanary.scan.hdf \
-	msg_coverage_EuropeCanary.euro4.hdf msg_coverage_EuropeCanary.mesanX.hdf\
 	C0600_1749_S1200_3000.LON C0600_1749_S1200_3000.LAT \
 	C0600_1749_S1200_3000.SAT_AZI C0600_1749_S1200_3000.SAT_ZEN
 
