@@ -154,9 +154,9 @@ PRODUCTS = {"globe":
                  "PGE02bj":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_ir.png",
                              FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_ir.png")],
 
-                 "PGE02cj":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png",
+                 "PGE02c":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png",
                             FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"),
-                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"],
+                           BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"],
 
                  "PGE02d":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png",
                             FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png"),

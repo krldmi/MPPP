@@ -242,9 +242,8 @@ class MSGSeviriChannels:
         """
         time_string = time_utils.time_string(self.time_slot)
 
-        prefix="SAFNWC_MSG%.1d_CT___%s_%s"%(msgpp_config.MSG_NUMBER,
-                                            time_string,
-                                            self.area_id)
+        prefix="SAFNWC_MSG?_CT___%s_%s"%(time_string,
+                                         self.area_id)
         
         msgctype_filename=None
         for ext in msgpp_config.MSG_PGE_EXTENTIONS:
@@ -296,9 +295,8 @@ class MSGSeviriChannels:
         """
         time_string = time_utils.time_string(self.time_slot)
 
-        prefix="SAFNWC_MSG%.1d_CTTH_%s_%s"%(msgpp_config.MSG_NUMBER,
-                                            time_string,
-                                            self.area_id)
+        prefix="SAFNWC_MSG?_CTTH_%s_%s"%(time_string,
+                                         self.area_id)
         msgctth_filename=None
         for ext in msgpp_config.MSG_PGE_EXTENTIONS:
             match_str = "%s/%s*%s"%(msgpp_config.CTTHDIR_IN,prefix,ext)
