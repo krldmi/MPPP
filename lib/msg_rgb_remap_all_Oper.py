@@ -51,22 +51,12 @@
 
 # Global modules
 
-import math
-import glob
-import datetime
-
-
-
 # PPS modules
-
-import area
 
 # Local modules
 
 from msg_communications import *
 from msgpp_config import *
-from msg_remap_util import *
-from msg_rgb_remap import *
 from misc_utils import *
 import msg_coverage
 import msg_data
@@ -87,7 +77,7 @@ def doGlobe(time_slot):
     """
     
     import Image
-
+    import misc_utils
     time_string = time_utils.time_string(time_slot)
     msgwrite_log("INFO",
                  "Loading Global Seviri channels...",
@@ -120,6 +110,7 @@ def doGlobe(time_slot):
     im9i = Image.fromarray(ch9i.astype(numpy.uint8),"L")
 
     im = Image.merge("RGB",(im1,im2,im9i))
+    misc_utils.ensure_dir(outname)
     im.save(outname)
 
 
@@ -140,8 +131,9 @@ if __name__ == "__main__":
 
     time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
 
-    # test on the 14th of september
-    time_slots = [datetime.datetime(2009,9,14,11,0)]
+    # Working locally
+    import datetime
+    time_slots = [datetime.datetime(2009,10,8,14,30)]
 
     start_date = time_slots[0]
     end_date = time_slots[-1]
@@ -165,14 +157,13 @@ if __name__ == "__main__":
         seviri_data = msg_data.MSGSeviriChannels(time_slot, 
                                                  input_area_id, 
                                                  rad = False)
+        seviri_data.load()
 
         msgwrite_log("INFO",
                      "Loading done",
                      moduleid=MODULE_ID)
 
             
-        time_string = time_utils.time_string(time_slot)
-        
         for akey in PRODUCTS:
             if akey == "globe":
                 continue
@@ -182,13 +173,16 @@ if __name__ == "__main__":
             channels = seviri_data.project(akey)
 
             for pkey in PRODUCTS[akey]:
-                msgwrite_log("INFO",
-                             "Generating %s for area %s."%(pkey,akey),
-                             moduleid=MODULE_ID)
+                if pkey in ["convection", "airmass", "overview","ir9",
+                            "wv_low", "wv_high", "greensnow", "redsnow",
+                            "fog", "nightfog", "cloudtop", "hr_overview"]:
+                    msgwrite_log("INFO",
+                                 "Generating %s for area %s."%(pkey,akey),
+                                 moduleid=MODULE_ID)
                 rgb = None
                 if(pkey == "convection"):
                     rgb = channels.convection()
-                if(pkey == "airmass"):
+                elif(pkey == "airmass"):
                     rgb = channels.airmass()
                 elif(pkey == "overview"):
                     rgb = channels.overview()
@@ -208,12 +202,8 @@ if __name__ == "__main__":
                     rgb = channels.night_fog()
                 elif(pkey == "cloudtop"):
                     rgb = channels.cloudtop()
-                elif(pkey == "hr_overview"):
+                if(pkey == "hr_overview"):
                     rgb = channels.hr_overview()
-                elif(pkey == "wv_low"):
-                    rgb = channels.wv_low()
-                else:
-                    print "Not implemented !"
 
                 if rgb is not None:
                     for filename in PRODUCTS[akey][pkey]:

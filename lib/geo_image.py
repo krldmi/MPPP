@@ -8,6 +8,10 @@ import area
 import image_processing
 import misc_utils
 import msg_communications
+import acpgimage
+import msgpp_config
+import _acpgpilext
+import pps_array2image
 
 try:
     from osgeo import gdal
@@ -26,8 +30,9 @@ class GeoImage:
     of the different *channels* (r, g, b for example), but also the area on
     which it is defined (*area_id* parameter) and *time_slot* of the
     snapshot. The *mode* tells if the channels define a black and white image
-    ("L"), an rgb image ("RGB"), an rgba image ("RGBA"), or a YCbCr image
-    ("YCbCr"). *fill_value* sets how the image is filled where data is
+    ("L"), an rgb image ("RGB"), an rgba image ("RGBA"), an YCbCr image
+    ("YCbCr"), or an indexed image ("P"), in which case a *palette* is
+    needed. *fill_value* sets how the image is filled where data is
     missing. Setting it to (0,0,0) in RGB mode for example will produce black
     where data is missing. "None" will produce transparency instead (if the
     file format allows it).
@@ -45,14 +50,16 @@ class GeoImage:
     width = 0
     height = 0
     fill_value = None
+    palette = None
 
     def __init__(self,channels, area_id, time_slot, 
-                 mode = "L",range = None, fill_value = None):
+                 mode = "L",range = None, fill_value = None, palette = None):
         self.area_id = area_id
         self.time_slot = time_slot
         self.mode = mode
         self.fill_value = fill_value
         self.channels = []
+        self.palette = palette
         if(isinstance(channels,tuple) or
            isinstance(channels,list)):
             self.height = channels[0].shape[0]
@@ -83,6 +90,11 @@ class GeoImage:
 
     def _finalize(self):
         channels = []
+        if self.mode == "P":
+            self.convert("RGB")
+        if self.mode == "PA":
+            self.convert("RGBA")
+
         for ch in self.channels:
             channels.append(np.ma.array(ch.clip(0,1)*255,
                                         np.uint8,
@@ -95,6 +107,8 @@ class GeoImage:
         first, then renaming it to the final filename. See also
         :meth:`GeoImage.save` and :meth:`GeoImage.double_save`.
         """
+        misc_utils.ensure_dir(filename)
+
         file,ext = os.path.splitext(filename)
         path,file = os.path.split(filename)
         trash,tmpfilename = tempfile.mkstemp(suffix = ext,
@@ -109,6 +123,8 @@ class GeoImage:
         :meth:`GeoImage.secure_save`.
         """
         self.save(local_filename)
+
+        misc_utils.ensure_dir(remote_filename)
 
         file,ext = os.path.splitext(remote_filename)
         path,file = os.path.split(remote_filename)
@@ -128,6 +144,8 @@ class GeoImage:
         file_tuple = os.path.splitext(filename)
 
         channels = self._finalize()
+
+        misc_utils.ensure_dir(filename)
         
         if(file_tuple[1] == ".tif"):
             self.geotiff_save(filename)
@@ -320,11 +338,75 @@ class GeoImage:
         dst_ds = None
 
 
-    def convert(self,mode):
+    def putalpha(self, alpha):
+        """Adds an *alpha* channel to the current image, or replaces it with
+        *alpha* if it already exists.
+        """
+        if(not self.mode.endswith("A")):
+            self.convert(self.mode+"A")
+        self.channels[-1] = alpha
+        
+
+    def convert(self, mode):
+        """Convert the current to the given *mode*.
+        """
         if mode == self.mode:
             return
-        
-        if((self.mode == "RGB" and
+
+        if(mode == self.mode+"A"):
+            self.channels.append(np.ma.ones(self.channels[0].shape))
+            self.mode = mode
+
+        elif((self.mode == "P" and
+            mode == "RGB") or
+           (self.mode == "PA" and
+            mode == "RGBA")):
+
+
+            p = np.ma.array(self.channels[0])
+            a = np.ma.array(self.channels[-1])
+            if self.mode == "PA":
+                for i in range(len(self.channels),4):
+                    self.channels.append(np.ma.zeros(p.shape))
+                    self.channels[i].mask = p.mask
+
+                self.channels[3] = a
+            else:
+                for i in range(len(self.channels),3):
+                    self.channels.append(np.ma.zeros(p.shape))
+                    self.channels[i].mask = p.mask
+
+            
+
+            rcdf = np.zeros(len(self.palette))
+            gcdf = np.zeros(len(self.palette))
+            bcdf = np.zeros(len(self.palette))
+
+            for i in range(len(self.palette)):
+                rcdf[i] = self.palette[i][0]
+                gcdf[i] = self.palette[i][1]
+                bcdf[i] = self.palette[i][2]
+
+            self.channels[0] = \
+                np.ma.array(np.interp(p,
+                                      np.arange(len(self.palette)),
+                                      rcdf))
+            self.channels[1] = \
+                np.ma.array(np.interp(p,
+                                      np.arange(len(self.palette)),
+                                      gcdf))
+            self.channels[2] = \
+                np.ma.array(np.interp(p,
+                                      np.arange(len(self.palette)),
+                                      bcdf))
+
+            self.channels[0].mask = p.mask
+            self.channels[1].mask = p.mask
+            self.channels[2].mask = p.mask
+
+            self.mode = mode
+
+        elif((self.mode == "RGB" and
             mode == "YCbCr") or
            (self.mode == "RGBA" and
             mode == "YCbCrA")):
@@ -370,7 +452,8 @@ class GeoImage:
             self.mode = mode
             
         else:
-            raise NameError("Conversion not implemented !")
+            raise NameError("Conversion from %s to %s not implemented !"
+                            %(self.mode,mode))
             
 
     def resize(self,shape):
@@ -496,7 +579,48 @@ class GeoImage:
             for ch in self.channels:
                 self.channels[i] = 1.0 - ch
                 i = i + 1
-            
+         
+    def add_overlay(self, color = (0,0,0)):
+        """Add coastline and political borders to image, using *color*.
+        """
+        self.convert("RGB")
+
+
+        arr = np.zeros(self.channels[0].shape,np.uint8)
+        
+        msg_communications.msgwrite_log("INFO","Add coastlines and political borders to image. Area = %s"%(self.area_id),moduleid=MODULE_ID)
+        rimg = acpgimage.image(self.area_id)
+        rimg.info["nodata"]=255
+        rimg.data = arr
+        area_overlayfile = "%s/coastlines_%s.asc"%(msgpp_config.AUX_DIR,self.area_id)
+        msg_communications.msgwrite_log("INFO","Read overlay. Try find something prepared on the area...",moduleid=MODULE_ID)
+        try:
+            overlay = _acpgpilext.read_overlay(area_overlayfile)
+            msg_communications.msgwrite_log("INFO","Got overlay for area: ",area_overlayfile,moduleid=MODULE_ID)
+        except:            
+            msg_communications.msgwrite_log("INFO","Didn't find an area specific overlay. Have to read world-map...",moduleid=MODULE_ID)
+            overlay = _acpgpilext.read_overlay(msgpp_config.COAST_FILE)
+            pass        
+        msg_communications.msgwrite_log("INFO","Add overlay",moduleid=MODULE_ID)
+        this = pps_array2image.add_overlay(rimg,overlay,Image.fromarray(arr),color = 1)
+
+        val = np.ma.asarray(this)
+
+        self.channels[0] = np.ma.where(val == 1, color[0], self.channels[0])
+        self.channels[0].mask = np.where(val == 1, 
+                                         False, 
+                                         np.ma.getmaskarray(self.channels[0]))
+        self.channels[1] = np.where(val == 1, color[1], self.channels[1])
+        self.channels[1].mask = np.where(val == 1, 
+                                         False, 
+                                         np.ma.getmaskarray(self.channels[1]))
+        self.channels[2] = np.where(val == 1, color[2], self.channels[2])
+        self.channels[2].mask = np.where(val == 1, 
+                                         False, 
+                                         np.ma.getmaskarray(self.channels[2]))
+
+
+   
 def stretch_hist_equalize(arr):
     """Stretch a monochromatic masked array *arr* by performing
     histogram equalization. The stretched array is returned.

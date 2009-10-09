@@ -78,31 +78,31 @@ esac
 
 dnl This seems to be uneeded - 20090925, Martin
 
-dnl AC_ARG_WITH(n2,[ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure],
-dnl 	,withval=yes)
+AC_ARG_WITH(n2,[ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure],
+	,withval=yes)
 
-dnl N2_INSTALL_OK=no
-dnl N2_INSTALL_ROOT=
-dnl case $withval in
-dnl   no)
-dnl     N2_INSTALL_OK=no
-dnl     ;;
-dnl   *)
-dnl     tm_root="`echo $withval`"
-dnl     if test "X" != "$tm_root"; then
-dnl       THIS_CWD=`pwd`
-dnl       cd $tm_root
-dnl       N2_INSTALL_ROOT=`pwd`
-dnl       N2_INSTALL_OK=yes
-dnl       cd $THIS_CWD
-dnl       AC_SUBST(N2_INSTALL_ROOT)
-dnl     fi
-dnl     ;;
-dnl esac
+N2_INSTALL_OK=no
+N2_INSTALL_ROOT=
+case $withval in
+  no)
+    N2_INSTALL_OK=no
+    ;;
+  *)
+    tm_root="`echo $withval`"
+    if test "X" != "$tm_root"; then
+      THIS_CWD=`pwd`
+      cd $tm_root
+      N2_INSTALL_ROOT=`pwd`
+      N2_INSTALL_OK=yes
+      cd $THIS_CWD
+      AC_SUBST(N2_INSTALL_ROOT)
+    fi
+    ;;
+esac
 
-dnl if [[ "x$withval" == "xyes" ]]; then
-dnl   AC_MSG_ERROR("You must run configure with --with-n2=<n2 install root dir>")
-dnl fi
+if [[ "x$withval" == "xyes" ]]; then
+  AC_MSG_ERROR("You must run configure with --with-n2=<n2 install root dir>")
+fi
 
 
 dnl Time to extract a lot of information from the training manager installation
@@ -151,6 +151,6 @@ AC_SUBST(HDF5_LD_PATH)
 AC_SUBST(HLHDF_ROOTDIR)
 AC_SUBST(PYLIBROOT)
 
-AC_CONFIG_FILES([./src/Makefile ./scr/Makefile ./scr/msg_remap_all.ksh ./scr/msg_remap_all_Oper.ksh ./scr/tm_msg_postproc.ksh ./scr/msg_n2inject.ksh ./etc/Makefile ./etc/.profile_msgpp ./etc/msgpp_config.py ./setup.env ./def.mk])
+AC_CONFIG_FILES([./src/Makefile ./lib/Makefile ./lib/tm_msg_postproc.ksh ./lib/msg_n2inject.ksh ./etc/Makefile ./etc/.profile_msgpp ./etc/msgpp_config.py ./setup.env ./def.mk])
 AC_OUTPUT()
 

@@ -53,146 +53,210 @@ class msgCTTH:
         self.pressure=None
         
 # ------------------------------------------------------------------
-def read_msgCtth(filename):
-    import _pyhl
-    aNodeList=_pyhl.read_nodelist(filename)
-    aNodeList.selectAll()
-    aNodeList.fetch()
+    def read_msgCtth(self,filename):
+        import _pyhl
+        aNodeList=_pyhl.read_nodelist(filename)
+        aNodeList.selectAll()
+        aNodeList.fetch()
+        
+        self.cloudiness=msgCTTHData() # Effective cloudiness
+        self.temperature=msgCTTHData()
+        self.height=msgCTTHData()
+        self.pressure=msgCTTHData()
+        self.processing_flags=msgCTTHData()
+        
+        # The header
+        aNode=aNodeList.getNode("/PACKAGE")
+        self.package=aNode.data()
+        aNode=aNodeList.getNode("/SAF")
+        self.saf=aNode.data()
+        aNode=aNodeList.getNode("/PRODUCT_NAME")
+        self.product_name=aNode.data()
+        aNode=aNodeList.getNode("/NC")
+        self.num_of_columns=aNode.data()
+        aNode=aNodeList.getNode("/NL")
+        self.num_of_lines=aNode.data()
+        aNode=aNodeList.getNode("/PROJECTION_NAME")
+        self.projection_name=aNode.data()
+        aNode=aNodeList.getNode("/REGION_NAME")
+        self.region_name=aNode.data()
+        aNode=aNodeList.getNode("/CFAC")
+        self.cfac=aNode.data()
+        aNode=aNodeList.getNode("/LFAC")
+        self.lfac=aNode.data()
+        aNode=aNodeList.getNode("/COFF")
+        self.coff=aNode.data()
+        aNode=aNodeList.getNode("/LOFF")
+        self.loff=aNode.data()
+        aNode=aNodeList.getNode("/NB_PARAMETERS")
+        self.nb_param=aNode.data()
+        aNode=aNodeList.getNode("/GP_SC_ID")
+        self.gp_sc_id=aNode.data()
+        aNode=aNodeList.getNode("/IMAGE_ACQUISITION_TIME")
+        self.image_acquisition_time=aNode.data()
+        aNode=aNodeList.getNode("/SPECTRAL_CHANNEL_ID")
+        self.spectral_channel_id=aNode.data()
+        aNode=aNodeList.getNode("/NOMINAL_PRODUCT_TIME")
+        self.nominal_product_time=aNode.data()
+        aNode=aNodeList.getNode("/SGS_PRODUCT_QUALITY")
+        self.sgs_product_quality=aNode.data()
+        aNode=aNodeList.getNode("/SGS_PRODUCT_COMPLETENESS")
+        self.sgs_product_completeness=aNode.data()
+        aNode=aNodeList.getNode("/PRODUCT_ALGORITHM_VERSION")
+        self.product_algorithm_version=aNode.data()    
+        # ------------------------
+    
+        # The CTTH cloudiness data
+        aNode=aNodeList.getNode("/CTTH_EFFECT")
+        self.cloudiness.data=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_EFFECT/SCALING_FACTOR")
+        self.cloudiness.scaling_factor=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_EFFECT/OFFSET")
+        self.cloudiness.offset=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_EFFECT/N_LINES")
+        self.cloudiness.num_of_lines=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_EFFECT/N_COLS")
+        self.cloudiness.num_of_columns=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_EFFECT/PRODUCT")
+        self.cloudiness.product=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_EFFECT/ID")
+        self.cloudiness.id=aNode.data()
+        # ------------------------
+    
+        # The CTTH temperature data
+        aNode=aNodeList.getNode("/CTTH_TEMPER")
+        self.temperature.data=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_TEMPER/SCALING_FACTOR")
+        self.temperature.scaling_factor=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_TEMPER/OFFSET") 
+        self.temperature.offset=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_TEMPER/N_LINES")
+        self.temperature.num_of_lines=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_TEMPER/N_COLS")
+        self.temperature.num_of_columns=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_TEMPER/PRODUCT")
+        self.temperature.product=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_TEMPER/ID")
+        self.temperature.id=aNode.data()
+        # ------------------------
+    
+        # The CTTH pressure data
+        aNode=aNodeList.getNode("/CTTH_PRESS")
+        self.pressure.data=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_PRESS/SCALING_FACTOR")
+        self.pressure.scaling_factor=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_PRESS/OFFSET")
+        self.pressure.offset=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_PRESS/N_LINES")
+        self.pressure.num_of_lines=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_PRESS/N_COLS")
+        self.pressure.num_of_columns=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_PRESS/PRODUCT")
+        self.pressure.product=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_PRESS/ID")
+        self.pressure.id=aNode.data()
+        # ------------------------
+    
+        # The CTTH height data
+        aNode=aNodeList.getNode("/CTTH_HEIGHT")
+        self.height.data=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_HEIGHT/SCALING_FACTOR")
+        self.height.scaling_factor=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_HEIGHT/OFFSET")
+        self.height.offset=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_HEIGHT/N_LINES")
+        self.height.num_of_lines=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_HEIGHT/N_COLS")
+        self.height.num_of_columns=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_HEIGHT/PRODUCT")
+        self.height.product=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_HEIGHT/ID")
+        self.height.id=aNode.data()
+        # ------------------------
+    
+        # The CTTH processing/quality flags
+        aNode=aNodeList.getNode("/CTTH_QUALITY")
+        self.processing_flags.data=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_QUALITY/SCALING_FACTOR")
+        self.processing_flags.scaling_factor=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_QUALITY/OFFSET")
+        self.processing_flags.offset=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_QUALITY/N_LINES")
+        self.processing_flags.num_of_lines=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_QUALITY/N_COLS")
+        self.processing_flags.num_of_columns=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_QUALITY/PRODUCT")
+        self.processing_flags.product=aNode.data()
+        aNode=aNodeList.getNode("/CTTH_QUALITY/ID")
+        self.processing_flags.id=aNode.data()
+        # ------------------------
+    
 
-    retv = msgCTTH()
-    retv.cloudiness=msgCTTHData() # Effective cloudiness
-    retv.temperature=msgCTTHData()
-    retv.height=msgCTTHData()
-    retv.pressure=msgCTTHData()
-    retv.processing_flags=msgCTTHData()
+    def project(self,coverage,dest_area):
+        import area
+        a = area.area(dest_area)
 
-    # The header
-    aNode=aNodeList.getNode("/PACKAGE")
-    retv.package=aNode.data()
-    aNode=aNodeList.getNode("/SAF")
-    retv.saf=aNode.data()
-    aNode=aNodeList.getNode("/PRODUCT_NAME")
-    retv.product_name=aNode.data()
-    aNode=aNodeList.getNode("/NC")
-    retv.num_of_columns=aNode.data()
-    aNode=aNodeList.getNode("/NL")
-    retv.num_of_lines=aNode.data()
-    aNode=aNodeList.getNode("/PROJECTION_NAME")
-    retv.projection_name=aNode.data()
-    aNode=aNodeList.getNode("/REGION_NAME")
-    retv.region_name=aNode.data()
-    aNode=aNodeList.getNode("/CFAC")
-    retv.cfac=aNode.data()
-    aNode=aNodeList.getNode("/LFAC")
-    retv.lfac=aNode.data()
-    aNode=aNodeList.getNode("/COFF")
-    retv.coff=aNode.data()
-    aNode=aNodeList.getNode("/LOFF")
-    retv.loff=aNode.data()
-    aNode=aNodeList.getNode("/NB_PARAMETERS")
-    retv.nb_param=aNode.data()
-    aNode=aNodeList.getNode("/GP_SC_ID")
-    retv.gp_sc_id=aNode.data()
-    aNode=aNodeList.getNode("/IMAGE_ACQUISITION_TIME")
-    retv.image_acquisition_time=aNode.data()
-    aNode=aNodeList.getNode("/SPECTRAL_CHANNEL_ID")
-    retv.spectral_channel_id=aNode.data()
-    aNode=aNodeList.getNode("/NOMINAL_PRODUCT_TIME")
-    retv.nominal_product_time=aNode.data()
-    aNode=aNodeList.getNode("/SGS_PRODUCT_QUALITY")
-    retv.sgs_product_quality=aNode.data()
-    aNode=aNodeList.getNode("/SGS_PRODUCT_COMPLETENESS")
-    retv.sgs_product_completeness=aNode.data()
-    aNode=aNodeList.getNode("/PRODUCT_ALGORITHM_VERSION")
-    retv.product_algorithm_version=aNode.data()    
-    # ------------------------
-    
-    # The CTTH cloudiness data
-    aNode=aNodeList.getNode("/CTTH_EFFECT")
-    retv.cloudiness.data=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_EFFECT/SCALING_FACTOR")
-    retv.cloudiness.scaling_factor=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_EFFECT/OFFSET")
-    retv.cloudiness.offset=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_EFFECT/N_LINES")
-    retv.cloudiness.num_of_lines=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_EFFECT/N_COLS")
-    retv.cloudiness.num_of_columns=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_EFFECT/PRODUCT")
-    retv.cloudiness.product=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_EFFECT/ID")
-    retv.cloudiness.id=aNode.data()
-    # ------------------------
-    
-    # The CTTH temperature data
-    aNode=aNodeList.getNode("/CTTH_TEMPER")
-    retv.temperature.data=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/SCALING_FACTOR")
-    retv.temperature.scaling_factor=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/OFFSET") 
-    retv.temperature.offset=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/N_LINES")
-    retv.temperature.num_of_lines=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/N_COLS")
-    retv.temperature.num_of_columns=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/PRODUCT")
-    retv.temperature.product=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_TEMPER/ID")
-    retv.temperature.id=aNode.data()
-    # ------------------------
-    
-    # The CTTH pressure data
-    aNode=aNodeList.getNode("/CTTH_PRESS")
-    retv.pressure.data=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_PRESS/SCALING_FACTOR")
-    retv.pressure.scaling_factor=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_PRESS/OFFSET")
-    retv.pressure.offset=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_PRESS/N_LINES")
-    retv.pressure.num_of_lines=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_PRESS/N_COLS")
-    retv.pressure.num_of_columns=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_PRESS/PRODUCT")
-    retv.pressure.product=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_PRESS/ID")
-    retv.pressure.id=aNode.data()
-    # ------------------------
-    
-    # The CTTH height data
-    aNode=aNodeList.getNode("/CTTH_HEIGHT")
-    retv.height.data=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_HEIGHT/SCALING_FACTOR")
-    retv.height.scaling_factor=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_HEIGHT/OFFSET")
-    retv.height.offset=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_HEIGHT/N_LINES")
-    retv.height.num_of_lines=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_HEIGHT/N_COLS")
-    retv.height.num_of_columns=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_HEIGHT/PRODUCT")
-    retv.height.product=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_HEIGHT/ID")
-    retv.height.id=aNode.data()
-    # ------------------------
-    
-    # The CTTH processing/quality flags
-    aNode=aNodeList.getNode("/CTTH_QUALITY")
-    retv.processing_flags.data=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_QUALITY/SCALING_FACTOR")
-    retv.processing_flags.scaling_factor=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_QUALITY/OFFSET")
-    retv.processing_flags.offset=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_QUALITY/N_LINES")
-    retv.processing_flags.num_of_lines=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_QUALITY/N_COLS")
-    retv.processing_flags.num_of_columns=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_QUALITY/PRODUCT")
-    retv.processing_flags.product=aNode.data()
-    aNode=aNodeList.getNode("/CTTH_QUALITY/ID")
-    retv.processing_flags.id=aNode.data()
-    # ------------------------
-    
-    return retv
+        retv = msgCTTH()
+        retv.cloudiness=msgCTTHData() # Effective cloudiness
+        retv.temperature=msgCTTHData()
+        retv.height=msgCTTHData()
+        retv.pressure=msgCTTHData()
+        retv.processing_flags=msgCTTHData()
+
+        retv.temperature.data = _satproj.project(coverage.coverage,
+                                                 coverage.rowidx,coverage.colidx,
+                                                 self.temperature.data)
+        retv.height.data = _satproj.project(coverage.coverage,
+                                            coverage.rowidx,
+                                            coverage.colidx,
+                                            self.height.data)
+        retv.pressure.data = _satproj.project(coverage.coverage,
+                                              coverage.rowidx,
+                                              coverage.colidx,
+                                              self.pressure.data)
+        retv.cloudiness.data = _satproj.project(coverage.coverage,
+                                                coverage.rowidx,
+                                                coverage.colidx,
+                                                self.cloudiness.data)
+        retv.processing_flags.data = _satproj.project(coverage.coverage,
+                                                      coverage.rowidx,
+                                                      coverage.colidx,
+                                                      self.processing_flags.data)    
+
+        retv.region_name = dest_area
+        retv.projection_name = a.pcs.id
+        retv.num_of_columns = a.xsize
+        retv.num_of_lines = a.ysize
+        
+        retv.temperature.offset=self.temperature.offset
+        retv.temperature.scaling_factor=self.temperature.scaling_factor
+        retv.temperature.num_of_columns = a.xsize
+        retv.temperature.num_of_lines = a.ysize
+        
+        retv.height.offset=self.height.offset
+        retv.height.scaling_factor=self.height.scaling_factor
+        retv.height.num_of_columns = a.xsize
+        retv.height.num_of_lines = a.ysize
+
+        retv.pressure.offset=self.pressure.offset
+        retv.pressure.scaling_factor=self.pressure.scaling_factor
+        retv.pressure.num_of_columns = a.xsize
+        retv.pressure.num_of_lines = a.ysize
+        
+        retv.cloudiness.offset=self.cloudiness.offset
+        retv.cloudiness.scaling_factor=self.cloudiness.scaling_factor
+        retv.cloudiness.num_of_columns = a.xsize
+        retv.cloudiness.num_of_lines = a.ysize
+        
+        retv.processing_flags.offset=self.processing_flags.offset
+        retv.processing_flags.scaling_factor=self.processing_flags.scaling_factor
+        retv.processing_flags.num_of_columns = a.xsize
+        retv.processing_flags.num_of_lines = a.ysize    
+
+        return retv
+
+
+
 
 # ------------------------------------------------------------------
 def msg_ctth2ppsformat(msgctth,satid="Meteosat 8"):
@@ -412,53 +476,6 @@ def OLDmsgCtth_remap_fast(cov,msgctth,areaid,a):
     return msgctth
 
 # ------------------------------------------------------------------
-def msgCtth_remap_fast(cov,msgctth,areaid,a):
-    retv = msgCTTH()
-    retv.cloudiness=msgCTTHData() # Effective cloudiness
-    retv.temperature=msgCTTHData()
-    retv.height=msgCTTHData()
-    retv.pressure=msgCTTHData()
-    retv.processing_flags=msgCTTHData()
-
-    retv.temperature.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.temperature.data)
-    retv.height.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.height.data)
-    retv.pressure.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.pressure.data)
-    retv.cloudiness.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.cloudiness.data)
-    retv.processing_flags.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctth.processing_flags.data)    
-
-    retv.region_name = areaid
-    retv.projection_name = a.pcs.id
-    retv.num_of_columns = a.xsize
-    retv.num_of_lines = a.ysize
-
-    retv.temperature.offset=msgctth.temperature.offset
-    retv.temperature.scaling_factor=msgctth.temperature.scaling_factor
-    retv.temperature.num_of_columns = a.xsize
-    retv.temperature.num_of_lines = a.ysize
-
-    retv.height.offset=msgctth.height.offset
-    retv.height.scaling_factor=msgctth.height.scaling_factor
-    retv.height.num_of_columns = a.xsize
-    retv.height.num_of_lines = a.ysize
-
-    retv.pressure.offset=msgctth.pressure.offset
-    retv.pressure.scaling_factor=msgctth.pressure.scaling_factor
-    retv.pressure.num_of_columns = a.xsize
-    retv.pressure.num_of_lines = a.ysize
-
-    retv.cloudiness.offset=msgctth.cloudiness.offset
-    retv.cloudiness.scaling_factor=msgctth.cloudiness.scaling_factor
-    retv.cloudiness.num_of_columns = a.xsize
-    retv.cloudiness.num_of_lines = a.ysize
-
-    retv.processing_flags.offset=msgctth.processing_flags.offset
-    retv.processing_flags.scaling_factor=msgctth.processing_flags.scaling_factor
-    retv.processing_flags.num_of_columns = a.xsize
-    retv.processing_flags.num_of_lines = a.ysize    
-
-    return retv
-
-# ------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
     if len(sys.argv) < 6:
@@ -488,7 +505,7 @@ if __name__ == "__main__":
     a=area.area(areaid)
 
     # Check for existing coverage file for the area:
-    covfilename = "%s/cst/msg_coverage_%s.%s.hdf"%(APPLDIR,in_aid,areaid)
+    covfilename = "%s/msg_coverage_%s.%s.hdf"%(DATADIR,in_aid,areaid)
     if not os.path.exists(covfilename):
         cov = _satproj.create_coverage(a,lon,lat,1)
         writeCoverage(cov,covfilename,in_aid,areaid)

@@ -13,7 +13,7 @@ INSTALL_DIR = @prefix@
 BIN_DIR = $(INSTALL_DIR)/bin
 INC_DIR = $(INSTALL_DIR)/include
 LIB_DIR = $(INSTALL_DIR)/lib
-PY_LIB_DIR = $(INSTALL_DIR)/lib/python2.5
+PY_LIB_DIR = $(INSTALL_DIR)/lib/python2.5/site-packages
 
 
 CFLAGS = -Wall -g3 -I/usr/include -I$(HLHDF_INCLUDE_DIR) -I$(NWCLIB_INC_DIR) -I/usr/include/python2.5 -I$(NUMPY_INC_DIR)
@@ -57,12 +57,10 @@ install: all
 	$(top_srcdir)/mkinstalldirs $(PY_LIB_DIR)
 	$(top_srcdir)/mkinstalldirs $(INC_DIR)
 	$(INSTALL) $(MOD_TARGET) $(PY_LIB_DIR)/
-	$(INSTALL) msg_data.py $(PY_LIB_DIR)/
 	$(INSTALL) $(LIB_TARGET) $(LIB_DIR)/
 	$(INSTALL) $(LIB_HEADER) $(INC_DIR)/
 
 uninstall:
 	rm $(PY_LIB_DIR)/$(MOD_TARGET)
-	rm $(PY_LIB_DIR)/msg_data.py
 	rm $(LIB_DIR)/$(LIB_TARGET)
 	rm $(INC_DIR)/$(LIB_HEADER)
