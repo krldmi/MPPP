@@ -68,54 +68,6 @@ seviri_data = None
 
 MODULE_ID="MSG_RGB_REMAP"
 
-# This should be done differently. The globe area should not be treated
-# differently, but this will wait for smart remapping features. -- Martin,
-# 2009-10-07
-
-def doGlobe(time_slot):
-    """Generate an overview rgb at time *time_slot* for the whole globe.
-    """
-    
-    import Image
-    import misc_utils
-    time_string = time_utils.time_string(time_slot)
-    msgwrite_log("INFO",
-                 "Loading Global Seviri channels...",
-                 moduleid=MODULE_ID)
-
-    outname = "%s/%s_%s_%s_rgb_overview.png"%(RGBDIR_OUT,MSG_SATELLITE,time_string,"globe")
-    msgwrite_log("INFO","%s product: %s_%s_rgb_overview"%(MSG_SATELLITE,time_string,"globe"),moduleid=MODULE_ID)
-    
-    ch1 = msg_data.MSGChannel(time_slot, "globe","1",rad = False)
-    ch2 = msg_data.MSGChannel(time_slot, "globe","2",rad = False)
-    ch9 = msg_data.MSGChannel(time_slot, "globe","9",rad = False)
-
-    msgwrite_log("INFO",
-                 "Loading done...",
-                 moduleid=MODULE_ID)
-
-    if((ch1 is None) or (ch2 is None) or (ch9 is None)):
-        return
-    
-    msgwrite_log("INFO",
-                 "Generating %s for area %s."%("overview","globe"),
-                 moduleid=MODULE_ID)
-    ch1 = msg_data.normalizeArray(ch1.component("CAL"),255)
-    im1 = Image.fromarray(ch1.astype(numpy.uint8),"L")
-
-    ch2 = msg_data.normalizeArray(ch2.component("CAL"),255)
-    im2 = Image.fromarray(ch2.astype(numpy.uint8),"L")
-
-    ch9i = msg_data.normalizeArray(ch9.component("CAL",inverted = True),255)
-    im9i = Image.fromarray(ch9i.astype(numpy.uint8),"L")
-
-    im = Image.merge("RGB",(im1,im2,im9i))
-    misc_utils.ensure_dir(outname)
-    im.save(outname)
-
-
-
-# ------------------------------------------------------------------
 if __name__ == "__main__":
     import sys
     import time
@@ -134,6 +86,7 @@ if __name__ == "__main__":
     # Working locally
     import datetime
     time_slots = [datetime.datetime(2009,10,8,14,30)]
+    time_slots = [datetime.datetime(2009,9,14,11,00)]
 
     start_date = time_slots[0]
     end_date = time_slots[-1]
@@ -148,7 +101,39 @@ if __name__ == "__main__":
         
     for time_slot in time_slots:
 
-        doGlobe(time_slot)
+        msgwrite_log("INFO",
+                     "Loading global Seviri channels...",
+                     moduleid=MODULE_ID)
+        
+        seviri_data = msg_data.MSGSeviriChannels(time_slot, 
+                                                 "globe", 
+                                                 rad = False)
+        seviri_data.load([1,2,9])
+
+
+        # This should be done differently. The globe area should not be treated
+        # differently, but this will wait for smart remapping features. -- Martin,
+        # 2009-10-07
+  
+        msgwrite_log("INFO",
+                     "Loading done",
+                     moduleid=MODULE_ID)
+        
+        msgwrite_log("INFO",
+                     "Generating %s for area %s."%("overview","globe"),
+                     moduleid=MODULE_ID)
+        
+        
+        rgb = seviri_data.overview()
+
+        if rgb is not None:
+            for filename in PRODUCTS["globe"]["overview"]:
+                if(isinstance(filename,tuple) and
+                   len(filename) == 2):
+                    rgb.double_save(time_slot.strftime(filename[0]),
+                                    time_slot.strftime(filename[1]))
+                else:
+                    rgb.secure_save(time_slot.strftime(filename))
 
         msgwrite_log("INFO",
                      "Loading Seviri channels...",

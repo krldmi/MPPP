@@ -147,7 +147,10 @@ class GeoImage:
 
         misc_utils.ensure_dir(filename)
         
-        if(file_tuple[1] == ".tif"):
+        if(file_tuple[1] == ".tif" and
+           # HACK -- We should add the globe region to acpg ! Martin,
+           # 2009-10-09
+           self.area_id != "globe"):
             self.geotiff_save(filename)
             return
         else:

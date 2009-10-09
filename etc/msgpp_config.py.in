@@ -34,19 +34,22 @@ if CONTEXT == "prod":
     FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
     FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
     SIR_DIR="/data/24/sirux/sir/data"
+    BOKART_OUT="/data/24/bokart"
 
 elif CONTEXT == "test":
     FSERVER_CTYPEDIR_OUT = "/data/temp/saf/msg/pge"
     FSERVER_CTTHDIR_OUT = "/data/temp/saf/msg/pge"
     FSERVER_RGBDIR_OUT = "/data/temp/saf/msg/rgb"
     SIR_DIR="/data/prodtest/sirux/sir/data"
+    BOKART_OUT="/data/temp/bokart"
     
 elif CONTEXT == "offline":
-    FSERVER_CTYPEDIR_OUT = "/local_disk/data/24/saf/msg/pge"
-    FSERVER_CTTHDIR_OUT = "/local_disk/data/24/saf/msg/pge"
-    FSERVER_RGBDIR_OUT = "/local_disk/data/24/saf/msg/rgb"    
-    SIR_DIR="/local_disk/data/prodtest/sirux/sir/data"
-
+    FSERVER_CTYPEDIR_OUT = "/local_disk/data/out"
+    FSERVER_CTTHDIR_OUT = "/local_disk/data/out"
+    FSERVER_RGBDIR_OUT = "/local_disk/data/out"    
+    SIR_DIR="/local_disk/data/out"
+    BOKART_OUT="/local_disk/data/out"
+        
 
 
 

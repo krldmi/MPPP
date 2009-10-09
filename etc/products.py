@@ -27,13 +27,7 @@ s_mesanX = mesanX.ljust(8,"_")
 s_globe = globe.ljust(8,"_")
 
 PRODUCTS = {"globe":
-
-                {"PGE02d":[(LOCAL_SIR_DIR+"/msg_02d_"+s_globe+"%y%m%d%H%M.tif",
-                            SIR_DIR+"/msg_02d_"+s_globe+"%y%m%d%H%M.tif_original"),
-                           (LOCAL_SIR_DIR+"/msg_02dp"+s_globe+"%y%m%d%H%M.png",
-                            SIR_DIR+"/msg_02dp"+s_globe+"%y%m%d%H%M.png_original")],
-            
-                 "overview":[(LOCAL_SIR_DIR+"/msg_ovw_"+s_globe+"%y%m%d%H%M.tif",
+                {"overview":[(LOCAL_SIR_DIR+"/msg_ovw_"+s_globe+"%y%m%d%H%M.tif",
                               SIR_DIR+"/msg_ovw_"+s_globe+"%y%m%d%H%M.tif_original"),
                              (LOCAL_SIR_DIR+"/msg_ovwp"+s_globe+"%y%m%d%H%M.png",
                               SIR_DIR+"/msg_ovwp"+s_globe+"%y%m%d%H%M.png_original"),
@@ -161,7 +155,16 @@ PRODUCTS = {"globe":
                              FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_ir.png")],
 
                  "PGE02cj":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png",
-                            FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png")],
+                            FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"),
+                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"],
+
+                 "PGE02d":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png",
+                            FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png"),
+                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png"],
+
+                 "PGE02e":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.png",
+                            FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.png"),
+                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.png"],
 
                  "PGE03":[(CTTHDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".ctth_standard.png",
                            FSERVER_CTTHDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".ctth_standard.png")],
@@ -171,9 +174,14 @@ PRODUCTS = {"globe":
                  "CtthHDF":[CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".ctth.hdf"],
 
                  "ir9":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch9.png",
-                         FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch9.png")],
+                         FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch9.png"),
+                        BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_bw_ch9.png"],
 
-                 "airmass":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.png",
+                 "airmass":[(LOCAL_SIR_DIR+"/msg_air_"+s_eurol+"%y%m%d%H%M.tif",
+                             SIR_DIR+"/msg_snow"+s_eurol+"%y%m%d%H%M.tif_original"),
+                            (LOCAL_SIR_DIR+"/msg_airp"+s_eurol+"%y%m%d%H%M.png",
+                             SIR_DIR+"/msg_snop"+s_eurol+"%y%m%d%H%M.png_original"),
+                            (RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.png",
                              FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.png")],
 
                  "wv_high":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch5.png",
@@ -183,7 +191,8 @@ PRODUCTS = {"globe":
                             FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch6.png")],
                  
                  "overview":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_overview.png",
-                              FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_overview.png")],
+                              FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_overview.png"),
+                             BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_rgb_overview.png"],
                  
                  "hr_overview":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_hr_overview.png",
                                  FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_hr_overview.png")],
