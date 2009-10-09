@@ -22,6 +22,13 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+Ctype Product
+=============
+
+.. automodule:: msg_ctype_products
+   :members:
+   :undoc-members:
+
 MSG_data
 ========
 
@@ -73,17 +80,17 @@ MSG_communications
    :members:
    :undoc-members:
 
-MSG_ctype_remap
-===============
+MSG_ctype
+=========
 
-.. automodule:: msg_ctype_remap
+.. automodule:: msg_ctype
    :members:
    :undoc-members:
 
-MSG_ctth_remap
-==============
+MSG_ctth
+========
 
-.. automodule:: msg_ctth_remap
+.. automodule:: msg_ctth
    :members:
    :undoc-members:
 

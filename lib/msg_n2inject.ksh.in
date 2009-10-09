@@ -4,7 +4,7 @@ APPLDIR=@prefix@
 
 # Set some basic environment:
 #. ${HOME}/.profile_msg_oper
-. ${APPLDIR}/cfg/.profile_msgpp
+. ${APPLDIR}/etc/.profile_msgpp
 
 # $1: n2inject program name
 # $2: server adress

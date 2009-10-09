@@ -17,5 +17,5 @@ distclean:
 install:
 	@for i in $(INSTALL_FILES) ; \
 	do \
-		$(HLHDF_INSTALL_BIN) -f -o -m644 -C $$i $(MSGPP_INSTALL_PATH)/cst/$$i; \
+		$(HLHDF_INSTALL_BIN) -f -o -m644 -C $$i $(MSGPP_INSTALL_PATH)/share/msgpp/$$i; \
 	done

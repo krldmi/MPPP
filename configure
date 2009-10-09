@@ -610,6 +610,7 @@ EXPORT_DIR
 MSG_INSTALL_ROOT
 ACPG_INSTALL_MKF
 ACPG_INSTALL_ROOT
+N2_INSTALL_ROOT
 target_alias
 host_alias
 build_alias
@@ -653,6 +654,7 @@ enable_option_checking
 with_acpg
 with_msg
 with_export_dir
+with_n2
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1278,6 +1280,7 @@ Optional Packages:
  --with-acpg=INSTALLROOT Need to specify the root of the acpg installation to be able to configure
  --with-msg=INSTALLROOT Need to specify the root of the msg installation to be able to configure
  --with-export-dir=EXPORT_DIR Specify the data export directory
+ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure
 
 _ACEOF
 ac_status=$?
@@ -1814,7 +1817,38 @@ esac
 
 
 
+# Check whether --with-n2 was given.
+if test "${with_n2+set}" = set; then
+  withval=$with_n2;
+else
+  withval=yes
+fi
 
+
+N2_INSTALL_OK=no
+N2_INSTALL_ROOT=
+case $withval in
+  no)
+    N2_INSTALL_OK=no
+    ;;
+  *)
+    tm_root="`echo $withval`"
+    if test "X" != "$tm_root"; then
+      THIS_CWD=`pwd`
+      cd $tm_root
+      N2_INSTALL_ROOT=`pwd`
+      N2_INSTALL_OK=yes
+      cd $THIS_CWD
+
+    fi
+    ;;
+esac
+
+if [ "x$withval" == "xyes" ]; then
+  { { $as_echo "$as_me:$LINENO: error: \"You must run configure with --with-n2=<n2 install root dir>\"" >&5
+$as_echo "$as_me: error: \"You must run configure with --with-n2=<n2 install root dir>\"" >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 
 
@@ -1864,7 +1898,7 @@ PYLIBROOT=`echo $PYLIB_SITEPACK | sed -e "s/\/site-packages//g"`
 
 
 
-ac_config_files="$ac_config_files ./src/Makefile ./scr/Makefile ./scr/msg_remap_all.ksh ./scr/msg_remap_all_Oper.ksh ./scr/tm_msg_postproc.ksh ./scr/msg_n2inject.ksh ./etc/Makefile ./etc/.profile_msgpp ./etc/msgpp_config.py ./setup.env ./def.mk"
+ac_config_files="$ac_config_files ./src/Makefile ./lib/Makefile ./lib/tm_msg_postproc.ksh ./lib/msg_n2inject.ksh ./etc/Makefile ./etc/.profile_msgpp ./etc/msgpp_config.py ./setup.env ./def.mk"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2475,11 +2509,9 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "./src/Makefile") CONFIG_FILES="$CONFIG_FILES ./src/Makefile" ;;
-    "./scr/Makefile") CONFIG_FILES="$CONFIG_FILES ./scr/Makefile" ;;
-    "./scr/msg_remap_all.ksh") CONFIG_FILES="$CONFIG_FILES ./scr/msg_remap_all.ksh" ;;
-    "./scr/msg_remap_all_Oper.ksh") CONFIG_FILES="$CONFIG_FILES ./scr/msg_remap_all_Oper.ksh" ;;
-    "./scr/tm_msg_postproc.ksh") CONFIG_FILES="$CONFIG_FILES ./scr/tm_msg_postproc.ksh" ;;
-    "./scr/msg_n2inject.ksh") CONFIG_FILES="$CONFIG_FILES ./scr/msg_n2inject.ksh" ;;
+    "./lib/Makefile") CONFIG_FILES="$CONFIG_FILES ./lib/Makefile" ;;
+    "./lib/tm_msg_postproc.ksh") CONFIG_FILES="$CONFIG_FILES ./lib/tm_msg_postproc.ksh" ;;
+    "./lib/msg_n2inject.ksh") CONFIG_FILES="$CONFIG_FILES ./lib/msg_n2inject.ksh" ;;
     "./etc/Makefile") CONFIG_FILES="$CONFIG_FILES ./etc/Makefile" ;;
     "./etc/.profile_msgpp") CONFIG_FILES="$CONFIG_FILES ./etc/.profile_msgpp" ;;
     "./etc/msgpp_config.py") CONFIG_FILES="$CONFIG_FILES ./etc/msgpp_config.py" ;;

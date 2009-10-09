@@ -13,8 +13,13 @@ def setenvpath(env):
 # -----------------------------------------------------
 
 APPLDIR="@prefix@"
+DATADIR=APPLDIR+"/share/msgpp"
+LIBDIR=APPLDIR+"/lib/python2.5/site-packages"
 MSG_DIR="@MSG_INSTALL_ROOT@"
 EXPORT_DIR="@EXPORT_DIR@"
+
+# Change if needed. "offline", "test", or "prod" 
+CONTEXT = "offline"
 
 CTYPEDIR_OUT = EXPORT_DIR+"/Meteosat/MesanX"
 CTTHDIR_OUT = EXPORT_DIR+"/Meteosat/MesanX"
@@ -22,240 +27,57 @@ CTYPEDIR_IN = MSG_DIR+"/export/PGE02"
 CTTHDIR_IN = MSG_DIR+"/export/PGE03"
 RGBDIR_OUT = EXPORT_DIR+"/Meteosat/RGBs"
 RGBDIR_IN = MSG_DIR+"/tmp"
+LOCAL_SIR_DIR="/local_disk/data/sir"
 
-# SEVIRI channel data + lon,lat and sun-satellite angles in hdf5 for archiving:
-# Work locally -- Martin 20090918
-SEVIRI_CHANNELS_IN_HDF5 = "/local_disk/data/24/saf/msg/channels"
-#SEVIRI_CHANNELS_IN_HDF5 = "/data/24/saf/msg/channels"
-#SEVIRI_CHANNELS_IN_HDF5 = "/data/prodtest/saf/msg/24/saf/msg/channels"
+if CONTEXT == "prod":
+    FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
+    FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
+    FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
+    SIR_DIR="/data/24/sirux/sir/data"
+
+elif CONTEXT == "test":
+    FSERVER_CTYPEDIR_OUT = "/data/temp/saf/msg/pge"
+    FSERVER_CTTHDIR_OUT = "/data/temp/saf/msg/pge"
+    FSERVER_RGBDIR_OUT = "/data/temp/saf/msg/rgb"
+    SIR_DIR="/data/prodtest/sirux/sir/data"
+    
+elif CONTEXT == "offline":
+    FSERVER_CTYPEDIR_OUT = "/local_disk/data/24/saf/msg/pge"
+    FSERVER_CTTHDIR_OUT = "/local_disk/data/24/saf/msg/pge"
+    FSERVER_RGBDIR_OUT = "/local_disk/data/24/saf/msg/rgb"    
+    SIR_DIR="/local_disk/data/prodtest/sirux/sir/data"
 
 
-FSERVER_CTYPEDIR_OUT = "/data/24/saf/msg/pge"
-FSERVER_CTTHDIR_OUT = "/data/24/saf/msg/pge"
-FSERVER_RGBDIR_OUT = "/data/24/saf/msg/rgb"
-#FSERVER_SYNC = 1 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
-# Work locally -- Martin 20090918
-FSERVER_SYNC = 0 # Equals 1 if data should be distributed to the fileserver, otherwise 0.
-SYNC = "/usr/bin/rsync -crzul"
-#SYNC = "/usr/bin/rsync -crzuln"
 
-# For equinox problems, avoiding bad NWCSAF products for Mesan:
-#SYNC_EXCLUDE_TIMESLOTS = ["0000","2345","2330"]
-SYNC_EXCLUDE_TIMESLOTS = []
+
 
 # Parallax correction.
 # Make a list of CTTH files to search. If no parallax file is available (poor ctth quality) the
 # program will search for the climate-corrected PGEs, and ultimately for the uncorrected PGEs:
 MSG_PGE_EXTENTIONS = ["PLAX.CTTH.0.h5","PLAX.CLIM.0.h5","h5"]
 
-
-#MSG_SATELLITE = "met08"
 MSG_SATELLITE = "met09"
 MSG_NUMBER = 2
-#MSG_NUMBER = 1
-#MSG_AREA = "Europe"
-#MSG_AREA_CENTER=(450,2099)
-#ROWS,COLS=(900,2300)
+
 MSG_AREA = "EuropeCanary"
 MSG_AREA_CENTER=(600,1749)
 ROWS,COLS=(1200,3000)
 
-MISSINGDATA=-99998.0
-NODATA=-99999.0
-
-LONFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LON"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
-LATFILE = "%s/cst/C%.4d_%.4d_S%.4d_%.4d.LAT"%(APPLDIR,MSG_AREA_CENTER[0],MSG_AREA_CENTER[1],ROWS,COLS)
+DSEC_SLOTS=3600/4 # Slot-frequency considered = 15 minutes
 
 COMPRESS_LVL=6
-
-DSEC_SLOTS=3600/4 # Slot-frequency considered = 15 minutes
 
 USGS_DIR = setenvpath("SM_USGS_DIR") 
 AUX_DIR=setenvpath("SM_AUXILIARY_DIR")
 COAST_FILE = "%s/world_map.ascii"%(USGS_DIR)
 
-# List of areas:
-#NWCSAF_MSG_AREAS = ["mesanX","euro4","eurotv","scan","euro"]
-# Misses a few areas to work properly
-NWCSAF_MSG_AREAS = ["mesanX","euro4","eurol","eurotv","scan","scan2","euro"]
-NWCSAF_MSG_AREAS_SIRPROD = ["euro4","eurotv","scan","euro"]
-NORDRAD_AREAS = ["euro4"]
+
 
 # Nordrad product injection:
 N2INJECT = "n2inject"
 #N2INJECT = "n2injectBROKEN"
 N2SERVERS_AND_PORTS = [("brdc",8822),("nordrad",8820)]
 #N2SERVERS_AND_PORTS = [("brdc",9999),("nordrad",9999)]
-N2INJECT_SCRIPT = "%s/scr/msg_n2inject.ksh"%APPLDIR
-#N2INJECT_SCRIPT = "%s/scr/msg_n2injectBROKEN.ksh"%APPLDIR
-
-# Standard and derived products:
-# Standard and derived products:
-NWCSAF_PRODUCTS = {"PGE02":["euro4","eurol"],
-		   "PGE02b":["euro4","eurol"],
-		   "PGE02bj":["euro4","eurol","scan"],
-                   "PGE02c":["euro4","eurol","eurotv","scan","euro"],
-                   "PGE03":["euro4","eurol"]}
-
-# ==========================================================
-# New since Nov-7, 2006, Adam Dybbroe:
-#"PGE02bj":["euro4","scan"],
-# ==========================================================
-
-
-# PGE02 IMAGE_LEGENDS:
-#   FULL: "get_cms_modified" - nwcsaf/msg colouring
-#   VV:   "get_ctype_vv"     - For the Swedish road authoroties
-
-# PGE03 IMAGE_LEGENDS:
-
-# Products on which areas, and with which colour-palettes, and in what image formats?:
-PRODUCT_IMAGES={"PGE02":{"mesanX" :{"standard":["png"]},
-		         "euro4"   :{"standard":["png"]},
-		         "eurol"   :{"standard":["png"]},
-		         "eurotv"   :{"standard":["png"]}},
-		"PGE03":{"mesanX":{"standard":["png"]},
-			 "euro4"  :{"standard":["png"]},
-			 "eurol"  :{"standard":["png"]}
-		}
-		}
-
-# Which LEGENDS/PALETTES to which products and region:
-from smhi_safnwc_legends import *
-from pps_array2image import get_cms_modified
-
-PGE02_LEGENDS = {"standard":get_cms_modified()}#,"vv2":get_ctype_vv2()}
-PGE02_LEGEND_NAMES = {}
-
-for aid in NWCSAF_MSG_AREAS:
-    PGE02_LEGEND_NAMES[aid] = ("standard",)
-for aid in NWCSAF_MSG_AREAS_SIRPROD:
-    PGE02_LEGEND_NAMES[aid] = ("standard",)
-    #PGE02_LEGEND_NAMES[aid] = ("standard","vv2")
-
-PGE03_LEGENDS = {"standard":"height"}
-PGE03_LEGEND_NAMES = {}
-for aid in NWCSAF_MSG_AREAS:
-    if aid not in ["euro","eurotv"]:
-        PGE03_LEGEND_NAMES[aid] = ("standard",)
-
-#SIR_DIR="/data/24/sirux/sir/data"
-#SIR_DIR="/data/prodtest/sirux/sir/data"
-# Work locally -- Martin 20090918
-SIR_DIR="/local_disk/data/prodtest/sirux/sir/data"
-LOCAL_SIR_DIR="/local_disk/data/sir"
-
-
-PGE02_SIR_NAMES={"standard":"msg_02a"}
-PGE03_SIR_NAMES={"standard":"msg_03a"}
-
-#
-RGB_IMAGE = {}
-for aid in NWCSAF_MSG_AREAS:
-    RGB_IMAGE[aid] = {"ir9":0,"watervapour_low":0,"watervapour_high":0,
-                      "overview":0,"hr_overview":0,"cloudtop":0,"nightfog":0,
-                      "fog":0,"convection":0,"greensnow":0
-		      }
-
-for prodname in RGB_IMAGE["euro4"].keys():
-    RGB_IMAGE["euro4"][prodname] = 1
-for prodname in RGB_IMAGE["eurol"].keys():
-    RGB_IMAGE["eurol"][prodname] = 1
-RGB_IMAGE["mesanX"]["fog"]=1
-RGB_IMAGE["mesanX"]["overview"]=1
-RGB_IMAGE["eurotv"]["fog"]=1
-RGB_IMAGE["eurotv"]["overview"]=1
-RGB_IMAGE["eurotv"]["greensnow"]=1
-RGB_IMAGE_FORMAT="png"
-RGB_IMAGE_QUALITY=100
-
-# For FM:
-RGB_IMAGE["scan2"]["greensnow"]=1
-RGB_IMAGE["scan2"]["cloudtop"]=1
-RGB_IMAGE["scan2"]["convection"]=1
-
-#
-SIR_PRODUCTS = {}
-SIR_SIGNAL = {}
-
-for aid in NWCSAF_MSG_AREAS:
-    SIR_PRODUCTS[aid] = {}
-    SIR_SIGNAL[aid] = {}
-        
-for aid in NWCSAF_MSG_AREAS_SIRPROD:
-    if aid in ["scan"]:
-        SIR_PRODUCTS[aid]["PGE02c"] = [("meteircj","jpg"),("metirccj","jpg")]
-        #SIR_PRODUCTS[aid]["PGE02b"]=[("msg_02b","jpg"),] # For vv-web site.
-        # ==========================================================
-        # New since Nov-7, 2006, Adam Dybbroe:
-        SIR_PRODUCTS[aid]["PGE02bj"]=[("msg_02bj","jpg"),] # For vv-web site.
-        # ==========================================================
-        #SIR_SIGNAL[aid] = {"PGE02c":1,"PGE02b":1}
-	SIR_SIGNAL[aid] = {"PGE02c":1,"PGE02bj":1}
-        continue
-    elif aid in ["euro"]:
-        SIR_PRODUCTS[aid]["PGE02c"] = [("meteircj","jpg"),("metirccj","jpg")]
-        SIR_SIGNAL[aid] = {"PGE02c":1}
-        continue
-    elif aid in ["eurotv"]:
-        SIR_PRODUCTS[aid] = {"PGE02c":[("msg_02cp","png"),]}
-        SIR_SIGNAL[aid] = {"PGE02c":1}
-        continue
-    elif aid in ["scan2"]:
-        # New since May-26, 2008, Adam Dybbroe:
-        # --------------------------------------
-        #Gron sno        Skandinavien       msgsnowpscan____yymmddhhmm.png_original
-        #Molntopp        Skandinavien:      msg_cltpscan____yymmddhhmm.png_original
-        #Konvektion      Skandinavien:      msgconvpscan____yymmddhhmm.png_original
-        #Molnoversida    Europa:            msg_03apeuro4___yymmddhhmm.png_original
-        # --------------------------------------        
-        SIR_PRODUCTS[aid]["cloudtop"] = [("msg_cltp","png")]
-        SIR_SIGNAL[aid] = {"cloudtop":1,"convection":1,"greensnow":1,"PGE03":1}
-        # Changed names to be consistent, Adam & Anna, 2008-11-21:
-        # 
-        #Gron sno        Skandinavien       msgsnowpscan____yymmddhhmm.png_original
-        #Konvektion      Skandinavien:      msgconvpscan____yymmddhhmm.png_original
-        SIR_PRODUCTS[aid]["convection"] = [("msgconvp","png")]
-        SIR_PRODUCTS[aid]["greensnow"] = [("msgsnowp","png")]
-        SIR_PRODUCTS[aid]["PGE03"] = [("msg_03ap","png")]
-        continue
-        
-    SIR_PRODUCTS[aid] = {"PGE01":[],
-                         "PGE02":[("msg_02a","tif"),],
-                         "PGE02b":[("msg_02bp","png"),],
-                         "PGE02c":[("msg_02cp","png"),],
-			 "PGE03":[("msg_03a","tif"),("msg_03ap","png"),],
-                         "PGE04":[("msg_04a","tif"),],
-			 "ir9":[("msg_ir9","tif"),("msg_ir9p","png"),],
-			 "watervapour_low":[("msg_ir6","tif"),],
-			 "watervapour_high":[("msg_ir5","tif"),],
-			 "overview":[("msg_ovw","tif"),("msg_ovwp","png"),],
-                         "hr_overview":[("msg_hrw","tif"),("msg_hrwp","png"),],
-			 "cloudtop":[("msg_clt","tif"),("msg_cltp","png"),],
-			 "nightfog":[("msg_nfog","tif"),("msg_nfop","png"),],
-			 "fog":[("msg_fog","tif"),("msg_fogp","png"),],
-			 "convection":[("msg_conv","tif"),("msg_conp","png"),],
-			 "greensnow":[("msg_snow","tif"),("msg_snop","png"),]
-			}
-
-    SIR_SIGNAL[aid] = {"PGE02":1,"PGE03":1,"PGE02b":1,"PGE02c":1,
-		       "ir9":1,"watervapour_low":1,"watervapour_high":1,
-		       "overview":1,"hr_overview":1,"cloudtop":1,"nightfog":1,
-		       "fog":1,"convection":1,"greensnow":1
-		      }
-
-SIR_PRODUCTS["scan"]["PGE02c"].append(("meteirct","tif"))
-SIR_PRODUCTS["euro"]["PGE02c"].append(("meteoict","tif"))
-# For vv-web site:
-# ==========================================================
-# New since Nov-7, 2006, Adam Dybbroe:
-if SIR_PRODUCTS["euro4"].has_key("PGE02bj"):
-    SIR_PRODUCTS["euro4"]["PGE02bj"].append(("msg_02bj","jpg"))
-else:
-    SIR_PRODUCTS["euro4"]["PGE02bj"]=[("msg_02bj","jpg"),]
-if SIR_SIGNAL.has_key("euro4"):
-    SIR_SIGNAL["euro4"]["PGE02bj"]=1
-else:
-    SIR_SIGNAL["euro4"] = {"PGE02bj":1}
-# ==========================================================
+N2INJECT_SCRIPT = "%s/bin/msg_n2inject.ksh"%APPLDIR
+#N2INJECT_SCRIPT = "%s/bin/msg_n2injectBROKEN.ksh"%APPLDIR
 

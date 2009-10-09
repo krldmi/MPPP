@@ -5,9 +5,9 @@ particular, it allows the retrieval of data from raw Seviri data.
 import os
 import msgpp_config
 
-os.environ['SAFNWC'] = os.environ['HOME']+"/usr/src/msg"
-os.environ['SAFNWC_BIN'] = os.environ['SAFNWC']+"/bin"
-os.environ['SAFNWC_LIB'] = os.environ['SAFNWC']+"/bin"
+os.environ['SAFNWC'] = msgpp_config.MSG_DIR
+os.environ['SAFNWC_BIN'] = msgpp_config.MSG_DIR+"/bin"
+os.environ['SAFNWC_LIB'] = msgpp_config.MSG_DIR+"/lib"
 os.environ['PATH'] = os.environ['PATH']+":"+os.environ['SAFNWC_BIN']
 os.environ['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']+":"+os.environ['SAFNWC_LIB']
 os.environ['BUFR_TABLES'] = os.environ['SAFNWC']+"/src/bufr_000360/bufrtables/"
@@ -22,69 +22,114 @@ import time_utils
 import msg_coverage
 import geo_image
 import image_processing
+import msg_ctype
+import msg_ctth
+import msg_communications
+import glob
+import pps_array2image
+import smhi_safnwc_legends
 
+MODULE_ID = "MSG DATA"
 
 class MSGSeviriChannels:
     """This class defines a container to Seviri data. It holds 12
     slots for the 12 Seviri channels.
     """
+
+    cloudtype = None
+    ctth = None
+
     def __init__(self, time_slot, area_id, hr = True,rad = True):
-        area_filename = "safnwc_" + area_id + ".cfg"
         self.time_slot = time_slot
         self.area_id = area_id
         self.nb_channels = 12
-        _data = py_msg.get_all_channels(time_utils.time_string(time_slot), area_filename, rad)
-        if(hr):
-            _hrdata = MSGChannel(time_slot, area_id, "HRVIS",rad = rad)
-        else:
-            _hrdata = None
-        self.channels = [MSGChannel(time_slot, area_id, "VIS06",
-                                    {"RAD":_data["RAD"][0],
-                                     "CAL":_data["CAL"][0],
-                                     "MASK":_data["MASK"][0]}),
-                         MSGChannel(time_slot, area_id, "VIS08",
-                                    {"RAD":_data["RAD"][1],
-                                     "CAL":_data["CAL"][1],
-                                     "MASK":_data["MASK"][1]}),
-                         MSGChannel(time_slot, area_id, "IR16",
-                                    {"RAD":_data["RAD"][2],
-                                     "CAL":_data["CAL"][2],
-                                     "MASK":_data["MASK"][2]}),
-                         MSGChannel(time_slot, area_id, "IR39",
-                                    {"RAD":_data["RAD"][3],
-                                     "CAL":_data["CAL"][3],
-                                     "MASK":_data["MASK"][3]}),
-                         MSGChannel(time_slot, area_id, "WV62",
-                                    {"RAD":_data["RAD"][4],
-                                     "CAL":_data["CAL"][4],
-                                     "MASK":_data["MASK"][4]}),
-                         MSGChannel(time_slot, area_id, "WV73",
-                                    {"RAD":_data["RAD"][5],
-                                     "CAL":_data["CAL"][5],
-                                     "MASK":_data["MASK"][5]}),
-                         MSGChannel(time_slot, area_id, "IR87",
-                                    {"RAD":_data["RAD"][6],
-                                     "CAL":_data["CAL"][6],
-                                     "MASK":_data["MASK"][6]}),
-                         MSGChannel(time_slot, area_id, "IR97",
-                                    {"RAD":_data["RAD"][7],
-                                     "CAL":_data["CAL"][7],
-                                     "MASK":_data["MASK"][7]}),
-                         MSGChannel(time_slot, area_id, "IR108",
-                                    {"RAD":_data["RAD"][8],
-                                     "CAL":_data["CAL"][8],
-                                     "MASK":_data["MASK"][8]}),
-                         MSGChannel(time_slot, area_id, "IR120",
-                                    {"RAD":_data["RAD"][9],
-                                     "CAL":_data["CAL"][9],
-                                     "MASK":_data["MASK"][9]}),
-                         MSGChannel(time_slot, area_id, "IR134",
-                                    {"RAD":_data["RAD"][10],
-                                     "CAL":_data["CAL"][10],
-                                     "MASK":_data["MASK"][10]}),
-                         _hrdata]
+        self._load_hr = hr
+        self._load_rad = rad
+        self.channels = [None,None,None,None,None,None,
+                         None,None,None,None,None,None]
+        self.cloudtype = None
+        self.ctth = None
 
+
+    def load(self,channels = "all"):
+        """Load the data into the Seviri structure. *channels* can be
+        specified, otherwise (or when set to "all") all the channels are
+        loaded.
+        """
+        time_slot = self.time_slot
+        area_id = self.area_id
+
+        area_filename = "safnwc_" + area_id + ".cfg"
+
+        if channels == "all":
+            
+            _data = py_msg.get_all_channels(time_utils.time_string(time_slot), 
+                                            area_filename, 
+                                            self._load_rad)
+            if(self._load_hr):
+                _hrdata = MSGChannel(time_slot, 
+                                     area_id, 
+                                     "HRVIS",
+                                     rad = self._load_rad)
+            else:
+                _hrdata = None
+            self.channels = [MSGChannel(time_slot, area_id, "VIS06",
+                                        {"RAD":_data["RAD"][0],
+                                         "CAL":_data["CAL"][0],
+                                         "MASK":_data["MASK"][0]}),
+                             MSGChannel(time_slot, area_id, "VIS08",
+                                        {"RAD":_data["RAD"][1],
+                                         "CAL":_data["CAL"][1],
+                                         "MASK":_data["MASK"][1]}),
+                             MSGChannel(time_slot, area_id, "IR16",
+                                        {"RAD":_data["RAD"][2],
+                                         "CAL":_data["CAL"][2],
+                                         "MASK":_data["MASK"][2]}),
+                             MSGChannel(time_slot, area_id, "IR39",
+                                        {"RAD":_data["RAD"][3],
+                                         "CAL":_data["CAL"][3],
+                                         "MASK":_data["MASK"][3]}),
+                             MSGChannel(time_slot, area_id, "WV62",
+                                        {"RAD":_data["RAD"][4],
+                                         "CAL":_data["CAL"][4],
+                                         "MASK":_data["MASK"][4]}),
+                             MSGChannel(time_slot, area_id, "WV73",
+                                        {"RAD":_data["RAD"][5],
+                                         "CAL":_data["CAL"][5],
+                                         "MASK":_data["MASK"][5]}),
+                             MSGChannel(time_slot, area_id, "IR87",
+                                        {"RAD":_data["RAD"][6],
+                                         "CAL":_data["CAL"][6],
+                                         "MASK":_data["MASK"][6]}),
+                             MSGChannel(time_slot, area_id, "IR97",
+                                        {"RAD":_data["RAD"][7],
+                                         "CAL":_data["CAL"][7],
+                                         "MASK":_data["MASK"][7]}),
+                             MSGChannel(time_slot, area_id, "IR108",
+                                        {"RAD":_data["RAD"][8],
+                                         "CAL":_data["CAL"][8],
+                                         "MASK":_data["MASK"][8]}),
+                             MSGChannel(time_slot, area_id, "IR120",
+                                        {"RAD":_data["RAD"][9],
+                                         "CAL":_data["CAL"][9],
+                                         "MASK":_data["MASK"][9]}),
+                             MSGChannel(time_slot, area_id, "IR134",
+                                        {"RAD":_data["RAD"][10],
+                                         "CAL":_data["CAL"][10],
+                                         "MASK":_data["MASK"][10]}),
+                             _hrdata]
+
+        else:
+            # This is dirty. py_msg module should allow individual channel
+            # selection on loading. -- Martin, 2009-10-08.
+            for ch in channels:
+                self.channels[ch-1] = MSGChannel(time_slot, 
+                                               area_id, 
+                                               ch, 
+                                               rad = self._load_rad)
         self._co2corr_bt39
+            
+            
 
     def __getitem__(self,key):
         if(key == "1" or key == "VIS06" or key == 1):
@@ -127,8 +172,12 @@ class MSGSeviriChannels:
         res.area_id = dest_area
         res.channels = []
         for ch in self.channels:
-            if(ch["RAD"] is not None or ch["CAL"] is not None):
-                if(ch.channel_id == "HRVIS"):
+            if(ch is not None and
+               (ch["RAD"] is not None or 
+                ch["CAL"] is not None)):
+                if(ch.channel_id == "HRVIS" or
+                   ch.channel_id == "12" or
+                   ch.channel_id == 12):
                     hr_coverage = msg_coverage.SatProjCov(self.area_id, dest_area, True)
                     res.channels.append(ch.project(dest_area,hr_coverage))
                 else:
@@ -136,6 +185,13 @@ class MSGSeviriChannels:
 
             else:
                 res.channels.append(None)
+
+        if self.cloudtype is not None:
+            res.cloudtype = self.cloudtype.project(coverage, dest_area)
+
+        if self.ctth is not None:
+            res.ctth = self.ctth.project(coverage, dest_area)
+
         return res
 
     def strip(self,key,shift = True):
@@ -158,6 +214,12 @@ class MSGSeviriChannels:
         dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
         
         """
+        if(self[4] is None or
+           self[9] is None or
+           self[11] is None):
+            msg_communications.msgwrite_log("WARNING","CO2 correction not performed, not enough channels loaded.",moduleid=MODULE_ID)
+            return
+
         epsilon = 0.001
         bt039 = self[4]["BT"]
         bt108 = self[9]["BT"]
@@ -175,14 +237,277 @@ class MSGSeviriChannels:
         self.channels[3]._bt = x ** 0.25
     
 
-    def cloudtype(self):
-        return
+    def load_cloudtype(self):
+        """Load cloudtype information into the current object.
+        """
+        time_string = time_utils.time_string(self.time_slot)
 
-    def ctth(self):
-        return
+        prefix="SAFNWC_MSG%.1d_CT___%s_%s"%(msgpp_config.MSG_NUMBER,
+                                            time_string,
+                                            self.area_id)
+        
+        msgctype_filename=None
+        for ext in msgpp_config.MSG_PGE_EXTENTIONS:
+            match_str = "%s/%s*%s"%(msgpp_config.CTYPEDIR_IN,prefix,ext)
+            msg_communications.msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
+            flist = glob.glob(match_str)
+            msgctype=None
+            if len(flist) > 1:
+                msg_communications.msgwrite_log("ERROR","More than one matching input file: N = ",len(flist),moduleid=MODULE_ID)
+            elif len(flist) == 0:
+                msg_communications.msgwrite_log("WARNING","No matching input file",moduleid=MODULE_ID)
+            else:
+                # File found:
+                msg_communications.msgwrite_log("INFO","MSG CT file found: ",flist[0],moduleid=MODULE_ID)
+                msgctype_filename = flist[0]
+                break
 
-    def cloudmask(self):
-        return
+        if msgctype_filename:
+            # Read the MSG file if not already done...
+            msg_communications.msgwrite_log("INFO","Read MSG CT file: ",msgctype_filename,moduleid=MODULE_ID)
+            self.cloudtype = msg_ctype.msgCloudType()
+            self.cloudtype.read_msgCtype(msgctype_filename)
+        else:
+            msg_communications.msgwrite_log("ERROR","No MSG CT input file found!",moduleid=MODULE_ID)
+            self.cloudtype = None
+
+    def save_cloudtype(self,filename):
+        ctype = msg_ctype.msg_ctype2ppsformat(self.cloudtype)
+        epshdf.write_cloudtype(filename, ctype, 6)
+
+    def get_cloudtype(self):
+        """Return the cloudtype structure.
+        """
+        if self.cloudtype is None:
+            self.load_cloudtype
+            
+        return self.cloudtype
+
+    def pps_cloudtype(self):
+        """Return the cloudtype structure, in pps format.
+        """
+        if self.cloudtype is None:
+            self.load_cloudtype
+            
+        return msg_ctype.msg_ctype2ppsformat(self.cloudtype)
+        
+    def load_ctth(self):
+        """Load ctth information into the current object.
+        """
+        time_string = time_utils.time_string(self.time_slot)
+
+        prefix="SAFNWC_MSG%.1d_CTTH_%s_%s"%(msgpp_config.MSG_NUMBER,
+                                            time_string,
+                                            self.area_id)
+        msgctth_filename=None
+        for ext in msgpp_config.MSG_PGE_EXTENTIONS:
+            match_str = "%s/%s*%s"%(msgpp_config.CTTHDIR_IN,prefix,ext)
+            msg_communications.msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
+            flist = glob.glob(match_str)
+            msgctth=None
+            if len(flist) > 1:
+                msg_communications.msgwrite_log("ERROR","More than one matching input file: N = ",len(flist),moduleid=MODULE_ID)
+            elif len(flist) == 0:
+                msg_communications.msgwrite_log("WARNING","No matching input file",moduleid=MODULE_ID)
+            else:
+                # File found:
+                msg_communications.msgwrite_log("INFO","MSG CTTH file found: ",flist[0],moduleid=MODULE_ID)
+                msgctth_filename = flist[0]
+                break
+             
+        if msgctth_filename:
+            # Read the MSG file if not already done...
+            msg_communications.msgwrite_log("INFO","Read MSG CTTH file: ",msgctth_filename,moduleid=MODULE_ID)
+            self.ctth = msg_ctth.msgCTTH()
+            self.ctth.read_msgCtth(msgctth_filename)
+        else:
+            msg_communications.msgwrite_log("ERROR","No MSG CT input file found!",moduleid=MODULE_ID)
+            self.ctth = None
+
+    def save_ctth(self,filename):
+        ctth = msg_ctth.msg_ctth2ppsformat(self.ctth)
+        epshdf.write_cloudtop(filename, ctth, 6)
+            
+    def get_ctth(self):
+        """Return the ctth structure.
+        """
+        if self.ctth is None:
+            self.load_ctth
+        
+        return self.ctth
+
+    def pps_ctth(self):
+        """Return the ctth structure in pps format.
+        """
+        if self.ctth is None:
+            self.load_ctth
+        
+        return msg_ctth.msg_ctth2ppsformat(self.ctth)
+
+    def pge02(self):
+        if self.cloudtype is None:
+            return None
+        
+        cloudtype = msg_ctype.msg_ctype2ppsformat(self.cloudtype).cloudtype
+        palette = _convert_palette(pps_array2image.get_cms_modified())
+        
+        cloudtype = numpy.ma.array(cloudtype)
+
+        im = geo_image.GeoImage(cloudtype,
+                                self.area_id,
+                                self.time_slot,
+                                mode = "P",
+                                palette = palette)
+
+        return im
+        
+
+    def pge02b(self):
+        if(self[9] is None or
+           self.cloudtype is None):
+            return None
+
+        cloudtype = msg_ctype.msg_ctype2ppsformat(self.cloudtype).cloudtype
+
+        cloudtype = numpy.ma.array(cloudtype)
+
+        palette = _convert_palette(smhi_safnwc_legends.get_vv_legend())
+        arr = geo_image.crude_stretch(self[9]["BT"])
+        arr = image_processing.gamma_correction(arr,1.6)
+        arr = 1 - arr
+        arr = (arr * 248 + 7).astype(numpy.uint8)
+        arr = numpy.where(cloudtype <= 2, cloudtype, arr)
+        for i in range(5,9):
+            arr = numpy.where(cloudtype == i, i - 2, arr)
+        
+        im = geo_image.GeoImage(arr,
+                                self.area_id,
+                                self.time_slot,
+                                mode = "P",
+                                palette = palette)
+
+        return im
+
+    def pge02b_with_overlay(self):
+        if(self[9] is None or
+           self.cloudtype is None):
+            return None
+        
+        im = self.pge02b()
+        
+        im.add_overlay()
+
+        return im
+
+    def pge02c(self):
+        if(self[9] is None or
+           self.cloudtype is None):
+            return None
+
+        cloudtype = msg_ctype.msg_ctype2ppsformat(self.cloudtype).cloudtype
+
+        cloudtype = numpy.ma.array(cloudtype)
+
+        palette = _convert_palette(smhi_safnwc_legends.get_tv_legend())
+
+        arr = (self[9]["BT"] - 205.0) / (295.0 - 205.0)
+        arr = (1 - arr).clip(0,1)
+        arr = (arr * 250 + 5).astype(numpy.uint8)
+        arr = numpy.where(cloudtype <= 4, cloudtype, arr)
+
+        im = geo_image.GeoImage(arr,
+                                self.area_id,
+                                self.time_slot,
+                                mode = "P",
+                                palette = palette)
+        
+        return im
+        
+    def pge02c_with_overlay(self):
+        if(self[9] is None or
+           self.cloudtype is None):
+            return None
+        
+        im = self.pge02c()
+
+        im.add_overlay()
+
+        return im
+
+    def pge02d(self):
+        if(self[9] is None or
+           self.cloudtype is None):
+            return None
+
+        cloudtype = msg_ctype.msg_ctype2ppsformat(self.cloudtype).cloudtype
+        cloudtype = numpy.ma.array(cloudtype)
+
+        palette = _convert_palette(smhi_safnwc_legends.get_tv_legend())
+        
+        arr = (self[9]["BT"] - 205.0) / (295.0 - 205.0)
+        arr = (1 - arr).clip(0,1)
+        arr = (arr * 250 + 5).astype(numpy.uint8)
+        arr = numpy.where(cloudtype <= 4, cloudtype, arr)
+
+        alpha = numpy.where(cloudtype < 5, 0.0, 1.0)
+        alpha = numpy.where(cloudtype == 15, 0.5, alpha)
+        alpha = numpy.where(cloudtype == 19, 0.5, alpha)
+
+
+
+        im = geo_image.GeoImage((arr,alpha),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "PA",
+                                palette = palette)
+        
+        return im
+        
+        
+    def pge02e(self):
+        if(self[1] is None or
+           self[2] is None or
+           self[9] is None or
+           self.cloudtype is None):
+            return None
+
+        im = self.overview()
+
+        cloudtype = msg_ctype.msg_ctype2ppsformat(self.cloudtype).cloudtype
+        cloudtype = numpy.ma.array(cloudtype)
+
+        alpha = numpy.where(cloudtype < 5, 0.0, 1.0)
+        alpha = numpy.where(cloudtype == 15, 0.5, alpha)
+        alpha = numpy.where(cloudtype == 19, 0.5, alpha)
+
+        im.putalpha(alpha)
+        
+        return im
+    
+
+    def pge03(self):
+        if(self[9] is None or
+           self.ctth is None):
+            return None
+        
+        ctth = msg_ctth.msg_ctth2ppsformat(self.ctth)
+
+        arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
+	a = numpy.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)
+	palette = _convert_palette(pps_array2image.ctth_height_legend())
+
+        a = numpy.ma.array(a)
+
+
+        im = geo_image.GeoImage(a.astype(numpy.uint8),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "P",
+                                palette = palette)
+
+        return im
+        
+        
 
     def airmass(self):
         """Make an Airmass RGB image composite from SEVIRI channels.
@@ -261,8 +586,11 @@ class MSGSeviriChannels:
            self[9] is None):
             return None
         
-        im = geo_image.GeoImage((self[1]["REFL"],
-                                 self[2]["REFL"],
+        ch1 = check_range(self[1]["REFL"])
+        ch2 = check_range(self[2]["REFL"])
+
+        im = geo_image.GeoImage((ch1,
+                                 ch2,
                                  -self[9]["BT"]),
                                 self.area_id,
                                 self.time_slot,
@@ -282,22 +610,26 @@ class MSGSeviriChannels:
            self[9] is None or
            self[12] is None):
             return None
-        
-        im = geo_image.GeoImage((self[1]["REFL"],
-                                 self[2]["REFL"],
+
+        ch1 = check_range(self[1]["REFL"])
+        ch2 = check_range(self[2]["REFL"])
+
+
+        im = geo_image.GeoImage((ch1,
+                                 ch2,
                                  -self[9]["BT"]),
                                 self.area_id,
                                 self.time_slot,
                                 mode = "RGB")
 
         im.enhance(stretch = "crude")
-        im.enhance(gamma = 1.6)
+        im.enhance(gamma = [1.6,1.6,1.1])
         
         luminance = self[12]["REFL"]
 
         luminance = geo_image.crude_stretch(luminance)
-
-        luminance = image_processing.gamma_correction(luminance,1.5)
+        
+        luminance = image_processing.gamma_correction(luminance,2)
 
         im.replace_luminance(luminance)
         
@@ -312,9 +644,12 @@ class MSGSeviriChannels:
            self[2] is None or
            self[9] is None):
             return None
+
+        ch2 = check_range(self[2]["REFL"])
+        ch3 = check_range(self[3]["REFL"])
         
-        im = geo_image.GeoImage((self[3]["REFL"],
-                                 self[2]["REFL"],
+        im = geo_image.GeoImage((ch3,
+                                 ch2,
                                  -self[9]["BT"]),
                                 self.area_id,
                                 self.time_slot,
@@ -355,10 +690,14 @@ class MSGSeviriChannels:
            self[6] is None or
            self[9] is None):
             return None
+
         
+        ch1 = check_range(self[1]["REFL"])
+        ch3 = check_range(self[3]["REFL"])
+
         im = geo_image.GeoImage((self[5]["BT"] - self[6]["BT"],
                                  self[4]["BT"] - self[9]["BT"],
-                                 self[3]["REFL"] - self[1]["REFL"]),
+                                 ch3 - ch1),
                                 self.area_id,
                                 self.time_slot,
                                 mode = "RGB",
@@ -435,6 +774,12 @@ class MSGSeviriChannels:
 def _getkey(item,key):
     return item[key]
 
+def check_range(arr,min_range = 1.0):
+    if((arr.max() - arr.min()) < min_range):
+        return numpy.ma.zeros(arr.shape)
+    else:
+        return arr
+
 class MSGChannel:
     def __init__(self, time_slot, area_id, channel_id, data = None, rad = True):
         area_filename = "safnwc_" + area_id + ".cfg"
@@ -443,6 +788,8 @@ class MSGChannel:
         self.channel_id = channel_id
         self.wavelength = None
         if (data is None):
+            if isinstance(channel_id, int):
+                channel_id = "%d"%channel_id
             data = py_msg.get_channel(time_utils.time_string(time_slot), 
                                       area_filename, 
                                       channel_id, 
@@ -468,7 +815,11 @@ class MSGChannel:
             channel_id == "1" or
             channel_id == "2" or
             channel_id == "3" or
-            channel_id == "12"):
+            channel_id == "12" or
+            channel_id == 1 or
+            channel_id == 2 or
+            channel_id == 3 or
+            channel_id == 12):
             self._refl = numpy.ma.array(data["CAL"],
                                         mask = data["MASK"],
                                         fill_value = py_msg.missing_value())
@@ -545,6 +896,15 @@ class MSGChannel:
             res._bt = coverage.project_array(self._bt)
         return res
 
+
+def _convert_palette(p):
+    palette = []
+    for i in p:
+        palette.append((i[0] / 255.0,
+                        i[1] / 255.0,
+                        i[2] / 255.0))
+#    print palette
+    return palette
 # -----------------------------------------------------------------------------
 # Test the current module
 
