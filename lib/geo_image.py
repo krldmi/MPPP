@@ -87,7 +87,6 @@ class GeoImage:
                 max = 1.0
             self.channels.append((channels - min) * 1.0 / (max - min))
 
-
     def _finalize(self):
         channels = []
         if self.mode == "P":
@@ -146,8 +145,9 @@ class GeoImage:
         channels = self._finalize()
 
         misc_utils.ensure_dir(filename)
-        
-        if(file_tuple[1] == ".tif" and
+
+        # Suppress geotiff ability for now -- Martin, 2009-10-12
+        if(file_tuple[1] == ".tof" and
            # HACK -- We should add the globe region to acpg ! Martin,
            # 2009-10-09
            self.area_id != "globe"):
@@ -160,7 +160,7 @@ class GeoImage:
                     im = Image.fromarray(channels[0].filled(self.fill_value))
                     im.save(filename)
                 else:
-                    l = Image.fromarray(channels[0])
+                    l = Image.fromarray(channels[0].filled(0))
                     alpha = np.zeros(channels[0].shape,np.uint8)
                     mask = np.ma.getmaskarray(channels[0])
                     alpha = np.where(mask, alpha, 255)
@@ -176,9 +176,9 @@ class GeoImage:
                     b = Image.fromarray(channels[2].filled(self.fill_value[2]))
                     Image.merge("RGB",(r,g,b)).save(filename)
                 else:
-                    r = Image.fromarray(channels[0])
-                    g = Image.fromarray(channels[1])
-                    b = Image.fromarray(channels[2])
+                    r = Image.fromarray(channels[0].filled(0))
+                    g = Image.fromarray(channels[1].filled(0))
+                    b = Image.fromarray(channels[2].filled(0))
 
                     alpha = np.zeros(channels[0].shape,np.uint8)
                     mask = (np.ma.getmaskarray(channels[0]) | 
@@ -198,9 +198,9 @@ class GeoImage:
                     a = Image.fromarray(channels[3].filled(self.fill_value[3]))
                     Image.merge("RGBA",(r,g,b,a)).save(filename)
                 else:
-                    r = Image.fromarray(channels[0])
-                    g = Image.fromarray(channels[1])
-                    b = Image.fromarray(channels[2])
+                    r = Image.fromarray(channels[0].filled(0))
+                    g = Image.fromarray(channels[1].filled(0))
+                    b = Image.fromarray(channels[2].filled(0))
 
                     mask = (np.ma.getmaskarray(channels[0]) | 
                             np.ma.getmaskarray(channels[1]) | 
@@ -239,7 +239,7 @@ class GeoImage:
                                         self.height, 
                                         2, 
                                         gdal.GDT_Byte)
-                dst_ds.GetRasterBand(1).WriteArray(channels[0])
+                dst_ds.GetRasterBand(1).WriteArray(channels[0].filled(0))
                 alpha = np.zeros(channels[0].shape,np.uint8)
                 mask = np.ma.getmaskarray(channels[0])
                 alpha = np.where(mask, alpha, 255)
@@ -270,9 +270,9 @@ class GeoImage:
                                         self.height, 
                                         4, 
                                         gdal.GDT_Byte)
-                dst_ds.GetRasterBand(1).WriteArray(channels[0])
-                dst_ds.GetRasterBand(2).WriteArray(channels[1])
-                dst_ds.GetRasterBand(3).WriteArray(channels[2])
+                dst_ds.GetRasterBand(1).WriteArray(channels[0].filled(0))
+                dst_ds.GetRasterBand(2).WriteArray(channels[1].filled(0))
+                dst_ds.GetRasterBand(3).WriteArray(channels[2].filled(0))
 
                 alpha = np.zeros(channels[0].shape,np.uint8)
                 mask = (np.ma.getmaskarray(channels[0]) | 
@@ -301,9 +301,9 @@ class GeoImage:
                 ch = channels[3].filled(self.fill_value[3])
                 dst_ds.GetRasterBand(4).WriteArray(ch)
             else:
-                dst_ds.GetRasterBand(1).WriteArray(channels[0])
-                dst_ds.GetRasterBand(2).WriteArray(channels[1])
-                dst_ds.GetRasterBand(3).WriteArray(channels[2])
+                dst_ds.GetRasterBand(1).WriteArray(channels[0].filled(0))
+                dst_ds.GetRasterBand(2).WriteArray(channels[1].filled(0))
+                dst_ds.GetRasterBand(3).WriteArray(channels[2].filled(0))
 
                 mask = (np.ma.getmaskarray(channels[0]) | 
                         np.ma.getmaskarray(channels[1]) | 
@@ -393,19 +393,18 @@ class GeoImage:
             self.channels[0] = \
                 np.ma.array(np.interp(p,
                                       np.arange(len(self.palette)),
-                                      rcdf))
+                                      rcdf),
+                            mask = p.mask)
             self.channels[1] = \
                 np.ma.array(np.interp(p,
                                       np.arange(len(self.palette)),
-                                      gcdf))
+                                      gcdf),
+                            mask = p.mask)
             self.channels[2] = \
                 np.ma.array(np.interp(p,
                                       np.arange(len(self.palette)),
-                                      bcdf))
-
-            self.channels[0].mask = p.mask
-            self.channels[1].mask = p.mask
-            self.channels[2].mask = p.mask
+                                      bcdf),
+                            mask = p.mask)
 
             self.mode = mode
 
@@ -508,7 +507,7 @@ class GeoImage:
         self.invert(inverse)
         self.gamma(gamma)
         self.stretch(stretch)
-
+        
     def gamma(self,gamma = 1.0):
         """Apply gamma correction to the channels of the image. If *gamma* is a
         tuple, then is should have as many elements as the channels of the
@@ -516,18 +515,20 @@ class GeoImage:
         number, the same gamma correction is applied on every channel, if there
         are several channels in the image.
         """
+        if gamma == 1.0:
+            return
         if (isinstance(gamma,tuple) or
             isinstance(gamma,list)):
             for i in range(len(gamma)):
-                self.channels[i] = np.where(self.channels[i] >= 0,
-                                            self.channels[i] ** (1 / gamma[i]),
-                                            self.channels[i])
+                self.channels[i] = np.ma.where(self.channels[i] >= 0,
+                                               self.channels[i] ** (1 / gamma[i]),
+                                               self.channels[i])
         else:
             i = 0
             for ch in self.channels:
-                self.channels[i] = np.where(ch >= 0,
-                                            ch ** (1 / gamma),
-                                            ch)
+                self.channels[i] = np.ma.where(ch >= 0,
+                                               ch ** (1 / gamma),
+                                               ch)
                 i = i + 1
         
     def stretch(self, stretch = "no"):
@@ -605,21 +606,26 @@ class GeoImage:
             overlay = _acpgpilext.read_overlay(msgpp_config.COAST_FILE)
             pass        
         msg_communications.msgwrite_log("INFO","Add overlay",moduleid=MODULE_ID)
-        this = pps_array2image.add_overlay(rimg,overlay,Image.fromarray(arr),color = 1)
+        overlay_image = pps_array2image.add_overlay(rimg,
+                                                    overlay,
+                                                    Image.fromarray(arr),
+                                                    color = 1)
 
-        val = np.ma.asarray(this)
+        val = np.ma.asarray(overlay_image)
 
         self.channels[0] = np.ma.where(val == 1, color[0], self.channels[0])
-        self.channels[0].mask = np.where(val == 1, 
-                                         False, 
+        self.channels[0].mask = np.where(val == 1,
+                                         False,
                                          np.ma.getmaskarray(self.channels[0]))
-        self.channels[1] = np.where(val == 1, color[1], self.channels[1])
-        self.channels[1].mask = np.where(val == 1, 
-                                         False, 
+
+        self.channels[1] = np.ma.where(val == 1, color[1], self.channels[1])
+        self.channels[1].mask = np.where(val == 1,
+                                         False,
                                          np.ma.getmaskarray(self.channels[1]))
-        self.channels[2] = np.where(val == 1, color[2], self.channels[2])
-        self.channels[2].mask = np.where(val == 1, 
-                                         False, 
+
+        self.channels[2] = np.ma.where(val == 1, color[2], self.channels[2])
+        self.channels[2].mask = np.where(val == 1,
+                                         False,
                                          np.ma.getmaskarray(self.channels[2]))
 
 
@@ -633,13 +639,15 @@ def stretch_hist_equalize(arr):
 
     nwidth=2048.0
 
-    imhist,bins = np.histogram(arr.compressed(),nwidth,normed=True)
+    carr = arr.compressed()
+
+    imhist,bins = np.histogram(carr,nwidth,normed=True)
     cdf = imhist.cumsum() - imhist[0]
     cdf = cdf / cdf[-1]
     
     res = np.ma.empty_like(arr)
     res.mask = arr.mask
-    res[~res.mask] = np.interp(arr.compressed(),bins[:-1],cdf)
+    res[~res.mask] = np.interp(carr,bins[:-1],cdf)
     
     return res
 
@@ -651,9 +659,11 @@ def stretch_linear(arr,cutoffs=(0.005,0.005)):
 
     nwidth=2048.0
     
-    hist,bins = np.histogram(arr.compressed(), nwidth)
+    carr = arr.compressed()
 
-    ndim = arr.compressed().size
+    hist,bins = np.histogram(carr, nwidth)
+
+    ndim = carr.size
 
     left = 0
     sum = 0.0
@@ -676,11 +686,9 @@ def stretch_linear(arr,cutoffs=(0.005,0.005)):
     dx = (right-left)
     msg_communications.msgwrite_log("INFO","Interval: left=%f,right=%f width=%f"%(left,right,dx),moduleid=MODULE_ID)
     if dx > 0.0:
-        res =  np.ma.empty_like(arr)
-        res.mask = arr.mask
-	res = (arr - left) / dx
+	res = np.ma.array((arr - left) / dx, mask = arr.mask)
     else:
-	res = np.zeros(arr.shape)
+	res = np.ma.zeros(arr.shape)
 	msg_communications.msgwrite_log("WARNING","Unable to make a contrast stretch!",moduleid=MODULE_ID)
 
     return res

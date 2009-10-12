@@ -232,7 +232,7 @@ class MSGSeviriChannels:
         Rcorr = a - b
         
         a = bt039*bt039*bt039*bt039
-        x = numpy.where(a+Rcorr > 0.0,(a + Rcorr), 0)
+        x = numpy.ma.where(a+Rcorr > 0.0,(a + Rcorr), 0)
                 
         self.channels[3]._bt = x ** 0.25
     
@@ -374,9 +374,9 @@ class MSGSeviriChannels:
         arr = image_processing.gamma_correction(arr,1.6)
         arr = 1 - arr
         arr = (arr * 248 + 7).astype(numpy.uint8)
-        arr = numpy.where(cloudtype <= 2, cloudtype, arr)
+        arr = numpy.ma.where(cloudtype <= 2, cloudtype, arr)
         for i in range(5,9):
-            arr = numpy.where(cloudtype == i, i - 2, arr)
+            arr = numpy.ma.where(cloudtype == i, i - 2, arr)
         
         im = geo_image.GeoImage(arr,
                                 self.area_id,
@@ -411,7 +411,7 @@ class MSGSeviriChannels:
         arr = (self[9]["BT"] - 205.0) / (295.0 - 205.0)
         arr = (1 - arr).clip(0,1)
         arr = (arr * 250 + 5).astype(numpy.uint8)
-        arr = numpy.where(cloudtype <= 4, cloudtype, arr)
+        arr = numpy.ma.where(cloudtype <= 4, cloudtype, arr)
 
         im = geo_image.GeoImage(arr,
                                 self.area_id,
@@ -445,11 +445,11 @@ class MSGSeviriChannels:
         arr = (self[9]["BT"] - 205.0) / (295.0 - 205.0)
         arr = (1 - arr).clip(0,1)
         arr = (arr * 250 + 5).astype(numpy.uint8)
-        arr = numpy.where(cloudtype <= 4, cloudtype, arr)
+        arr = numpy.ma.where(cloudtype <= 4, cloudtype, arr)
 
-        alpha = numpy.where(cloudtype < 5, 0.0, 1.0)
-        alpha = numpy.where(cloudtype == 15, 0.5, alpha)
-        alpha = numpy.where(cloudtype == 19, 0.5, alpha)
+        alpha = numpy.ma.where(cloudtype < 5, 0.0, 1.0)
+        alpha = numpy.ma.where(cloudtype == 15, 0.5, alpha)
+        alpha = numpy.ma.where(cloudtype == 19, 0.5, alpha)
 
 
 
@@ -474,9 +474,9 @@ class MSGSeviriChannels:
         cloudtype = msg_ctype.msg_ctype2ppsformat(self.cloudtype).cloudtype
         cloudtype = numpy.ma.array(cloudtype)
 
-        alpha = numpy.where(cloudtype < 5, 0.0, 1.0)
-        alpha = numpy.where(cloudtype == 15, 0.5, alpha)
-        alpha = numpy.where(cloudtype == 19, 0.5, alpha)
+        alpha = numpy.ma.where(cloudtype < 5, 0.0, 1.0)
+        alpha = numpy.ma.where(cloudtype == 15, 0.5, alpha)
+        alpha = numpy.ma.where(cloudtype == 19, 0.5, alpha)
 
         im.putalpha(alpha)
         
@@ -593,6 +593,7 @@ class MSGSeviriChannels:
                                 self.area_id,
                                 self.time_slot,
                                 mode = "RGB")
+
 
         im.enhance(stretch = "crude")
         im.enhance(gamma = 1.6)

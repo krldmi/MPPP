@@ -90,8 +90,8 @@ def stretch_linear(arr,cutoffs=[0.005,0.005]):
         res =  numpy.ma.empty_like(arr)
         res.mask = arr.mask
 	res = 255 * (arr - left) / dx
-	res = numpy.where(res < 255, res, 255)
-	res = numpy.where(res > 0, res, 0)
+	res = numpy.ma.where(res < 255, res, 255)
+	res = numpy.ma.where(res > 0, res, 0)
 	res = res.astype(numpy.uint8)
     else:
 	res = numpy.zeros(arr.shape,numpy.uint8)

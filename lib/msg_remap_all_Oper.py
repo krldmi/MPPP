@@ -101,11 +101,6 @@ if __name__ == "__main__":
     start_date = time_slots[0]
     end_date = time_slots[-1]
 
-    # Working locally
-    import datetime
-    time_slots = [datetime.datetime(2009,10,8,14,30)]
-
-
     msgwrite_log("INFO","Start and End times: ",start_date,end_date,moduleid=MODULE_ID)
 
     input_area_id=MSG_AREA
