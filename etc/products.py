@@ -156,15 +156,15 @@ PRODUCTS = {"globe":
 
                  "PGE02c":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png",
                             FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"),
-                           BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.png"],
+                           BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_irtv.tif"],
 
                  "PGE02d":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png",
                             FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png"),
-                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.png"],
+                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_d.tif"],
 
                  "PGE02e":[(CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.png",
                             FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.png"),
-                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.png"],
+                            BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".cloudtype_e.tif"],
 
                  "PGE03":[(CTTHDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".ctth_standard.png",
                            FSERVER_CTTHDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+".ctth_standard.png")],
@@ -175,7 +175,7 @@ PRODUCTS = {"globe":
 
                  "ir9":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch9.png",
                          FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_bw_ch9.png"),
-                        BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_bw_ch9.png"],
+                        BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_bw_ch9.tif"],
 
                  "airmass":[(LOCAL_SIR_DIR+"/msg_air_"+s_eurol+"%y%m%d%H%M.tif",
                              SIR_DIR+"/msg_snow"+s_eurol+"%y%m%d%H%M.tif_original"),
@@ -192,7 +192,7 @@ PRODUCTS = {"globe":
                  
                  "overview":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_overview.png",
                               FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_overview.png"),
-                             BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_rgb_overview.png"],
+                             BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_rgb_overview.tif"],
                  
                  "hr_overview":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_hr_overview.png",
                                  FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_hr_overview.png")],

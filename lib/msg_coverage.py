@@ -180,7 +180,7 @@ class SatProjCov:
                                  self.colidx,
                                  amask,
                                  int(filling))
-        
+
         return numpy.ma.array(res, mask = (pmask == 0))
 
 

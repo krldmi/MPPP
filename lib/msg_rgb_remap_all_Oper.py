@@ -83,11 +83,6 @@ if __name__ == "__main__":
 
     time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
 
-    # Working locally
-    import datetime
-    time_slots = [datetime.datetime(2009,10,8,14,30)]
-    time_slots = [datetime.datetime(2009,9,14,11,00)]
-
     start_date = time_slots[0]
     end_date = time_slots[-1]
 
