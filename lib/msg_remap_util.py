@@ -1,5 +1,6 @@
 
 from msgpp_config import *
+import numpy
 
 # ----------------------------------------
 class SeviriChannelData:
@@ -60,7 +61,6 @@ def read_msg_lonlat(geofile):
 
 # --------------------------------------------------------------------
 def get_bit_from_flags(arr,nbit):
-    import Numeric
-    a = Numeric.bitwise_and(Numeric.right_shift(arr,nbit),1)
+    a = numpy.bitwise_and(numpy.right_shift(arr,nbit),1)
     return a.astype('b')
 

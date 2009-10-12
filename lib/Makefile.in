@@ -14,7 +14,7 @@ INSTALL_FILES=msg_remap_all_Oper.py \
 	      geo_image.py \
 	      msg_data.py
 
-DEST_LIB_DIR = $(MSGPP_INSTALL_PATH)/lib/python2.5/site_packages
+DEST_LIB_DIR = $(MSGPP_INSTALL_PATH)/lib/python2.5/site-packages
 DEST_BIN_DIR = $(MSGPP_INSTALL_PATH)/bin
 
 BIN_INSTALL_FILES = tm_msg_postproc.ksh msg_n2inject.ksh

@@ -6,7 +6,7 @@ include @top_srcdir@/def.mk
 NWCLIB_INC_DIR = @MSG_INSTALL_ROOT@/include/NWCLIB
 NWCLIB_LIB_DIR = @MSG_INSTALL_ROOT@/bin
 
-NUMPY_INC_DIR = /usr/lib64/python2.5/site-packages/numpy/core/include
+NUMPY_INC_DIR = /usr/lib64/python2.4/site-packages/numpy/core/include
 
 top_srcdir = @top_srcdir@
 INSTALL_DIR = @prefix@
@@ -16,7 +16,7 @@ LIB_DIR = $(INSTALL_DIR)/lib
 PY_LIB_DIR = $(INSTALL_DIR)/lib/python2.5/site-packages
 
 
-CFLAGS = -Wall -g3 -I/usr/include -I$(HLHDF_INCLUDE_DIR) -I$(NWCLIB_INC_DIR) -I/usr/include/python2.5 -I$(NUMPY_INC_DIR)
+CFLAGS = -Wall -g3 -I/usr/include -I$(HLHDF_INCLUDE_DIR) -I$(NWCLIB_INC_DIR) $(INCLUDE_PYTHON) -I$(NUMPY_INC_DIR)
 LFLAGS = -L/usr/lib64 -L$(HLHDF_LIB_DIR) -L$(NWCLIB_LIB_DIR)
 LIBS = -Xlinker -Bstatic -lnwclib -lmsg -Xlinker -Bdynamic -lhlhdf -lm -lhdf5
 

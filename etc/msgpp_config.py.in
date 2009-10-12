@@ -18,8 +18,8 @@ LIBDIR=APPLDIR+"/lib/python2.5/site-packages"
 MSG_DIR="@MSG_INSTALL_ROOT@"
 EXPORT_DIR="@EXPORT_DIR@"
 
-# Change if needed. "offline", "test", or "prod" 
-CONTEXT = "offline"
+# Change if needed. "offline", "dev, "test", "prod" 
+CONTEXT = "dev"
 
 CTYPEDIR_OUT = EXPORT_DIR+"/Meteosat/MesanX"
 CTTHDIR_OUT = EXPORT_DIR+"/Meteosat/MesanX"
@@ -49,6 +49,14 @@ elif CONTEXT == "offline":
     FSERVER_RGBDIR_OUT = "/local_disk/data/out"    
     SIR_DIR="/local_disk/data/out"
     BOKART_OUT="/local_disk/data/out"
+
+elif CONTEXT == "dev":
+    FSERVER_CTYPEDIR_OUT = "/data/temp/MartinR/out"
+    FSERVER_CTTHDIR_OUT = "/data/temp/MartinR/out"
+    FSERVER_RGBDIR_OUT = "/data/temp/MartinR/out"    
+    LOCAL_SIR_DIR="/data/temp/MartinR/out/local"
+    SIR_DIR="/data/temp/MartinR/out"
+    BOKART_OUT="/data/temp/MartinR/out"
         
 
 
