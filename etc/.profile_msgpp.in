@@ -6,7 +6,8 @@ HDF5_LD_PATH=@HDF5_LD_PATH@
 SZLIB_LD_PATH=@SZLIB_LD_PATH@
 PYLIBROOT=@PYLIBROOT@
 
-ACPG_DATA_DIR=/data/prodtest/saf/pps ; export ACPG_DATA_DIR
+#ACPG_DATA_DIR=/data/prodtest/saf/pps ; export ACPG_DATA_DIR
+
 
 # ----------------------------
 # python stuff:
@@ -16,6 +17,7 @@ PYTHONPATH=${APPLDIR}/scr:${APPLDIR}/cfg:${APPLDIR}/cst:${ACPG}/lib:${ACPG}/scr:
 SM_REGION_CONFIGURATION_FILE="${ACPG}/cfg/region_config.cfg"; export SM_REGION_CONFIGURATION_FILE
 SM_CFG_FILE="${ACPG}/cfg/pps_config_common.cfg"; export SM_CFG_FILE
 
+ACPG_DATA_DIR=@ACPG_DATA_DIR@ ; export ACPG_DATA_DIR
 SM_USGS_DIR=${ACPG_DATA_DIR}/import/AUX_data/source;export SM_USGS_DIR
 SM_AUXILIARY_DIR=${ACPG_DATA_DIR}/import/AUX_data/remapped;export SM_AUXILIARY_DIR
 

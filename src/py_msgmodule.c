@@ -171,7 +171,6 @@ msg_get_all_channels(PyObject *dummy, PyObject *args)
   int dimensions[3];
   npy_intp dims[3];
   int rank;
-  int i;
 
   if (!PyArg_ParseTuple(args, "ss|b", &time_slot, &region_file, &read_rad))
     return NULL;

@@ -6,7 +6,7 @@ include @top_srcdir@/def.mk
 NWCLIB_INC_DIR = @MSG_INSTALL_ROOT@/include/NWCLIB
 NWCLIB_LIB_DIR = @MSG_INSTALL_ROOT@/bin
 
-NUMPY_INC_DIR = /usr/lib64/python2.4/site-packages/numpy/core/include
+NUMPY_INC_DIR = @NUMPY_INC@
 
 top_srcdir = @top_srcdir@
 INSTALL_DIR = @prefix@

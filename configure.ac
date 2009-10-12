@@ -8,6 +8,134 @@ if test "${prefix}" = "NONE"; then
   prefix=/usr/local/MSG_PostProc
 fi
 
+
+################################################################################
+#                           Python
+################################################################################
+
+AC_ARG_VAR([PYTHON],[Python interpretper])
+AC_CHECK_PROG([PYTHON],[python],[python])
+
+# Check if python interpreter works
+AC_MSG_CHECKING([if python works])
+py_command="from math import *; aTuple = ('robots', 77, 93, 'try'); \
+  sqrt(aTuple[[1]])"
+if ${PYTHON} -c "$py_command" >/dev/null 2>&1; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([NO])
+  PYTHON=
+fi
+
+
+
+if test "x$PYTHON" != "x"; then
+   # Checking python version
+   AC_MSG_CHECKING([python version])
+   py_command="import sys; print '%d.%d'%(sys.version_info[[0]], \
+               sys.version_info[[1]])"
+   PYVERSION=`$PYTHON -c "$py_command"`
+   AC_MSG_RESULT(${PYVERSION})
+   AS_VERSION_COMPARE("2.4",$PYVERSION,
+     [],
+     [],
+     [AC_MSG_ERROR("python >= 2.4 is needed.")])
+
+   
+ 
+    # Allow user to specify location of python includes
+  AC_ARG_WITH(python-includes,[AC_HELP_STRING([--with-python-includes=DIR],
+          [Specify directory containing Python headers])],
+          [PYTHON_DIR="$withval"],[PYTHON_DIR=])
+
+    # Get the default Python include dir containing pyconfig.h
+    # Note: Python does this automatically via distutils
+  AC_MSG_CHECKING([for location of python headers])
+  py_command="import sys; print '%s/include/python%d.%d' % (sys.prefix, \
+    sys.version_info[[0]],sys.version_info[[1]])"
+  if pydir_out=`$PYTHON -c "$py_command"`; then
+    PYCONFIG_DIR="$pydir_out"
+  else
+    AC_MSG_ERROR("python interpreter is broken?")
+  fi
+
+    # If user did not specify an include dir, use the default
+  if test "x" = "x$PYTHON_DIR"; then
+    PYTHON_DIR=PYCONFIG_DIR
+  fi
+  AC_MSG_RESULT($PYTHON_DIR)
+
+    # Determine location for python libraries
+  py_command="import sys; print '$libdir/python%d.%d/site-packages' % (\
+    sys.version_info[[0]],sys.version_info[[1]])"
+  pylibdir=`$PYTHON -c "$py_command"`
+  AC_SUBST(pylibdir)
+
+    # Check for expected header in python include dir
+  old_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -I$PYTHON_DIR -I$PYCONFIG_DIR"
+  AC_CHECK_HEADER([pyconfig.h],[],[PYTHON_DIR=; AC_MSG_WARN([mis-detected python include dir])],[])
+  AC_CHECK_HEADER([Python.h],[],[PYTHON_DIR=; AC_MSG_WARN([mis-detected python include dir])],[])
+  CPPFLAGS="$old_CPPFLAGS"
+ 
+    # Check that NumPy module is installed
+  HAVE_NUMPY=no
+  AC_MSG_CHECKING([for NumPy module])
+  if "${PYTHON}" -c "import numpy.core" >/dev/null 2>&1; then
+    HAVE_NUMPY=yes
+  fi
+  AC_MSG_RESULT($HAVE_NUMPY)
+ 
+  if test yes = $HAVE_NUMPY; then
+ 
+      # Allow user to specify location of NumPy includes
+    AC_ARG_WITH(numpy,[AC_HELP_STRING([--with-numpy=DIR],
+            [Specify directory containing Numpy include directory])],
+            [NUMPY_DIR="$withval"],[NUMPY_DIR=])
+
+      # If numpy directory was not specified, guess
+    if test "x" = "x$NUMPY_DIR"; then
+      AC_MSG_CHECKING([for location of NumPy includes])
+      if test -d "${PYTHON_DIR}/numpy"; then
+        NUMPY_DIR="${PYTHON_DIR}"
+      else
+        py_command="import numpy; print numpy.__path__[[0]]"
+        NUMPY_DIR=`$PYTHON -c "$py_command"`/..
+      fi
+    else
+      AC_MSG_CHECKING([for location of NumPy includes])
+      AC_MSG_RESULT([$NUMPY_DIR])
+    fi
+    
+    NUMPY_INC=$NUMPY_DIR/numpy/core/include
+   
+   # Check numpy version
+
+   AC_MSG_CHECKING([numpy version])
+   py_command="import numpy; print numpy.__version__"
+   NUMPYVERSION=`PYTHONPATH=$NUMPY_DIR:$PYTHONPATH $PYTHON -c "$py_command"`
+   AC_MSG_RESULT([$NUMPYVERSION])
+   AS_VERSION_COMPARE("1.2.0",$NUMPYVERSION,
+     [],
+     [],
+     [AC_MSG_ERROR("numpy >= 1.2.0 is needed.")])
+
+   
+
+    # Check for expected headers in NUMPY_DIR
+   
+    old_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS -I$NUMPY_INC -I$PYTHON_DIR -I$PYCONFIG_DIR"
+    AC_CHECK_HEADER([numpy/arrayobject.h],[],[NUMPY_DIR=; AC_MSG_WARN([mis-detected NumPy include dir])],[#include "Python.h"])
+    CPPFLAGS="$old_CPPFLAGS"
+  fi
+fi
+
+AC_SUBST(PYTHON)
+AC_SUBST(PYTHON_DIR)
+AC_SUBST(NUMPY_DIR)
+AC_SUBST(NUMPY_INC)
+
 AC_ARG_WITH(acpg,[ --with-acpg=INSTALLROOT Need to specify the root of the acpg installation to be able to configure],
 	,withval=no)
 
@@ -35,6 +163,7 @@ esac
 if [[ "x$ACPG_INSTALL_OK" != "xyes" ]]; then
   AC_MSG_ERROR("You must run configure with --with-acpg=<acpg install root dir>")
 fi
+
 
 AC_ARG_WITH(msg,[ --with-msg=INSTALLROOT Need to specify the root of the msg installation to be able to configure],
 	,withval=no)
@@ -116,6 +245,9 @@ echo "ACPG_INSTALL_MKF=$ACPG_INSTALL_MKF"
 ACPG_INSTALL_ROOT=`echo $ACPG_INSTALL_MKF | sed -e "s/\/mkf\/def.mk//g"`
 echo "ACPG_INSTALL_ROOT=$ACPG_INSTALL_ROOT"
 
+ACPG_DATA_DIR=`cat $ACPG_INSTALL_MKF | sed -n "/^ACPG_DATA_DIR/p" | sed -e "s/ACPG_DATA_DIR=//g" | awk '{print $1}'`
+echo "ACPG_DATA_DIR=$ACPG_DATA_DIR"
+
 HLHDF_ROOTDIR=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_ROOTDIR/p" | sed -e "s/HLHDF_ROOTDIR=//g" | awk '{print $1}'`
 echo "HLHDF_LIB_DIR=$HLHDF_LIB_DIR"
 
@@ -143,6 +275,7 @@ PYLIBROOT=`echo $PYLIB_SITEPACK | sed -e "s/\/site-packages//g"`
 
 AC_SUBST(ACPG_INSTALL_ROOT)
 AC_SUBST(ACPG_INSTALL_MKF)
+AC_SUBST(ACPG_DATA_DIR)
 AC_SUBST(MSG_INSTALL_ROOT)
 AC_SUBST(EXPORT_DIR)
 AC_SUBST(ZLIB_LD_PATH)
