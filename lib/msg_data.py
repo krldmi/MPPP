@@ -363,7 +363,7 @@ class MSGSeviriChannels:
             num_ctth.pressure.data = \
                 Numeric.array(num_ctth.pressure.data)
             num_ctth.processing_flags.data = \
-                Numeric.array(num_ctth.processing_flags.data,Numeric.Int16)
+                Numeric.array(num_ctth.processing_flags.data,Numeric.Int32)
             ctth = msg_ctth.msg_ctth2ppsformat_numeric(num_ctth)
             epshdf.write_cloudtop(filename,ctth,6)
             

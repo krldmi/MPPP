@@ -170,9 +170,19 @@ if __name__ == "__main__":
              elif(pkey == "PGE03"):
                 rgb = channels.pge03()
              elif(pkey == "CtypeHDF"):
-                channels.save_cloudtype(time_slot.strftime(filename))
+                 if(isinstance(filename,tuple) and
+                    len(filename) == 2):
+                     channels.save_cloudtype(time_slot.strftime(filename[0]))
+                     channels.save_cloudtype(time_slot.strftime(filename[1]))
+                 else:
+                     channels.save_cloudtype(time_slot.strftime(filename))
              elif(pkey == "CtthHDF"):
-                channels.save_ctth(time_slot.strftime(filename))
+                 if(isinstance(filename,tuple) and
+                    len(filename) == 2):
+                     channels.save_ctth(time_slot.strftime(filename[0]))
+                     channels.save_ctth(time_slot.strftime(filename[1]))
+                 else:
+                     channels.save_ctth(time_slot.strftime(filename))
              elif(pkey == "NordRad"):
                 nordrad = channels.get_cloudtype()
 

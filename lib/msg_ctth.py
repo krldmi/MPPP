@@ -502,7 +502,7 @@ def convert_procflags2pps(data):
 def convert_procflags2pps_numeric(data):
     import Numeric
     
-    ones = Numeric.ones(data.shape,"s")
+    ones = Numeric.ones(data.shape,"i")
 
     # 2 bits to define processing status
     # (maps to pps bits 0 and 1:)
