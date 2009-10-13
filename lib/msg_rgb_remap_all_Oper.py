@@ -68,18 +68,42 @@ seviri_data = None
 
 MODULE_ID="MSG_RGB_REMAP"
 
+def usage():
+    print "Usage: %s <n-slots back in time>"%(sys.argv[0])
+    sys.exit(-9)
+    
+
 if __name__ == "__main__":
     import sys
     import time
     import string
     import py_msg
     import numpy
+    import getopt
 
-    if len(sys.argv) < 2:
-        print "Usage: %s <n-slots back in time>"%(sys.argv[0])
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"ha:p:",["help"])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+    
+    if len(args) > 1:
+        usage()
         sys.exit(-9)
     else:
-        n_slots = string.atoi(sys.argv[1])
+        n_slots = string.atoi(args[0])
+
+    areas = PRODUCTS.keys()
+    prods = None
+
+    for opt, arg in opts:
+        if opt in ("-h","--help"):
+            usage()
+            sys.exit()
+        elif opt == "-a":
+            areas = [arg]
+        elif opt == "-p":
+            prods = [arg]
 
     time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
 
@@ -96,40 +120,46 @@ if __name__ == "__main__":
         
     for time_slot in time_slots:
 
-        msgwrite_log("INFO",
-                     "Loading global Seviri channels...",
-                     moduleid=MODULE_ID)
+        if("globe" in areas and
+           (prods is None or
+            "overview" in prods)):
+
+            msgwrite_log("INFO",
+                         "Loading global Seviri channels...",
+                         moduleid=MODULE_ID)
         
-        seviri_data = msg_data.MSGSeviriChannels(time_slot, 
-                                                 "globe", 
-                                                 rad = False)
-        seviri_data.load([1,2,9])
+
+        
+            seviri_data = msg_data.MSGSeviriChannels(time_slot, 
+                                                     "globe", 
+                                                     rad = False)
+            seviri_data.load([1,2,9])
 
 
-        # This should be done differently. The globe area should not be treated
-        # differently, but this will wait for smart remapping features. -- Martin,
-        # 2009-10-07
+            # This should be done differently. The globe area should not be
+            # treated differently, but this will wait for smart remapping
+            # features. -- Martin, 2009-10-07
   
-        msgwrite_log("INFO",
-                     "Loading done",
-                     moduleid=MODULE_ID)
-        
-        msgwrite_log("INFO",
-                     "Generating %s for area %s."%("overview","globe"),
-                     moduleid=MODULE_ID)
-        
-        
-        rgb = seviri_data.overview()
-
-        if rgb is not None:
-            for filename in PRODUCTS["globe"]["overview"]:
-                if(isinstance(filename,tuple) and
-                   len(filename) == 2):
-                    rgb.double_save(time_slot.strftime(filename[0]),
-                                    time_slot.strftime(filename[1]))
-                else:
-                    rgb.secure_save(time_slot.strftime(filename))
-
+            msgwrite_log("INFO",
+                         "Loading done",
+                         moduleid=MODULE_ID)
+            
+            msgwrite_log("INFO",
+                         "Generating %s for area %s."%("overview","globe"),
+                         moduleid=MODULE_ID)
+            
+            
+            rgb = seviri_data.overview()
+            
+            if rgb is not None:
+                for filename in PRODUCTS["globe"]["overview"]:
+                    if(isinstance(filename,tuple) and
+                       len(filename) == 2):
+                        rgb.double_save(time_slot.strftime(filename[0]),
+                                        time_slot.strftime(filename[1]))
+                    else:
+                        rgb.secure_save(time_slot.strftime(filename))
+                        
         msgwrite_log("INFO",
                      "Loading Seviri channels...",
                      moduleid=MODULE_ID)
@@ -144,7 +174,7 @@ if __name__ == "__main__":
                      moduleid=MODULE_ID)
 
             
-        for akey in PRODUCTS:
+        for akey in areas:
             if akey == "globe":
                 continue
             msgwrite_log("INFO",
@@ -152,7 +182,13 @@ if __name__ == "__main__":
                          moduleid=MODULE_ID)
             channels = seviri_data.project(akey)
 
-            for pkey in PRODUCTS[akey]:
+            if prods is None:
+                products = PRODUCTS[akey]
+            else:
+                products = list(set(PRODUCTS[akey]) &
+                                set(prods))
+
+            for pkey in products:
                 if pkey in ["convection", "airmass", "overview","ir9",
                             "wv_low", "wv_high", "greensnow", "redsnow",
                             "fog", "nightfog", "cloudtop", "hr_overview"]:
@@ -189,7 +225,20 @@ if __name__ == "__main__":
                     for filename in PRODUCTS[akey][pkey]:
                         if(isinstance(filename,tuple) and
                            len(filename) == 2):
-                            rgb.double_save(time_slot.strftime(filename[0]),
-                                            time_slot.strftime(filename[1]))
+                            filename0 = time_slot.strftime(filename[0])
+                            filename1 = time_slot.strftime(filename[1])
+                            msgwrite_log("INFO",
+                                         "Saving to %s."%(filename0),
+                                         moduleid=MODULE_ID)
+                            msgwrite_log("INFO",
+                                         "Saving to %s."%(filename1),
+                                         moduleid=MODULE_ID)
+
+                            rgb.double_save(filename0, filename1)
                         else:
-                            rgb.secure_save(time_slot.strftime(filename))
+                            filename0 = time_slot.strftime(filename)
+                            msgwrite_log("INFO",
+                                         "Saving to %s."%(filename0),
+                                         moduleid=MODULE_ID)
+
+                            rgb.secure_save(filename0)

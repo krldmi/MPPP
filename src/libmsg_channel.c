@@ -331,7 +331,7 @@ make_blank_mask(unsigned char ** out, int lines, int cols)
   for(i=0; i<lines; i++)
     for(j=0; j<cols; j++)
       {
-	out[i][j] = FALSE;
+	out[i][j] = TRUE;
       }
   
   

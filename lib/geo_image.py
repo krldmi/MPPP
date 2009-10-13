@@ -513,22 +513,23 @@ class GeoImage:
         tuple, then is should have as many elements as the channels of the
         image, and the gamma correction is applied elementwise. If *gamma* is a
         number, the same gamma correction is applied on every channel, if there
-        are several channels in the image.
+        are several channels in the image. The behaviour of :func:`gamma` is
+        undefined outside the normal [0,1] range of the channels.
         """
         if gamma == 1.0:
             return
         if (isinstance(gamma,tuple) or
             isinstance(gamma,list)):
             for i in range(len(gamma)):
-                self.channels[i] = np.ma.where(self.channels[i] >= 0,
-                                               self.channels[i] ** (1 / gamma[i]),
-                                               self.channels[i])
+                self.channels[i] = np.where(self.channels[i] >= 0,
+                                            self.channels[i] ** (1 / gamma[i]),
+                                            self.channels[i])
         else:
             i = 0
             for ch in self.channels:
-                self.channels[i] = np.ma.where(ch >= 0,
-                                               ch ** (1 / gamma),
-                                               ch)
+                self.channels[i] = np.where(ch >= 0,
+                                            ch ** (1 / gamma),
+                                            ch)
                 i = i + 1
         
     def stretch(self, stretch = "no"):

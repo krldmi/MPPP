@@ -127,6 +127,12 @@ class MSGSeviriChannels:
                                                area_id, 
                                                ch, 
                                                rad = self._load_rad)
+
+        for i in range(len(self.channels)):
+            if(self.channels[i] is not None):
+                if numpy.ma.count(self.channels[i]["CAL"]) == 0:
+                    self.channels[i] = None
+        
         self._co2corr_bt39
             
             
