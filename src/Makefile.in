@@ -1,7 +1,10 @@
 include @top_srcdir@/def.mk
 
-#HLHDF_INCLUDE_DIR = /local_disk/usr/src/hlhdf-v0.7.7/hlhdf
-#HLHDF_LIB_DIR = /local_disk/usr/src/hlhdf-v0.7.7/hlhdf
+HLHDF_INCLUDE_DIR = @HLHDF_ROOTDIR@/include
+HLHDF_LIB_DIR = @HLHDF_ROOTDIR@/lib
+
+HDF5LIB = @HDF5LIB_DIR@
+HDF5INC = @HDF5INC_DIR@
 
 NWCLIB_INC_DIR = @MSG_INSTALL_ROOT@/include/NWCLIB
 NWCLIB_LIB_DIR = @MSG_INSTALL_ROOT@/bin
@@ -16,9 +19,9 @@ LIB_DIR = $(INSTALL_DIR)/lib
 PY_LIB_DIR = $(INSTALL_DIR)/lib/python2.5/site-packages
 
 
-CFLAGS = -Wall -g3 -I/usr/include -I$(HLHDF_INCLUDE_DIR) -I$(NWCLIB_INC_DIR) $(INCLUDE_PYTHON) -I$(NUMPY_INC_DIR)
-LFLAGS = -L/usr/lib64 -L$(HLHDF_LIB_DIR) -L$(NWCLIB_LIB_DIR)
-LIBS = -Xlinker -Bstatic -lnwclib -lmsg -Xlinker -Bdynamic -lhlhdf -lm -lhdf5
+CFLAGS = -Wall -g3 -I$(HDF5INC) -I$(HLHDF_INCLUDE_DIR) -I$(NWCLIB_INC_DIR) $(INCLUDE_PYTHON) -I$(NUMPY_INC_DIR) -I/usr/include 
+LFLAGS = -L$(HDF5LIB) -L$(HLHDF_LIB_DIR) -L$(NWCLIB_LIB_DIR) -L/usr/lib64 
+LIBS = -Xlinker -Bstatic -lnwclib -lmsg -Xlinker -Bdynamic -lhdf5 -lhlhdf -lm
 
 
 MOD_SOURCES = py_msgmodule.c

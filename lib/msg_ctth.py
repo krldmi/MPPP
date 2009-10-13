@@ -203,25 +203,12 @@ class msgCTTH:
         retv.pressure=msgCTTHData()
         retv.processing_flags=msgCTTHData()
 
-        retv.temperature.data = _satproj.project(coverage.coverage,
-                                                 coverage.rowidx,coverage.colidx,
-                                                 self.temperature.data)
-        retv.height.data = _satproj.project(coverage.coverage,
-                                            coverage.rowidx,
-                                            coverage.colidx,
-                                            self.height.data)
-        retv.pressure.data = _satproj.project(coverage.coverage,
-                                              coverage.rowidx,
-                                              coverage.colidx,
-                                              self.pressure.data)
-        retv.cloudiness.data = _satproj.project(coverage.coverage,
-                                                coverage.rowidx,
-                                                coverage.colidx,
-                                                self.cloudiness.data)
-        retv.processing_flags.data = _satproj.project(coverage.coverage,
-                                                      coverage.rowidx,
-                                                      coverage.colidx,
-                                                      self.processing_flags.data)    
+        retv.temperature.data = coverage.project_array(self.temperature.data)
+        retv.height.data = coverage.project_array(self.height.data)
+        retv.pressure.data = coverage.project_array(self.pressure.data)
+        retv.cloudiness.data = coverage.project_array(self.cloudiness.data)
+        retv.processing_flags.data = \
+            coverage.project_array(self.processing_flags.data)
 
         retv.region_name = dest_area
         retv.projection_name = a.pcs.id
@@ -318,6 +305,68 @@ def msg_ctth2ppsformat(msgctth,satid="Meteosat 8"):
     retv.c_nodata=255 # Is this correct? FIXME
     
     retv.processingflag=convert_procflags2pps(msgctth.processing_flags.data)
+    
+    return retv
+
+def msg_ctth2ppsformat_numeric(msgctth,satid="Meteosat 8"):
+    import area,string, Numeric
+
+    retv = epshdf.CloudTop()
+    retv.region=epshdf.SafRegion()
+    retv.region.xsize=msgctth.num_of_columns
+    retv.region.ysize=msgctth.num_of_lines
+    retv.region.id=msgctth.region_name
+    retv.region.pcs_id=msgctth.projection_name
+    pcsdef=string.join(area.area(msgctth.region_name).pcs.definition)
+    retv.region.pcs_def=pcsdef
+    retv.region.area_extent=area.area(msgctth.region_name).extent
+    retv.satellite_id=satid
+
+    retv.processingflag_lut = []
+    retv.des="MSG SEVIRI Cloud Top Temperature & Height"
+    retv.ctt_des="MSG SEVIRI cloud top temperature (K)"
+    retv.ctp_des="MSG SEVIRI cloud top pressure (hPa)"
+    retv.ctp_des="MSG SEVIRI cloud top height (m)"
+    retv.cloudiness_des="MSG SEVIRI effective cloudiness (%)"
+    retv.processingflag_des = 'MSG SEVIRI bitwise quality/processing flags'
+
+    retv.t_gain=1.0
+    retv.t_intercept=100.0
+    retv.t_nodata=255
+    #print "Temp offset & scaling factor: ",msgctth.temperature.scaling_factor,msgctth.temperature.offset
+    arr = (((msgctth.temperature.data * msgctth.temperature.scaling_factor + msgctth.temperature.offset)\
+            - retv.t_intercept)/retv.t_gain).astype('b')
+    retv.temperature = Numeric.where(Numeric.equal(msgctth.temperature.data,0),retv.t_nodata,arr).astype('b')
+    #retv.temperature=msgctth.temperature.data
+    #retv.t_gain=msgctth.temperature.scaling_factor
+    #retv.t_intercept=msgctth.temperature.offset
+    
+    retv.h_gain=200.0
+    retv.h_intercept=0.0
+    retv.h_nodata=255
+    #print "Height offset & scaling factor: ",msgctth.height.scaling_factor,msgctth.height.offset
+    arr = (((msgctth.height.data * msgctth.height.scaling_factor + msgctth.height.offset)\
+            - retv.h_intercept)/retv.h_gain).astype('b')
+    retv.height = Numeric.where(Numeric.equal(msgctth.height.data,0),retv.h_nodata,arr).astype('b')
+    #retv.height=msgctth.height.data
+    #retv.h_gain=msgctth.height.scaling_factor
+    #retv.h_intercept=msgctth.height.offset
+    
+    retv.p_gain=25.0
+    retv.p_intercept=0.0
+    retv.p_nodata=255
+    #print "Pressure offset & scaling factor: ",msgctth.pressure.scaling_factor,msgctth.pressure.offset
+    arr = (((msgctth.pressure.data * msgctth.pressure.scaling_factor + msgctth.pressure.offset)\
+            - retv.p_intercept)/retv.p_gain).astype('b')
+    retv.pressure = Numeric.where(Numeric.equal(msgctth.pressure.data,0),retv.p_nodata,arr).astype('b')
+    #retv.pressure=msgctth.pressure.data
+    #retv.p_gain=msgctth.pressure.scaling_factor
+    #retv.p_intercept=msgctth.pressure.offset
+    
+    retv.cloudiness=msgctth.cloudiness.data
+    retv.c_nodata=255 # Is this correct? FIXME
+    
+    retv.processingflag=convert_procflags2pps_numeric(msgctth.processing_flags.data)
     
     return retv
 
@@ -449,6 +498,135 @@ def convert_procflags2pps(data):
     del is_bit13_set    
     
     return retv.astype('h')
+
+def convert_procflags2pps_numeric(data):
+    import Numeric
+    
+    ones = Numeric.ones(data.shape,"s")
+
+    # 2 bits to define processing status
+    # (maps to pps bits 0 and 1:)
+    is_bit0_set = get_bit_from_flags(data,0)    
+    is_bit1_set = get_bit_from_flags(data,1)
+    proc = is_bit0_set * Numeric.left_shift(ones,0) + \
+           is_bit1_set * Numeric.left_shift(ones,1)
+    #print Numeric.minimum.reduce(is_bit0_set.flat),Numeric.maximum.reduce(is_bit0_set.flat)
+    #print Numeric.minimum.reduce(is_bit1_set.flat),Numeric.maximum.reduce(is_bit1_set.flat)
+    del is_bit0_set
+    del is_bit1_set
+    #print "Processing status flags: min,max=",Numeric.minimum.reduce(proc.flat),Numeric.maximum.reduce(proc.flat)
+    # Non-processed?
+    # If non-processed in msg (0) then set pps bit 0 and nothing else.
+    # If non-processed in msg due to FOV is cloud free (1) then do not set any pps bits.
+    # If processed (because cloudy) with/without result in msg (2&3) then set pps bit 1.
+    #
+    arr = Numeric.where(Numeric.equal(proc,0),Numeric.left_shift(ones,0),0)
+    #arr = Numeric.where(Numeric.equal(proc,1),Numeric.left_shift(ones,0),0)
+    arr = Numeric.where(Numeric.equal(proc,2),Numeric.left_shift(ones,1),0)
+    arr = Numeric.where(Numeric.equal(proc,3),Numeric.left_shift(ones,1),0)
+    retv = Numeric.array(arr)
+    del proc
+    #print Numeric.minimum.reduce(retv.flat),Numeric.maximum.reduce(retv.flat)
+
+    # 1 bit to define if RTTOV-simulations are available?
+    # (maps to pps bit 3:)
+    is_bit2_set = get_bit_from_flags(data,2)    
+    proc = is_bit2_set
+    #print Numeric.minimum.reduce(is_bit2_set.flat),Numeric.maximum.reduce(is_bit2_set.flat)
+    #print "Processing flags - rttov: min,max=",Numeric.minimum.reduce(proc.flat),Numeric.maximum.reduce(proc.flat)
+    # RTTOV-simulations available?
+    #
+    arr = Numeric.where(Numeric.equal(proc,1),Numeric.left_shift(ones,3),0)
+    retv = Numeric.add(retv,arr)
+    del is_bit2_set
+    
+    # 3 bits to describe NWP input data
+    # (maps to pps bits 4&5:)
+    is_bit3_set = get_bit_from_flags(data,3)
+    is_bit4_set = get_bit_from_flags(data,4)
+    is_bit5_set = get_bit_from_flags(data,5)    
+    # Put together the three bits into a nwp-flag:
+    nwp_bits = is_bit3_set * Numeric.left_shift(ones,0) + \
+               is_bit4_set * Numeric.left_shift(ones,1) + \
+               is_bit5_set * Numeric.left_shift(ones,2)
+    arr = Numeric.where(Numeric.logical_and(Numeric.greater_equal(nwp_bits,3),Numeric.less_equal(nwp_bits,5)),
+                        Numeric.left_shift(ones,4),0)
+    arr = Numeric.add(arr,Numeric.where(Numeric.logical_or(Numeric.equal(nwp_bits,2),Numeric.equal(nwp_bits,4)),
+                                        Numeric.left_shift(ones,5),0))
+    #print "Processing flags - nwp: min,max=",Numeric.minimum.reduce(nwp_bits.flat),Numeric.maximum.reduce(nwp_bits.flat)
+    retv = Numeric.add(retv,arr)
+    del is_bit3_set
+    del is_bit4_set
+    del is_bit5_set
+
+    # 2 bits to describe SEVIRI input data
+    # (maps to pps bits 6:)
+    is_bit6_set = get_bit_from_flags(data,6)
+    is_bit7_set = get_bit_from_flags(data,7)
+    # Put together the two bits into a seviri-flag:
+    seviri_bits = is_bit6_set * Numeric.left_shift(ones,0) + \
+                  is_bit7_set * Numeric.left_shift(ones,1)
+    arr = Numeric.where(Numeric.greater_equal(seviri_bits,2),Numeric.left_shift(ones,6),0)
+    #print "Processing flags - seviri: min,max=",Numeric.minimum.reduce(seviri_bits.flat),\
+    #      Numeric.maximum.reduce(seviri_bits.flat)
+    retv = Numeric.add(retv,arr)
+    del is_bit6_set
+    del is_bit7_set
+    
+    # 4 bits to describe which method has been used
+    # (maps to pps bits 7&8 and bit 2:)
+    is_bit8_set = get_bit_from_flags(data,8)
+    is_bit9_set = get_bit_from_flags(data,9)
+    is_bit10_set = get_bit_from_flags(data,10)
+    is_bit11_set = get_bit_from_flags(data,11)
+    # Put together the four bits into a method-flag:
+    method_bits = is_bit8_set * Numeric.left_shift(ones,0) + \
+                  is_bit9_set * Numeric.left_shift(ones,1) + \
+                  is_bit10_set * Numeric.left_shift(ones,2) + \
+                  is_bit11_set * Numeric.left_shift(ones,3)
+    arr = Numeric.where(Numeric.logical_or(
+        Numeric.logical_and(Numeric.greater_equal(method_bits,1),Numeric.less_equal(method_bits,2)),
+        Numeric.equal(method_bits,13)),
+                        Numeric.left_shift(ones,2),0)
+    arr = Numeric.add(arr,
+                      Numeric.where(Numeric.equal(method_bits,1),Numeric.left_shift(ones,7),0))
+    arr = Numeric.add(arr,
+                      Numeric.where(Numeric.logical_and(Numeric.greater_equal(method_bits,3),
+                                                        Numeric.less_equal(method_bits,12)),
+                                    Numeric.left_shift(ones,8),0))
+    #print "Processing flags - method: min,max=",Numeric.minimum.reduce(method_bits.flat),\
+    #      Numeric.maximum.reduce(method_bits.flat)
+    # (Maps directly - as well - to the spare bits 9-12) 
+    arr = Numeric.add(arr,Numeric.where(is_bit8_set,Numeric.left_shift(ones,9),0))
+    arr = Numeric.add(arr,Numeric.where(is_bit9_set,Numeric.left_shift(ones,10),0))
+    arr = Numeric.add(arr,Numeric.where(is_bit10_set,Numeric.left_shift(ones,11),0))
+    arr = Numeric.add(arr,Numeric.where(is_bit11_set,Numeric.left_shift(ones,12),0))   
+    retv = Numeric.add(retv,arr)
+    del is_bit8_set
+    del is_bit9_set
+    del is_bit10_set
+    del is_bit11_set
+
+    # 2 bits to describe the quality of the processing itself
+    # (maps to pps bits 14&15:)
+    is_bit12_set = get_bit_from_flags(data,12)
+    is_bit13_set = get_bit_from_flags(data,13)
+    # Put together the two bits into a quality-flag:
+    qual_bits = is_bit12_set * Numeric.left_shift(ones,0) + \
+                is_bit13_set * Numeric.left_shift(ones,1)
+    arr = Numeric.where(Numeric.logical_and(Numeric.greater_equal(qual_bits,1),
+                                            Numeric.less_equal(qual_bits,2)),
+                        Numeric.left_shift(ones,14),0)
+    arr = Numeric.add(arr,
+                      Numeric.where(Numeric.equal(qual_bits,2),Numeric.left_shift(ones,15),0))
+    #print "Processing flags - quality: min,max=",Numeric.minimum.reduce(qual_bits.flat),\
+    #      Numeric.maximum.reduce(qual_bits.flat)
+    retv = Numeric.add(retv,arr)
+    del is_bit12_set
+    del is_bit13_set    
+    
+    return retv.astype('s')
+
 
 # ------------------------------------------------------------------
 def OLDmsgCtth_remap_fast(cov,msgctth,areaid,a):

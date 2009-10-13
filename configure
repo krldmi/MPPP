@@ -699,7 +699,6 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 PYLIBROOT
 HLHDF_ROOTDIR
-HDF5_LD_PATH
 SZLIB_LD_PATH
 ZLIB_LD_PATH
 EXPORT_DIR
@@ -708,6 +707,10 @@ ACPG_DATA_DIR
 ACPG_INSTALL_MKF
 ACPG_INSTALL_ROOT
 N2_INSTALL_ROOT
+HDF5LIB_DIR
+HDF5INC_DIR
+HDF5PATH
+LIBHDF5
 NUMPY_INC
 NUMPY_DIR
 PYTHON_DIR
@@ -765,6 +768,8 @@ ac_user_opts='
 enable_option_checking
 with_python_includes
 with_numpy
+with_hdf5
+with_hlhdf
 with_acpg
 with_msg
 with_export_dir
@@ -1401,6 +1406,8 @@ Optional Packages:
   --with-python-includes=DIR
                           Specify directory containing Python headers
   --with-numpy=DIR        Specify directory containing Numpy include directory
+  --with-hdf5=DIR         Where to find the HDF5 library
+ --with-hlhdf=INSTALLROOT Need to specify the root of the hlhdf installation to be able to configure
  --with-acpg=INSTALLROOT Need to specify the root of the acpg installation to be able to configure
  --with-msg=INSTALLROOT Need to specify the root of the msg installation to be able to configure
  --with-export-dir=EXPORT_DIR Specify the data export directory
@@ -1863,7 +1870,7 @@ fi
 
 
 ################################################################################
-#                           Python
+#                           Python & Numpy
 ################################################################################
 
 
@@ -3939,6 +3946,586 @@ fi
 
 
 
+################################################################################
+#                           HDF5
+################################################################################
+
+ LIBHDF5=""
+ HDF5PATH=""
+
+# Check whether --with-hdf5 was given.
+if test "${with_hdf5+set}" = set; then
+  withval=$with_hdf5;
+fi
+
+
+case "$withval" in
+  yes)
+
+for ac_header in hdf5.h
+do
+as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
+$as_echo_n "checking $ac_header usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
+$as_echo_n "checking $ac_header presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+
+fi
+as_val=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  { { $as_echo "$as_me:$LINENO: error: cannot find HDF5 header files." >&5
+$as_echo "$as_me: error: cannot find HDF5 header files." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+done
+
+
+{ $as_echo "$as_me:$LINENO: checking for H5open in -lhdf5" >&5
+$as_echo_n "checking for H5open in -lhdf5... " >&6; }
+if test "${ac_cv_lib_hdf5_H5open+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lhdf5  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char H5open ();
+int
+main ()
+{
+return H5open ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_hdf5_H5open=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_hdf5_H5open=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_hdf5_H5open" >&5
+$as_echo "$ac_cv_lib_hdf5_H5open" >&6; }
+if test "x$ac_cv_lib_hdf5_H5open" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBHDF5 1
+_ACEOF
+
+  LIBS="-lhdf5 $LIBS"
+
+else
+  { { $as_echo "$as_me:$LINENO: error: cannot find the HDF5 library." >&5
+$as_echo "$as_me: error: cannot find the HDF5 library." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+    ;;
+  no)
+    { { $as_echo "$as_me:$LINENO: error: HDF5 library needed for compilation." >&5
+$as_echo "$as_me: error: HDF5 library needed for compilation." >&2;}
+   { (exit 1); exit 1; }; }
+    ;;
+  *)
+    case "$withval" in
+      *,*)
+        hdf5_inc="`echo $withval | cut -f1 -d,`"
+        hdf5_lib="`echo $withval | cut -f2 -d, -s`"
+        ;;
+      *)
+        if test -n "$withval"; then
+          hdf5_inc="$withval/include"
+          hdf5_lib="$withval/lib"
+        fi
+        ;;
+    esac
+
+    if test -n "$hdf5_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$hdf5_inc"
+    fi
+
+
+for ac_header in hdf5.h
+do
+as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
+$as_echo_n "checking $ac_header usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
+$as_echo_n "checking $ac_header presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+
+fi
+as_val=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  { { $as_echo "$as_me:$LINENO: error: cannot find HDF5 header files!" >&5
+$as_echo "$as_me: error: cannot find HDF5 header files!" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+done
+
+
+
+
+    HDF5PATH="$hdf5_lib,"
+    HDF5LIB_DIR="`echo $HDF5PATH | sed -e "s/lib,/lib/"`"
+    HDF5INC_DIR="`echo $HDF5PATH | sed -e "s/lib,/include/"`"
+    HDF5PATH="`echo $HDF5PATH | sed -e "s/lib,/bin/"`"
+
+    if test -n "$hdf5_lib"; then
+      LD_LIBRARY_PATH="$hdf5_lib:$LD_LIBRARY_PATH"
+      LDFLAGS="$LDFLAGS -L$hdf5_lib"
+
+                        if test -f "$hdf5_lib/libhdf5.la"; then
+        libdir_saved=$libdir
+        . $hdf5_lib/libhdf5.la
+        libdir=$libdir_saved
+        for lib in X $dependency_libs; do
+          case "$lib" in
+            *libhdf5.la*)
+              ;;
+            *)
+              if test "$lib" != "X"; then
+                LIBHDF5="$LIBHDF5 $lib"
+              fi
+              ;;
+          esac
+        done
+      fi
+    fi
+
+
+{ $as_echo "$as_me:$LINENO: checking for H5open in -lhdf5" >&5
+$as_echo_n "checking for H5open in -lhdf5... " >&6; }
+if test "${ac_cv_lib_hdf5_H5open+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lhdf5  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char H5open ();
+int
+main ()
+{
+return H5open ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_hdf5_H5open=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_hdf5_H5open=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_hdf5_H5open" >&5
+$as_echo "$ac_cv_lib_hdf5_H5open" >&6; }
+if test "x$ac_cv_lib_hdf5_H5open" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBHDF5 1
+_ACEOF
+
+  LIBS="-lhdf5 $LIBS"
+
+else
+  { { $as_echo "$as_me:$LINENO: error: cannot find HDF5 library." >&5
+$as_echo "$as_me: error: cannot find HDF5 library." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+    ;;
+esac
+
+
+
+
+################################################################################
+#                           HLHDF
+################################################################################
+
+
+# Check whether --with-hlhdf was given.
+if test "${with_hlhdf+set}" = set; then
+  withval=$with_hlhdf;
+else
+  withval=no
+fi
+
+
+HLHDF_INSTALL_OK=no
+HLHDF_INSTALL_ROOT=
+case $withval in
+  no)
+    HLHDF_INSTALL_OK=no
+    ;;
+  *)
+    tm_root="`echo ${withval}`"
+    if test "X" != "$tm_root"; then
+      THIS_CWD=`pwd`
+      cd $tm_root
+      if [ ! -f ./mkf/hldef.mk ]; then
+        { { $as_echo "$as_me:$LINENO: error: \"Could not successfully find the def.mk file\"" >&5
+$as_echo "$as_me: error: \"Could not successfully find the def.mk file\"" >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+      HLHDF_INSTALL_ROOT=`pwd`
+      HLHDF_INSTALL_OK=yes
+      cd $THIS_CWD
+    fi
+    ;;
+esac
+
+if [ "x$HLHDF_INSTALL_OK" != "xyes" ]; then
+  { { $as_echo "$as_me:$LINENO: error: \"You must run configure with --with-hlhdf=<hlhdf install root dir>\"" >&5
+$as_echo "$as_me: error: \"You must run configure with --with-hlhdf=<hlhdf install root dir>\"" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+################################################################################
+#                           Acpg
+################################################################################
+
 
 # Check whether --with-acpg was given.
 if test "${with_acpg+set}" = set; then
@@ -3977,6 +4564,9 @@ $as_echo "$as_me: error: \"You must run configure with --with-acpg=<acpg install
    { (exit 1); exit 1; }; }
 fi
 
+################################################################################
+#                           MSG
+################################################################################
 
 
 # Check whether --with-msg was given.
@@ -4008,6 +4598,10 @@ $as_echo "$as_me: error: \"You must run configure with --with-msg=<msg install r
    { (exit 1); exit 1; }; }
 fi
 
+################################################################################
+#                           Export dir
+################################################################################
+
 
 # Check whether --with-export_dir was given.
 if test "${with_export_dir+set}" = set; then
@@ -4032,6 +4626,10 @@ case $withval in
     ;;
 esac
 
+
+################################################################################
+#                           N2INJECT
+################################################################################
 
 
 # Check whether --with-n2 was given.
@@ -4068,6 +4666,9 @@ $as_echo "$as_me: error: \"You must run configure with --with-n2=<n2 install roo
 fi
 
 
+################################################################################
+#                           Misc
+################################################################################
 
 ACPG_INSTALL_MKF=$ACPG_INSTALL_ROOT/mkf/def.mk
 if [ "x$ACPG_INSTALL_MKF" == "x" ]; then
@@ -4083,17 +4684,18 @@ echo "ACPG_INSTALL_ROOT=$ACPG_INSTALL_ROOT"
 ACPG_DATA_DIR=`cat $ACPG_INSTALL_MKF | sed -n "/^ACPG_DATA_DIR/p" | sed -e "s/ACPG_DATA_DIR=//g" | awk '{print $1}'`
 echo "ACPG_DATA_DIR=$ACPG_DATA_DIR"
 
-HLHDF_ROOTDIR=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_ROOTDIR/p" | sed -e "s/HLHDF_ROOTDIR=//g" | awk '{print $1}'`
-echo "HLHDF_LIB_DIR=$HLHDF_LIB_DIR"
+HLHDF_ROOTDIR=$HLHDF_INSTALL_ROOT
+#HLHDF_ROOTDIR=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_ROOTDIR/p" | sed -e "s/HLHDF_ROOTDIR=//g" | awk '{print $1}'`
+#echo "HLHDF_LIB_DIR=$HLHDF_LIB_DIR"
 
-HLHDF_MK_FILE=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_HLDEF_MK_FILE/p" | sed -e "s/HLHDF_HLDEF_MK_FILE=//g" | awk '{print $1}'`
-echo "HLHDF_MK_FILE=$HLHDF_MK_FILE"
+#HLHDF_MK_FILE=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_HLDEF_MK_FILE/p" | sed -e "s/HLHDF_HLDEF_MK_FILE=//g" | awk '{print $1}'`
+#echo "HLHDF_MK_FILE=$HLHDF_MK_FILE"
 
-HDF5_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^HDF5_LIBDIR/p" | sed -e "s/HDF5_LIBDIR=//g" | awk '{print $1}'`
-echo "HDF5_LIBDIR=$HDF5_LIBDIR"
+#HDF5_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^HDF5_LIBDIR/p" | sed -e "s/HDF5_LIBDIR=//g" | awk '{print $1}'`
+#echo "HDF5_LIBDIR=$HDF5_LIBDIR"
 
-HDF5_LD_PATH=`echo $HDF5_LIBDIR | sed -e "s/^\-L//g"`
-echo "HDF5_LD_PATH=$HDF5_LD_PATH"
+#HDF5_LD_PATH=`echo $HDF5_LIBDIR | sed -e "s/^\-L//g"`
+#echo "HDF5_LD_PATH=$HDF5_LD_PATH"
 
 ZLIB_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^ZLIB_LIBDIR/p" | sed -e "s/ZLIB_LIBDIR=//g" | awk '{print $1}'`
 ZLIB_LD_PATH=`echo $ZLIB_LIBDIR | sed -e "s/^\-L//g"`
@@ -4115,7 +4717,7 @@ PYLIBROOT=`echo $PYLIB_SITEPACK | sed -e "s/\/site-packages//g"`
 
 
 
-
+#AC_SUBST(HDF5_LD_PATH)
 
 
 

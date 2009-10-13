@@ -28,6 +28,7 @@ import msg_communications
 import glob
 import pps_array2image
 import smhi_safnwc_legends
+import epshdf
 
 MODULE_ID = "MSG DATA"
 
@@ -277,8 +278,23 @@ class MSGSeviriChannels:
             self.cloudtype = None
 
     def save_cloudtype(self,filename):
-        ctype = msg_ctype.msg_ctype2ppsformat(self.cloudtype)
-        epshdf.write_cloudtype(filename, ctype, 6)
+        try:
+            ctype = msg_ctype.msg_ctype2ppsformat(self.cloudtype)
+            epshdf.write_cloudtype(filename, ctype, 6)
+        except AttributeError:
+            msg_communications.msgwrite_log("INFO",
+                                            "Old version of satproj, converting to Numeric...",
+                                            moduleid=MODULE_ID)
+            import Numeric
+            num_ctype = self.cloudtype
+            num_ctype.cloudtype.data = \
+                Numeric.array(num_ctype.cloudtype.data)
+            num_ctype.cloudphase.data = \
+                Numeric.array(num_ctype.cloudphase.data)
+            num_ctype.processing_flags.data = \
+                Numeric.array(num_ctype.processing_flags.data)
+            ctype = msg_ctype.msg_ctype2ppsformat(num_ctype)
+            epshdf.write_cloudtype(filename, ctype, 6)
 
     def get_cloudtype(self):
         """Return the cloudtype structure.
@@ -329,8 +345,27 @@ class MSGSeviriChannels:
             self.ctth = None
 
     def save_ctth(self,filename):
-        ctth = msg_ctth.msg_ctth2ppsformat(self.ctth)
-        epshdf.write_cloudtop(filename, ctth, 6)
+        try:
+            ctth = msg_ctth.msg_ctth2ppsformat(self.ctth)
+            epshdf.write_cloudtop(filename, ctth, 6)
+        except AttributeError:
+            msg_communications.msgwrite_log("INFO",
+                                            "Old version of satproj, converting to Numeric...",
+                                            moduleid=MODULE_ID)
+            import Numeric
+            num_ctth = self.ctth
+            num_ctth.temperature.data = \
+                Numeric.array(num_ctth.temperature.data)
+            num_ctth.height.data = \
+                Numeric.array(num_ctth.height.data)
+            num_ctth.cloudiness.data = \
+                Numeric.array(num_ctth.cloudiness.data,'b')
+            num_ctth.pressure.data = \
+                Numeric.array(num_ctth.pressure.data)
+            num_ctth.processing_flags.data = \
+                Numeric.array(num_ctth.processing_flags.data,Numeric.Int16)
+            ctth = msg_ctth.msg_ctth2ppsformat_numeric(num_ctth)
+            epshdf.write_cloudtop(filename,ctth,6)
             
     def get_ctth(self):
         """Return the ctth structure.

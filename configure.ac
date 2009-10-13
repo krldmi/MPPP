@@ -10,7 +10,7 @@ fi
 
 
 ################################################################################
-#                           Python
+#                           Python & Numpy
 ################################################################################
 
 AC_ARG_VAR([PYTHON],[Python interpretper])
@@ -136,6 +136,139 @@ AC_SUBST(PYTHON_DIR)
 AC_SUBST(NUMPY_DIR)
 AC_SUBST(NUMPY_INC)
 
+################################################################################
+#                           HDF5
+################################################################################
+
+dnl ----------------------------------------------------------------------
+dnl Where's HDF5? We need to find out where the HDF5 library
+dnl and header files are if they aren't in system library/include places.
+dnl
+AC_SUBST(LIBHDF5) LIBHDF5=""
+AC_SUBST(HDF5PATH) HDF5PATH=""
+AC_ARG_WITH([hdf5],
+            [AC_HELP_STRING([--with-hdf5=DIR],
+                            [Where to find the HDF5 library])],,)
+
+case "$withval" in
+  yes)
+    AC_CHECK_HEADERS(hdf5.h,,
+                     AC_MSG_ERROR(cannot find HDF5 header files.))
+    AC_CHECK_LIB(hdf5, H5open,,
+                 AC_MSG_ERROR(cannot find the HDF5 library.))
+    ;;
+  no)
+    AC_MSG_ERROR(HDF5 library needed for compilation.)
+    ;;
+  *)
+    case "$withval" in
+      *,*)
+        hdf5_inc="`echo $withval | cut -f1 -d,`"
+        hdf5_lib="`echo $withval | cut -f2 -d, -s`"
+        ;;
+      *)
+        if test -n "$withval"; then
+          hdf5_inc="$withval/include"
+          hdf5_lib="$withval/lib"
+        fi
+        ;;
+    esac
+
+    if test -n "$hdf5_inc"; then
+      CPPFLAGS="$CPPFLAGS -I$hdf5_inc"
+    fi
+
+    AC_CHECK_HEADERS(hdf5.h,,
+                     AC_MSG_ERROR(cannot find HDF5 header files!))
+dnl We should check version !!!!
+dnl     HDF5MAJ=`grep "\#define H5_VERS_MAJOR" $hdf5_inc/H5public.h | cut -f 2`
+dnl     HDF5MIN=`grep "\#define H5_VERS_MINOR" $hdf5_inc/H5public.h | cut -f 2`
+dnl     HDF5REL=`grep "\#define H5_VERS_RELEASE" $hdf5_inc/H5public.h | cut -f 2`
+dnl     HDF5VERS=`echo $HDF5MAJ"."$HDF5MIN"."$HDF5REL`
+
+dnl    AS_VERSION_COMPARE("1.8.3",$HDF5VERS,
+dnl      [],
+dnl      [],
+dnl      [AC_MSG_ERROR("hdf5 >= 1.8.3 is needed.")])
+
+
+    HDF5PATH="$hdf5_lib,"
+    HDF5LIB_DIR="`echo $HDF5PATH | sed -e "s/lib,/lib/"`"
+    HDF5INC_DIR="`echo $HDF5PATH | sed -e "s/lib,/include/"`"
+    HDF5PATH="`echo $HDF5PATH | sed -e "s/lib,/bin/"`"
+
+    if test -n "$hdf5_lib"; then
+      LD_LIBRARY_PATH="$hdf5_lib:$LD_LIBRARY_PATH"
+      LDFLAGS="$LDFLAGS -L$hdf5_lib"
+
+      dnl We want to use the ``.la'' version of the HDF5 library which
+      dnl is the thing libtool creates and has in it all of the neat
+      dnl stuff like where to find the libraries libhdf5 depends upon.
+      if test -f "$hdf5_lib/libhdf5.la"; then
+        libdir_saved=$libdir
+        . $hdf5_lib/libhdf5.la
+        libdir=$libdir_saved
+        for lib in X $dependency_libs; do
+          case "$lib" in
+            *libhdf5.la*)
+              ;;
+            *)
+              if test "$lib" != "X"; then
+                LIBHDF5="$LIBHDF5 $lib"
+              fi
+              ;;
+          esac
+        done
+      fi
+    fi
+
+    dnl LDFLAGS="$LDFLAGS $LIBHDF5"
+    dnl LIBHDF5="$LIBHDF5" 
+    AC_CHECK_LIB(hdf5, H5open,,
+                 AC_MSG_ERROR(cannot find HDF5 library.))
+    ;;
+esac
+
+AC_SUBST(HDF5INC_DIR)
+AC_SUBST(HDF5LIB_DIR)
+
+################################################################################
+#                           HLHDF
+################################################################################
+
+AC_ARG_WITH(hlhdf,[ --with-hlhdf=INSTALLROOT Need to specify the root of the hlhdf installation to be able to configure],
+	,withval=no)
+
+HLHDF_INSTALL_OK=no
+HLHDF_INSTALL_ROOT=
+case $withval in
+  no)
+    HLHDF_INSTALL_OK=no
+    ;;
+  *)
+    tm_root="`echo ${withval}`"
+    if test "X" != "$tm_root"; then
+      THIS_CWD=`pwd`
+      cd $tm_root
+      if [[ ! -f ./mkf/hldef.mk ]]; then
+        AC_MSG_ERROR("Could not successfully find the def.mk file")
+      fi
+      HLHDF_INSTALL_ROOT=`pwd`
+      HLHDF_INSTALL_OK=yes
+      cd $THIS_CWD
+    fi
+    ;;
+esac
+
+if [[ "x$HLHDF_INSTALL_OK" != "xyes" ]]; then
+  AC_MSG_ERROR("You must run configure with --with-hlhdf=<hlhdf install root dir>")
+fi
+
+
+################################################################################
+#                           Acpg
+################################################################################
+
 AC_ARG_WITH(acpg,[ --with-acpg=INSTALLROOT Need to specify the root of the acpg installation to be able to configure],
 	,withval=no)
 
@@ -164,6 +297,9 @@ if [[ "x$ACPG_INSTALL_OK" != "xyes" ]]; then
   AC_MSG_ERROR("You must run configure with --with-acpg=<acpg install root dir>")
 fi
 
+################################################################################
+#                           MSG
+################################################################################
 
 AC_ARG_WITH(msg,[ --with-msg=INSTALLROOT Need to specify the root of the msg installation to be able to configure],
 	,withval=no)
@@ -187,6 +323,10 @@ if [[ "x$MSG_INSTALL_OK" != "xyes" ]]; then
   AC_MSG_ERROR("You must run configure with --with-msg=<msg install root dir>")
 fi
 
+################################################################################
+#                           Export dir
+################################################################################
+
 AC_ARG_WITH(export_dir,[ --with-export-dir=EXPORT_DIR Specify the data export directory],
 	,withval=no)
 
@@ -205,6 +345,10 @@ case $withval in
     ;;
 esac
 
+
+################################################################################
+#                           N2INJECT
+################################################################################
 dnl This seems to be uneeded - 20090925, Martin
 
 AC_ARG_WITH(n2,[ --with-n2=INSTALLROOT Need to specify the root of the N2 installation to be able to configure],
@@ -234,6 +378,9 @@ if [[ "x$withval" == "xyes" ]]; then
 fi
 
 
+################################################################################
+#                           Misc
+################################################################################
 dnl Time to extract a lot of information from the training manager installation
 
 ACPG_INSTALL_MKF=$ACPG_INSTALL_ROOT/mkf/def.mk
@@ -248,17 +395,18 @@ echo "ACPG_INSTALL_ROOT=$ACPG_INSTALL_ROOT"
 ACPG_DATA_DIR=`cat $ACPG_INSTALL_MKF | sed -n "/^ACPG_DATA_DIR/p" | sed -e "s/ACPG_DATA_DIR=//g" | awk '{print $1}'`
 echo "ACPG_DATA_DIR=$ACPG_DATA_DIR"
 
-HLHDF_ROOTDIR=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_ROOTDIR/p" | sed -e "s/HLHDF_ROOTDIR=//g" | awk '{print $1}'`
-echo "HLHDF_LIB_DIR=$HLHDF_LIB_DIR"
+HLHDF_ROOTDIR=$HLHDF_INSTALL_ROOT
+#HLHDF_ROOTDIR=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_ROOTDIR/p" | sed -e "s/HLHDF_ROOTDIR=//g" | awk '{print $1}'`
+#echo "HLHDF_LIB_DIR=$HLHDF_LIB_DIR"
 
-HLHDF_MK_FILE=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_HLDEF_MK_FILE/p" | sed -e "s/HLHDF_HLDEF_MK_FILE=//g" | awk '{print $1}'`
-echo "HLHDF_MK_FILE=$HLHDF_MK_FILE"
+#HLHDF_MK_FILE=`cat $ACPG_INSTALL_MKF | sed -n "/^HLHDF_HLDEF_MK_FILE/p" | sed -e "s/HLHDF_HLDEF_MK_FILE=//g" | awk '{print $1}'`
+#echo "HLHDF_MK_FILE=$HLHDF_MK_FILE"
 
-HDF5_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^HDF5_LIBDIR/p" | sed -e "s/HDF5_LIBDIR=//g" | awk '{print $1}'`
-echo "HDF5_LIBDIR=$HDF5_LIBDIR"
+#HDF5_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^HDF5_LIBDIR/p" | sed -e "s/HDF5_LIBDIR=//g" | awk '{print $1}'`
+#echo "HDF5_LIBDIR=$HDF5_LIBDIR"
 
-HDF5_LD_PATH=`echo $HDF5_LIBDIR | sed -e "s/^\-L//g"`
-echo "HDF5_LD_PATH=$HDF5_LD_PATH"
+#HDF5_LD_PATH=`echo $HDF5_LIBDIR | sed -e "s/^\-L//g"`
+#echo "HDF5_LD_PATH=$HDF5_LD_PATH"
 
 ZLIB_LIBDIR=`cat $HLHDF_MK_FILE | sed -n "/^ZLIB_LIBDIR/p" | sed -e "s/ZLIB_LIBDIR=//g" | awk '{print $1}'`
 ZLIB_LD_PATH=`echo $ZLIB_LIBDIR | sed -e "s/^\-L//g"`
@@ -280,7 +428,7 @@ AC_SUBST(MSG_INSTALL_ROOT)
 AC_SUBST(EXPORT_DIR)
 AC_SUBST(ZLIB_LD_PATH)
 AC_SUBST(SZLIB_LD_PATH)
-AC_SUBST(HDF5_LD_PATH)
+#AC_SUBST(HDF5_LD_PATH)
 AC_SUBST(HLHDF_ROOTDIR)
 AC_SUBST(PYLIBROOT)
 

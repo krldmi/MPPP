@@ -210,19 +210,11 @@ class msgCloudType:
         retv.cloudtype=msgCloudTypeData()
         retv.processing_flags=msgCloudTypeData()
         retv.cloudphase=msgCloudTypeData()
-        
-        retv.cloudtype.data = _satproj.project(coverage.coverage,
-                                               coverage.rowidx,
-                                               coverage.colidx,
-                                               self.cloudtype.data)
-        retv.cloudphase.data = _satproj.project(coverage.coverage,
-                                                coverage.rowidx,
-                                                coverage.colidx,
-                                                self.cloudphase.data)
-        retv.processing_flags.data = _satproj.project(coverage.coverage,
-                                                      coverage.rowidx,
-                                                      coverage.colidx,
-                                                      self.processing_flags.data)    
+
+        retv.cloudtype.data = coverage.project_array(self.cloudtype.data)
+        retv.cloudphase.data = coverage.project_array(self.cloudphase.data)
+        retv.processing_flags.data = \
+            coverage.project_array(self.processing_flags.data)
         
         retv.region_name = dest_area
         retv.projection_name = a.pcs.id

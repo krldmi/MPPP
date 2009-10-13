@@ -85,9 +85,9 @@ class SatProjCov:
             areaObj=area.area(out_area_id)
             coverage_data = _satproj.create_coverage(areaObj,lon,lat,1)
 
-            self.colidx = coverage_data.colidx
-            self.rowidx = coverage_data.rowidx
-            self.coverage = coverage_data.coverage
+            self.colidx = numpy.array(coverage_data.colidx,numpy.int16)
+            self.rowidx = numpy.array(coverage_data.rowidx,numpy.int16)
+            self.coverage = numpy.array(coverage_data.coverage,numpy.int8)
             self._write()
 
         else:
@@ -161,26 +161,68 @@ class SatProjCov:
         """
         if (a is None):
             return None
+
+        no_data = -99999
         
+        if(isinstance(a,numpy.ma.core.MaskedArray)):
+            amask = numpy.ones(a.shape)
+            amask[a.mask] = 0
+            a_filled = a.filled(no_data)
+        else:
+            amask = None
+            a_filled = a
+
+        pmask = None
+
         # This is kinda dirty, but necessary until _satproj supports masked
         # arrays.
 
-        filling = -99999.0
-        
-        amask = numpy.ones(a.shape)
-        amask[a.mask] = 0
+        try:
+            res = _satproj.project(self.coverage,
+                                   self.rowidx,
+                                   self.colidx,
+                                   a_filled,
+                                   int(no_data))
+            if(amask is not None):
+                pmask = _satproj.project(self.coverage,
+                                         self.rowidx,
+                                         self.colidx,
+                                         amask,
+                                         int(no_data))
+        except AttributeError:
+            msgwrite_log("INFO",
+                         "Old version of satproj, converting to Numeric...",
+                         moduleid=MODULE_ID)
 
-        res = _satproj.project(self.coverage,
-                               self.rowidx,
-                               self.colidx,
-                               a.filled(filling),
-                               int(filling))
-        pmask = _satproj.project(self.coverage,
-                                 self.rowidx,
-                                 self.colidx,
-                                 amask,
-                                 int(filling))
+            # For compatibility with older satproj
+            import Numeric
+            cov = Numeric.array(self.coverage).astype('1')
+            if a_filled.dtype == numpy.int16:
+                num_a = Numeric.array(a_filled).astype('s')
+            else: 
+                num_a = Numeric.array(a_filled)
+            ridx = Numeric.array(self.rowidx).astype('s')
+            cidx = Numeric.array(self.colidx).astype('s')
 
-        return numpy.ma.array(res, mask = (pmask == 0))
+            res = _satproj.project(cov,
+                                   ridx,
+                                   cidx,
+                                   num_a,
+                                   int(no_data))
+            res = numpy.array(res,a_filled.dtype)
+
+            if(amask is not None):
+                num_mask = Numeric.array(amask)
+                pmask = _satproj.project(cov,
+                                         ridx,
+                                         cidx,
+                                         num_mask,
+                                         int(no_data))
+                pmask = numpy.array(pmask)
+
+        if pmask is None:
+            return res
+        else:
+            return numpy.ma.array(res, mask = (pmask == 0))
 
 
