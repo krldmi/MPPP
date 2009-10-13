@@ -23,7 +23,6 @@ CFLAGS = -Wall -g3 -I$(HDF5INC) -I$(HLHDF_INCLUDE_DIR) -I$(NWCLIB_INC_DIR) $(INC
 LFLAGS = -L$(HDF5LIB) -L$(HLHDF_LIB_DIR) -L$(NWCLIB_LIB_DIR) -L/usr/lib64 
 LIBS = -Xlinker -Bstatic -lnwclib -lmsg -Xlinker -Bdynamic -lhdf5 -lhlhdf -lm
 
-
 MOD_SOURCES = py_msgmodule.c
 MOD_OBJECTS = $(MOD_SOURCES:.c=.o)
 MOD_TARGET = py_msgmodule.so
