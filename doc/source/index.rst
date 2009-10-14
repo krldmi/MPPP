@@ -12,6 +12,7 @@
 
    msg_data
    msg_coverage
+   image
    geo_image
    time_utils
 
@@ -27,13 +28,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-image_processing
-================
-
-.. automodule:: image_processing
-   :members:
-   :undoc-members:
 
 
 MSG_rgb_remap_all_Oper
