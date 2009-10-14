@@ -11,6 +11,7 @@ INSTALL_FILES=msg_remap_all_Oper.py \
 	      msg_coverage.py \
 	      image_processing.py \
 	      time_utils.py \
+	      image.py \
 	      geo_image.py \
 	      msg_data.py
 

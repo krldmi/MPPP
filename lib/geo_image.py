@@ -26,19 +26,18 @@ except Exception, exc:
 
 MODULE_ID = "GEO IMAGE"
 
-class GeoImage(Image):
+class GeoImage(image.Image):
     """This class defines geographic images. As such, it contains not only data
-    of the different *channels*, but also the area on
-    which it is defined (*area_id* parameter) and *time_slot* of the
-    snapshot. 
+    of the different *channels* of the image, but also the area on which it is
+    defined (*area_id* parameter) and *time_slot* of the snapshot.
     
     The channels are considered to contain floating point values in the range
-    [0.0:1.0]. In order to normalize the input data, the *range* parameter
+    [0.0,1.0]. In order to normalize the input data, the *range* parameter
     defines the original range of the data. The conversion to the classical
-    [0:255] range and byte type is done automagically when saving the image to
+    [0,255] range and byte type is done automagically when saving the image to
     file.
 
-    See also :class:`Image` for more information.
+    See also :class:`image.Image` for more information.
     """
     area_id = None
     time_slot = None
@@ -52,7 +51,8 @@ class GeoImage(Image):
     def save(self, filename):
         """Save the image to the given *filename*. If the extension is "tif",
         the image is saved to geotiff_ format. See also
-        :meth:`GeoImage.double_save` and :meth:`GeoImage.secure_save`.
+        :meth:`image.Image.save`, :meth:`image.Image.double_save`, and
+        :meth:`image.Image.secure_save`.
 
         .. _geotiff: http://trac.osgeo.org/geotiff/
         """
@@ -62,11 +62,11 @@ class GeoImage(Image):
            # HACK -- We should add the globe region to acpg ! Martin,
            # 2009-10-09
            self.area_id != "globe"):
-            self.geotiff_save(filename)
+            self._geotiff_save(filename)
         else:
             super(GeoImage,self).save(filename)
 
-    def geotiff_save(self,filename):
+    def _geotiff_save(self,filename):
         """Save the image to the given *filename* in geotiff_ format.
         
         .. _geotiff: http://trac.osgeo.org/geotiff/

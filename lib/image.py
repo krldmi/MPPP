@@ -1,6 +1,6 @@
 import os
 import tempfile
-import Image
+import Image as PilImage
 import numpy as np
 import shutil
 import string
@@ -9,21 +9,21 @@ import msg_communications
 
 MODULE_ID = "IMAGE"
 
-class Image:
+class Image(object):
     """This class defines images. As such, it contains data of the different
-    *channels* (red, green, and blue for example). The *mode* tells if the
-    channels define a black and white image ("L"), an rgb image ("RGB"), an
-    rgba image ("RGBA"), an YCbCr image ("YCbCr"), or an indexed image ("P"),
-    in which case a *palette* is needed. *fill_value* sets how the image is
-    filled where data is missing, since channels are numpy masked
+    *channels* of the image (red, green, and blue for example). The *mode*
+    tells if the channels define a black and white image ("L"), an rgb image
+    ("RGB"), an rgba image ("RGBA"), an YCbCr image ("YCbCr"), or an indexed
+    image ("P"), in which case a *palette* is needed. *fill_value* sets how the
+    image is filled where data is missing, since channels are numpy masked
     arrays. Setting it to (0,0,0) in RGB mode for example will produce black
-    where data is missing. "None" will produce transparency instead (if the
-    file format allows it).
+    where data is missing. "None" (default) will produce transparency if the
+    file format allows it, black otherwise.
     
     The channels are considered to contain floating point values in the range
-    [0.0:1.0]. In order to normalize the input data, the *range* parameter
+    [0.0,1.0]. In order to normalize the input data, the *range* parameter
     defines the original range of the data. The conversion to the classical
-    [0:255] range and byte type is done automagically when saving the image to
+    [0,255] range and byte type is done automagically when saving the image to
     file.
     """
     channels = None
@@ -32,7 +32,9 @@ class Image:
     height = 0
     fill_value = None
     palette = None
-
+    shape = None
+    """Shape (dimensions) of the image."""
+    
     def __init__(self,channels, mode = "L",range = None, 
                  fill_value = None, palette = None):
         self.mode = mode
@@ -43,7 +45,8 @@ class Image:
            isinstance(channels,list)):
             self.height = channels[0].shape[0]
             self.width = channels[0].shape[1]
-            
+            self.shape = channels[0].shape
+
             i = 0
             for ch in channels:
                 if range is not None:
@@ -57,6 +60,7 @@ class Image:
         else:
             self.height = channels.shape[0]
             self.width = channels.shape[1]
+            self.shape = channels.shape
 
             if range is not None:
                 min = range[0]
@@ -83,7 +87,7 @@ class Image:
     def secure_save(self, filename):
         """Save the current image to *filename* using a temporary file at
         first, then renaming it to the final filename. See also
-        :meth:`Image.save` and :meth:`Image.double_save`.
+        :meth:`save` and :meth:`double_save`.
         """
         misc_utils.ensure_dir(filename)
 
@@ -97,8 +101,8 @@ class Image:
     def double_save(self,local_filename,remote_filename):
         """Save the current image to *local_filename*, then copy it to
         *remote_filename*, using a temporary file at first, then renaming it to
-        the final remote filename. See also :meth:`Image.save` and
-        :meth:`Image.secure_save`.
+        the final remote filename. See also :meth:`save` and
+        :meth:`secure_save`.
         """
         self.save(local_filename)
 
@@ -114,7 +118,7 @@ class Image:
 
     def save(self, filename):
         """Save the image to the given *filename*. See also
-        :meth:`Image.double_save` and :meth:`Image.secure_save`.
+        :meth:`double_save` and :meth:`secure_save`.
         """
         file_tuple = os.path.splitext(filename)
 
@@ -125,50 +129,50 @@ class Image:
         if(self.mode == "L"):
             misc_utils.ensure_dir(filename)
             if self.fill_value is not None:
-                im = Image.fromarray(channels[0].filled(self.fill_value))
+                im = PilImage.fromarray(channels[0].filled(self.fill_value))
                 im.save(filename)
             else:
-                l = Image.fromarray(channels[0].filled(0))
+                l = PilImage.fromarray(channels[0].filled(0))
                 alpha = np.zeros(channels[0].shape,np.uint8)
                 mask = np.ma.getmaskarray(channels[0])
                 alpha = np.where(mask, alpha, 255)
-                a = Image.fromarray(alpha)
+                a = PilImage.fromarray(alpha)
                 
-                Image.merge("LA",(l,a)).save(filename)
+                PilImage.merge("LA",(l,a)).save(filename)
 
         elif(self.mode == "RGB"):
             misc_utils.ensure_dir(filename)
             if self.fill_value is not None:
-                r = Image.fromarray(channels[0].filled(self.fill_value[0]))
-                g = Image.fromarray(channels[1].filled(self.fill_value[1]))
-                b = Image.fromarray(channels[2].filled(self.fill_value[2]))
-                Image.merge("RGB",(r,g,b)).save(filename)
+                r = PilImage.fromarray(channels[0].filled(self.fill_value[0]))
+                g = PilImage.fromarray(channels[1].filled(self.fill_value[1]))
+                b = PilImage.fromarray(channels[2].filled(self.fill_value[2]))
+                PilImage.merge("RGB",(r,g,b)).save(filename)
             else:
-                r = Image.fromarray(channels[0].filled(0))
-                g = Image.fromarray(channels[1].filled(0))
-                b = Image.fromarray(channels[2].filled(0))
+                r = PilImage.fromarray(channels[0].filled(0))
+                g = PilImage.fromarray(channels[1].filled(0))
+                b = PilImage.fromarray(channels[2].filled(0))
 
                 alpha = np.zeros(channels[0].shape,np.uint8)
                 mask = (np.ma.getmaskarray(channels[0]) | 
                         np.ma.getmaskarray(channels[1]) | 
                         np.ma.getmaskarray(channels[2]))
                 alpha = np.where(mask,alpha, 255)
-                a = Image.fromarray(alpha)
+                a = PilImage.fromarray(alpha)
 
-                Image.merge("RGBA",(r,g,b,a)).save(filename)
+                PilImage.merge("RGBA",(r,g,b,a)).save(filename)
 
         elif(self.mode == "RGBA"):
             misc_utils.ensure_dir(filename)
             if self.fill_value is not None:
-                r = Image.fromarray(channels[0].filled(self.fill_value[0]))
-                g = Image.fromarray(channels[1].filled(self.fill_value[1]))
-                b = Image.fromarray(channels[2].filled(self.fill_value[2]))
-                a = Image.fromarray(channels[3].filled(self.fill_value[3]))
-                Image.merge("RGBA",(r,g,b,a)).save(filename)
+                r = PilImage.fromarray(channels[0].filled(self.fill_value[0]))
+                g = PilImage.fromarray(channels[1].filled(self.fill_value[1]))
+                b = PilImage.fromarray(channels[2].filled(self.fill_value[2]))
+                a = PilImage.fromarray(channels[3].filled(self.fill_value[3]))
+                PilImage.merge("RGBA",(r,g,b,a)).save(filename)
             else:
-                r = Image.fromarray(channels[0].filled(0))
-                g = Image.fromarray(channels[1].filled(0))
-                b = Image.fromarray(channels[2].filled(0))
+                r = PilImage.fromarray(channels[0].filled(0))
+                g = PilImage.fromarray(channels[1].filled(0))
+                b = PilImage.fromarray(channels[2].filled(0))
 
                 mask = (np.ma.getmaskarray(channels[0]) | 
                         np.ma.getmaskarray(channels[1]) | 
@@ -176,9 +180,9 @@ class Image:
                         np.ma.getmaskarray(channels[3]))
 
                 alpha = np.where(mask, 0, channels[3])
-                a = Image.fromarray(alpha)
+                a = PilImage.fromarray(alpha)
 
-                Image.merge("RGBA",(r,g,b,a)).save(filename)
+                PilImage.merge("RGBA",(r,g,b,a)).save(filename)
                     
 
     def putalpha(self, alpha):
@@ -191,7 +195,8 @@ class Image:
         
 
     def convert(self, mode):
-        """Convert the current to the given *mode*.
+        """Convert the current image to the given *mode*. See :class:`Image`
+        for a list of available modes.
         """
         if mode == self.mode:
             return
@@ -304,13 +309,17 @@ class Image:
         factor = channels[0] * 1.0 / shape[0]
 
         if int(factor) != factor:
-            raise NameError("Resize not of integer factor!")
+            raise ValueError("Resize not of integer factor!")
 
         i = 0
         for ch in self.channels:
             ch = ch.repeat([factor]*ch.shape[0],axis = 0)
             self.channels[i] = ch.repeat([factor]*a.shape[1],axis = 1)
             i = i + 1
+
+        self.height = self.channels[0].shape[0]
+        self.width = self.channels[0].shape[1]
+        self.shape = self.channels[0].shape
 
     def replace_luminance(self,luminance):
         """Replace the Y channel of the image by the array *luminance*. If the
@@ -324,7 +333,7 @@ class Image:
                     for ch in channels:
                         self.resize(luminance.shape)
                 else:
-                    luminance = resize(luminance)
+                    raise NameError("Luminance replacement: luminance smaller than the image !")
             else:
                 raise NameError("Luminance replacement: Not the good shape !")
         
@@ -419,7 +428,7 @@ class Image:
          
    
     def stretch_hist_equalize(self,ch_nb):
-        """Stretch the current image’s colors by performing histogram
+        """Stretch the current image's colors by performing histogram
         equalization on channel *ch_nb*.
         """
         msg_communications.msgwrite_log("INFO",
