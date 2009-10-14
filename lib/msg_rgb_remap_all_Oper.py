@@ -69,7 +69,7 @@ seviri_data = None
 MODULE_ID="MSG_RGB_REMAP"
 
 def usage():
-    print "Usage: %s <n-slots back in time>"%(sys.argv[0])
+    print "Usage: %s [-h,--help] [-a area] [-p product] <n-slots back in time>"%(sys.argv[0])
     sys.exit(-9)
     
 
@@ -87,12 +87,6 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
     
-    if len(args) > 1:
-        usage()
-        sys.exit(-9)
-    else:
-        n_slots = string.atoi(args[0])
-
     areas = PRODUCTS.keys()
     prods = None
 
@@ -104,6 +98,14 @@ if __name__ == "__main__":
             areas = [arg]
         elif opt == "-p":
             prods = [arg]
+
+
+    if len(args) != 1:
+        usage()
+        sys.exit(-9)
+    else:
+        n_slots = string.atoi(args[0])
+
 
     time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
 

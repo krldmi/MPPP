@@ -2,7 +2,6 @@
 #include <error.h>
 #include <libnwc.h>
 #include <sevext.h>
-#include <hlhdf.h>
 #include "libmsg_channel.h"
 
 /*
