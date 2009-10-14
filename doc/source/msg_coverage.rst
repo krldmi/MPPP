@@ -1,5 +1,6 @@
-MSG coverage
-============
+============================================
+ Geographical coverage: :mod:`msg_coverage`
+============================================
 
 .. automodule:: msg_coverage
    :members:

@@ -1,5 +1,6 @@
-Geographical images: :mod:`geo_image`
-=====================================
+=======================================
+ Geographical images: :mod:`geo_image`
+=======================================
 
 .. automodule:: geo_image
    :members:

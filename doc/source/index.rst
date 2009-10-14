@@ -7,14 +7,19 @@
  Welcome to NWCSAF/MSG PP's documentation!
 ===========================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
+   msg_data
    msg_coverage
    geo_image
    time_utils
+
+Introduction
+============
+
+This is the documentation for the Post Processing package, MSG part.
+
 
 Indices and tables
 ==================
@@ -23,42 +28,13 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-Ctype Product
-=============
-
-.. automodule:: msg_ctype_products
-   :members:
-   :undoc-members:
-
-MSG_data
-========
-
-.. automodule:: msg_data
-   :members:
-   :undoc-members:
-
-py_msg
-======
-
-.. automodule:: py_msg
-   :members:
-   :undoc-members:
-
-
 image_processing
-======================
+================
 
 .. automodule:: image_processing
    :members:
    :undoc-members:
 
-
-MSG_rgb_remap
-=============
-
-.. automodule:: msg_rgb_remap
-   :members:
-   :undoc-members:
 
 MSG_rgb_remap_all_Oper
 ======================
