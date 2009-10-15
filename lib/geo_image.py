@@ -121,7 +121,7 @@ class GeoImage:
         the final remote filename. See also :meth:`GeoImage.save` and
         :meth:`GeoImage.secure_save`.
         """
-        self.save(local_filename)
+        self.secure_save(local_filename)
 
         misc_utils.ensure_dir(remote_filename)
 
@@ -142,9 +142,10 @@ class GeoImage:
         """
         file_tuple = os.path.splitext(filename)
 
-        channels = self._finalize()
-
         misc_utils.ensure_dir(filename)
+
+        msg_communications.msgwrite_log("INFO","Saving image in mode: ",self.mode,moduleid=MODULE_ID)
+
 
         # Suppress geotiff ability for now -- Martin, 2009-10-12
         if(file_tuple[1] == ".tif" and
@@ -154,6 +155,7 @@ class GeoImage:
             self.geotiff_save(filename)
             return
         else:
+            channels = self._finalize()
             if(self.mode == "L"):
                 misc_utils.ensure_dir(filename)
                 if self.fill_value is not None:
@@ -219,8 +221,10 @@ class GeoImage:
         .. _geotiff: http://trac.osgeo.org/geotiff/
         """
         raster = gdal.GetDriverByName("GTiff")
-        
+                    
         channels = self._finalize()
+
+        msg_communications.msgwrite_log("INFO","Saving to GeoTiff. ",moduleid=MODULE_ID)
 
         if(self.mode == "L"):
             misc_utils.ensure_dir(filename)
