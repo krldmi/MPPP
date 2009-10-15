@@ -283,7 +283,13 @@ class MSGSeviriChannels:
     def save_cloudtype(self,filename):
         try:
             ctype = msg_ctype.msg_ctype2ppsformat(self.cloudtype)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CType hdf file...",
+                                            moduleid=MODULE_ID)
             epshdf.write_cloudtype(filename, ctype, 6)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CType hdf file done !",
+                                            moduleid=MODULE_ID)
         except AttributeError:
             msg_communications.msgwrite_log("INFO",
                                             "Old version of satproj, converting to Numeric...",
@@ -350,7 +356,13 @@ class MSGSeviriChannels:
     def save_ctth(self,filename):
         try:
             ctth = msg_ctth.msg_ctth2ppsformat(self.ctth)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CTTH hdf file...",
+                                            moduleid=MODULE_ID)
             epshdf.write_cloudtop(filename, ctth, 6)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CTTH hdf file done !",
+                                            moduleid=MODULE_ID)
         except AttributeError:
             msg_communications.msgwrite_log("INFO",
                                             "Old version of satproj, converting to Numeric...",
@@ -748,6 +760,9 @@ class MSGSeviriChannels:
                                          (0, 55),
                                          (- 70, 20)))
 
+        im.clip()
+        im.enhance(stretch = "crude")
+
         return im
 
 
@@ -792,7 +807,8 @@ class MSGSeviriChannels:
                                          (243, 293)))
 
         im.enhance(gamma = (1.0, 2.0, 1.0))
-
+        im.clip()
+        im.enhance(stretch = "crude")
         return im
 
     def cloudtop(self):

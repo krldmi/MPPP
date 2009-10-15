@@ -458,6 +458,17 @@ class GeoImage:
                             %(self.mode,mode))
             
 
+    def clip(self,c = True):
+        """Limit the values of the array to the default [0,1] range. *c* says
+        which channels should be clipped."""
+        if not (isinstance(c, tuple) or
+                isinstance(c, list)):
+            c = [c]*len(self.channels)
+            
+        for i in range(len(self.channels)):
+            if c[i]:
+                self.channels[i] = np.ma.clip(self.channels[i],0.0,1.0)
+
     def resize(self,shape):
         """Resize the image to the given *shape* tuple, in place.
         """
