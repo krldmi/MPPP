@@ -102,7 +102,7 @@ if __name__ == "__main__":
     else:
         import string
         msgwrite_log("INFO",
-                     "No slots number specified, extrapolating... ",
+                     "No slots number specified, guestimating... ",
                      moduleid=MODULE_ID)
         prefix="H-000-MSG?__-MSG?________-_________-EPI______-"
         match_str = "%s/import/SEVIRI_data/%s*"%(MSG_DIR,prefix)
@@ -114,10 +114,6 @@ if __name__ == "__main__":
                                         string.atoi(tstr[6:8]),
                                         string.atoi(tstr[8:10]),
                                         string.atoi(tstr[10:12]))]
-
-    time_slots = [datetime.datetime(2009,10,8,14,30)]
-
-
 
 
     start_date = time_slots[0]

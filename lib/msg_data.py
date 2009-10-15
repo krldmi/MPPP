@@ -136,8 +136,12 @@ class MSGSeviriChannels:
                    # Cal is not the right thing to check here
                    numpy.ma.count(self.channels[i]["CAL"]) == 0):
                     self.channels[i] = None
-        
-        self._co2corr_bt39
+
+        if(self.channels[3] is not None):
+            self.prestine4 = numpy.ma.array(self.channels[3]._bt)
+       
+        self._co2corr_bt39()
+
             
             
 
@@ -196,6 +200,8 @@ class MSGSeviriChannels:
             else:
                 res.channels.append(None)
 
+        res.prestine4 = coverage.project_array(self.prestine4)
+
         if self.cloudtype is not None:
             res.cloudtype = self.cloudtype.project(coverage, dest_area)
 
@@ -236,12 +242,12 @@ class MSGSeviriChannels:
         bt134 = self[11]["BT"]
         
         dt_co2 = (bt108-bt134)/4.0
-        a = bt108*bt108*bt108*bt108
-        b = (bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)
+        a = bt108 ** 4
+        b = (bt108-dt_co2) ** 4
         
         Rcorr = a - b
         
-        a = bt039*bt039*bt039*bt039
+        a = bt039 ** 4
         x = numpy.ma.where(a+Rcorr > 0.0,(a + Rcorr), 0)
                 
         self.channels[3]._bt = x ** 0.25
@@ -750,8 +756,9 @@ class MSGSeviriChannels:
         ch1 = check_range(self[1]["REFL"])
         ch3 = check_range(self[3]["REFL"])
 
+
         im = geo_image.GeoImage((self[5]["BT"] - self[6]["BT"],
-                                 self[4]["BT"] - self[9]["BT"],
+                                 self.prestine4 - self[9]["BT"],
                                  ch3 - ch1),
                                 self.area_id,
                                 self.time_slot,
@@ -805,10 +812,15 @@ class MSGSeviriChannels:
                                 range = ((-4, 2),
                                          (0, 6),
                                          (243, 293)))
-
+        
         im.enhance(gamma = (1.0, 2.0, 1.0))
         im.clip()
-        im.enhance(stretch = "crude")
+
+
+# Old version, without co2 correction
+#        im.enhance(gamma = (1.0, 2.0, 1.0))
+#        im.clip()
+#        im.enhance(stretch = "crude")
         return im
 
     def cloudtop(self):
@@ -962,7 +974,6 @@ def _convert_palette(p):
         palette.append((i[0] / 255.0,
                         i[1] / 255.0,
                         i[2] / 255.0))
-#    print palette
     return palette
 # -----------------------------------------------------------------------------
 # Test the current module
