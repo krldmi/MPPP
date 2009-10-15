@@ -350,8 +350,8 @@ class Image(object):
     def enhance(self, inverse = False, gamma = 1.0, stretch = "no"):
         """Image enhancement function. It applies **in this order** inversion,
         gamma correction, and stretching to the current image, with parameters
-        *inverse* (see :meth:`GeoImage.invert`), *gamma* (see
-        :meth:`GeoImage.gamma`), and *stretch* (see :meth:`GeoImage.stretch`).
+        *inverse* (see :meth:`Image.invert`), *gamma* (see
+        :meth:`Image.gamma`), and *stretch* (see :meth:`Image.stretch`).
         """
         self.invert(inverse)
         self.gamma(gamma)

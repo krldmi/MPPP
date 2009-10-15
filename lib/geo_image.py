@@ -26,18 +26,10 @@ except Exception, exc:
 
 MODULE_ID = "GEO IMAGE"
 
-<<<<<<< HEAD:lib/geo_image.py
 class GeoImage(image.Image):
     """This class defines geographic images. As such, it contains not only data
     of the different *channels* of the image, but also the area on which it is
     defined (*area_id* parameter) and *time_slot* of the snapshot.
-=======
-class GeoImage(Image):
-    """This class defines geographic images. As such, it contains not only data
-    of the different *channels*, but also the area on
-    which it is defined (*area_id* parameter) and *time_slot* of the
-    snapshot. 
->>>>>>> e1c203d172fff58fb41c5cd3c22227bbe9017a64:lib/geo_image.py
     
     The channels are considered to contain floating point values in the range
     [0.0,1.0]. In order to normalize the input data, the *range* parameter
@@ -45,11 +37,7 @@ class GeoImage(Image):
     [0,255] range and byte type is done automagically when saving the image to
     file.
 
-<<<<<<< HEAD:lib/geo_image.py
     See also :class:`image.Image` for more information.
-=======
-    See also :class:`Image` for more information.
->>>>>>> e1c203d172fff58fb41c5cd3c22227bbe9017a64:lib/geo_image.py
     """
     area_id = None
     time_slot = None
@@ -74,19 +62,11 @@ class GeoImage(Image):
            # HACK -- We should add the globe region to acpg ! Martin,
            # 2009-10-09
            self.area_id != "globe"):
-<<<<<<< HEAD:lib/geo_image.py
             self._geotiff_save(filename)
         else:
             super(GeoImage,self).save(filename)
 
     def _geotiff_save(self,filename):
-=======
-            self.geotiff_save(filename)
-        else:
-            super(GeoImage,self).save(filename)
-
-    def geotiff_save(self,filename):
->>>>>>> e1c203d172fff58fb41c5cd3c22227bbe9017a64:lib/geo_image.py
         """Save the image to the given *filename* in geotiff_ format.
         
         .. _geotiff: http://trac.osgeo.org/geotiff/
