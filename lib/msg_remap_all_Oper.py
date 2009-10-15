@@ -73,6 +73,9 @@
 #
 
 
+import glob
+import datetime
+
 from msgpp_config import *
 
 import epshdf
@@ -89,14 +92,30 @@ MODULE_ID = "MSG_PROD_REMAP"
 
 # -----------------------------------------------------------------------
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) > 2:
         print "Usage: %s <n-slots back in time>"%(sys.argv[0])
         sys.exit(-9)
-    else:
+    elif len(sys.argv) == 2:
         import string
         n_slots = string.atoi(sys.argv[1])
+        time_slots = time_utils.time_slots(n_slots)
+    else:
+        import string
+        msgwrite_log("INFO",
+                     "No slots number specified, extrapolating... ",
+                     moduleid=MODULE_ID)
+        prefix="H-000-MSG?__-MSG?________-_________-EPI______-"
+        match_str = "%s/import/SEVIRI_data/%s*"%(MSG_DIR,prefix)
+        flist = glob.glob(match_str)
+        flist.sort(reverse = True)
+        tstr = flist[0][-15:-3]
+        time_slots = [datetime.datetime(string.atoi(tstr[:4]),
+                                        string.atoi(tstr[4:6]),
+                                        string.atoi(tstr[6:8]),
+                                        string.atoi(tstr[8:10]),
+                                        string.atoi(tstr[10:12]))]
 
-    time_slots = time_utils.time_slots(n_slots)
+
 
     start_date = time_slots[0]
     end_date = time_slots[-1]
@@ -120,8 +139,17 @@ if __name__ == "__main__":
                                                 rad = False)
        
        seviri_data.load([1,2,9])
+       msgwrite_log("INFO",
+                    "Seviri channels loaded.",
+                    moduleid=MODULE_ID)
        seviri_data.load_cloudtype()
+       msgwrite_log("INFO",
+                     "Seviri ctype loaded.",
+                     moduleid=MODULE_ID)
        seviri_data.load_ctth()
+       msgwrite_log("INFO",
+                    "Seviri ctth loaded.",
+                    moduleid=MODULE_ID)
        
        if(seviri_data.cloudtype is None and
           seviri_data.ctth is None):

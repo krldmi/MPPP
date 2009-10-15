@@ -131,8 +131,10 @@ class MSGSeviriChannels:
 
         for i in range(len(self.channels)):
             if(self.channels[i] is not None):
-                # Cal is not the right thing to check here
-                if numpy.ma.count(self.channels[i]["CAL"]) == 0:
+                if((self.channels[i]["CAL"] is None and
+                    self.channels[i]["RAD"] is None) or
+                   # Cal is not the right thing to check here
+                   numpy.ma.count(self.channels[i]["CAL"]) == 0):
                     self.channels[i] = None
         
         self._co2corr_bt39
