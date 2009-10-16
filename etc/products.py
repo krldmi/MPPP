@@ -178,9 +178,9 @@ PRODUCTS = {"globe":
                         BOKART_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M."+eurol+"_bw_ch9.tif"],
 
                  "airmass":[(LOCAL_SIR_DIR+"/msg_air_"+s_eurol+"%y%m%d%H%M.tif",
-                             SIR_DIR+"/msg_snow"+s_eurol+"%y%m%d%H%M.tif_original"),
+                             SIR_DIR+"/msg_air_"+s_eurol+"%y%m%d%H%M.tif_original"),
                             (LOCAL_SIR_DIR+"/msg_airp"+s_eurol+"%y%m%d%H%M.png",
-                             SIR_DIR+"/msg_snop"+s_eurol+"%y%m%d%H%M.png_original"),
+                             SIR_DIR+"/msg_airp"+s_eurol+"%y%m%d%H%M.png_original"),
                             (RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.png",
                              FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.png")],
 
@@ -208,6 +208,9 @@ PRODUCTS = {"globe":
 
                  "convection":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_severe_convection.png",
                                 FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_severe_convection.png")],
+
+                 "natural":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_natural.png",
+                             FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_natural.png")],
              
                  "greensnow":[(RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_greensnow.png",
                                FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_greensnow.png")]},

@@ -638,6 +638,35 @@ class MSGSeviriChannels:
         else:
             return None
         
+    def natural(self):
+        """Make a Natural Colors RGB image composite from SEVIRI channels.
+        """
+        if(self[1] is None or
+           self[2] is None or
+           self[3] is None):
+            return None
+        
+        ch1 = check_range(self[1]["REFL"])
+        ch2 = check_range(self[2]["REFL"])
+        ch3 = check_range(self[3]["REFL"])
+
+        im = geo_image.GeoImage((ch3,
+                                 ch2,
+                                 ch1),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB",
+                                range = ((0,45),
+                                         (0,45),
+                                         (0,45)))
+
+
+
+        im.enhance(gamma = 1.2)
+
+        return im
+
+
     def overview(self):
         """Make an Overview RGB image composite from SEVIRI channels.
         """

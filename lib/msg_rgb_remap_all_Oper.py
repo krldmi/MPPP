@@ -234,6 +234,8 @@ if __name__ == "__main__":
                     rgb = channels.night_fog()
                 elif(pkey == "cloudtop"):
                     rgb = channels.cloudtop()
+                elif(pkey == "natural"):
+                    rgb = channels.natural()
                 if(pkey == "hr_overview"):
                     rgb = channels.hr_overview()
 
