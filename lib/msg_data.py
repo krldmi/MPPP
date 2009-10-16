@@ -39,6 +39,7 @@ class MSGSeviriChannels:
 
     cloudtype = None
     ctth = None
+    prestine4 = None
 
     def __init__(self, time_slot, area_id, hr = True,rad = True):
         self.time_slot = time_slot
@@ -48,6 +49,7 @@ class MSGSeviriChannels:
         self._load_rad = rad
         self.channels = [None,None,None,None,None,None,
                          None,None,None,None,None,None]
+        self.prestine4 = None
         self.cloudtype = None
         self.ctth = None
 
