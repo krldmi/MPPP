@@ -114,7 +114,8 @@ class GeoImage:
                                              dir = path)
         self.save(tmpfilename)
         os.rename(tmpfilename,filename)
-        
+        os.chmod(filename, 0644)        
+
     def double_save(self,local_filename,remote_filename):
         """Save the current image to *local_filename*, then copy it to
         *remote_filename*, using a temporary file at first, then renaming it to
@@ -131,7 +132,7 @@ class GeoImage:
                                              dir = path)
         shutil.copy(local_filename,tmpfilename)
         os.rename(tmpfilename,remote_filename)
-
+        os.chmod(remote_filename, 0644)
 
     def save(self, filename):
         """Save the image to the given *filename*. If the extension is "tif",
