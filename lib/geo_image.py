@@ -340,6 +340,10 @@ class GeoImage:
         
         srs.SetWellKnownGeogCS('WGS84')
         dst_ds.SetProjection(srs.ExportToWkt())
+
+        tag = {'TIFFTAG_DATETIME':self.time_slot.strftime("%Y:%m:%d %H:%M:%S")}
+
+        dst_ds.SetMetadata(tag,'')
         
         # Close the dataset
         
