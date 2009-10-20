@@ -37,13 +37,17 @@ PRODUCTS = {"globe":
                           FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d_%H%M."+euro4+".cloudtype_standard.png"],
                  
                  "PGE02b":[(LOCAL_SIR_DIR+"/msg_02bp"+s_euro4+"%y%m%d%H%M.png",
-                            SIR_DIR+"/msg_02bp"+s_euro4+"%y%m%d%H%M.png_original")],
+                            SIR_DIR+"/msg_02bp"+s_euro4+"%y%m%d%H%M.png_original"),
+                           (LOCAL_SIR_DIR+"/msg_02b_"+s_euro4+"%y%m%d%H%M.tif",
+                            SIR_DIR+"/msg_02b_"+s_euro4+"%y%m%d%H%M.tif_original")],
                  
                  "PGE02bj":[(LOCAL_SIR_DIR+"/msg_02bj"+s_euro4+"%y%m%d%H%M.jpg",
                              SIR_DIR+"/msg_02bj"+s_euro4+"%y%m%d%H%M.jpg_original")],
                  
                  "PGE02c":[(LOCAL_SIR_DIR+"/msg_02cp"+s_euro4+"%y%m%d%H%M.png",
-                            SIR_DIR+"/msg_02cp"+s_euro4+"%y%m%d%H%M.png_original")],
+                            SIR_DIR+"/msg_02cp"+s_euro4+"%y%m%d%H%M.png_original"),
+                           (LOCAL_SIR_DIR+"/msg_02c_"+s_euro4+"%y%m%d%H%M.tif",
+                            SIR_DIR+"/msg_02c_"+s_euro4+"%y%m%d%H%M.tif_original")],
 
                  "PGE02d":[(LOCAL_SIR_DIR+"/msg_02d_"+s_euro4+"%y%m%d%H%M.tif",
                             SIR_DIR+"/msg_02d_"+s_euro4+"%y%m%d%H%M.tif_original"),
@@ -52,7 +56,7 @@ PRODUCTS = {"globe":
 
                  "CtypeHDF":[FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d_%H%M."+euro4+".cloudtype.hdf"],
 
-                 "NordRad":[CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_nordrad_%Y%m%d_%H%M."+euro4+".cloudtype.hdf"],
+                 "NordRad":[FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_nordrad_%Y%m%d_%H%M."+euro4+".cloudtype.hdf"],
 
                  "PGE03":[(LOCAL_SIR_DIR+"/msg_03a_"+s_euro4+"%y%m%d%H%M.tif",
                            SIR_DIR+"/msg_03a_"+s_euro4+"%y%m%d%H%M.tif_original"),
@@ -173,6 +177,11 @@ PRODUCTS = {"globe":
                              SIR_DIR+"/msg_air_"+s_eurol+"%y%m%d%H%M.tif_original"),
                             FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.tif",
                             FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_airmass.png"],
+
+                 "natural":[(LOCAL_SIR_DIR+"/msg_dnc_"+s_eurol+"%y%m%d%H%M.tif",
+                             SIR_DIR+"/msg_dnc_"+s_eurol+"%y%m%d%H%M.tif_original"),
+                            FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_natural_colors.tif",
+                            FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurol+"_rgb_natural_colors.png"],
 
                  "wv_high":[(LOCAL_SIR_DIR+"/msg_ir5_"+s_eurol+"%y%m%d%H%M.tif",
                              SIR_DIR+"/msg_ir5_"+s_eurol+"%y%m%d%H%M.tif_original"),
