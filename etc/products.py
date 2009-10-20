@@ -295,26 +295,21 @@ PRODUCTS = {"globe":
             
             "eurotv4n":
                 {"PGE02c":[(LOCAL_SIR_DIR+"/msg_02cp"+s_eurotv4n+"%y%m%d%H%M.png",
-                            SIR_DIR+"/msg_02cp"+s_eurotv4n+"%y%m%d%H%M.png_original"),
-                           FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d_%H%M."+eurotv4n+".cloudtype_c.png"],
+                            SIR_DIR+"/msg_02cp"+s_eurotv4n+"%y%m%d%H%M.png_original")],
 
 
                  "PGE02d":[(LOCAL_SIR_DIR+"/msg_02dp"+s_eurotv4n+"%y%m%d%H%M.png",
-                            SIR_DIR+"/msg_02dp"+s_eurotv4n+"%y%m%d%H%M.png_original"),
-                           FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d_%H%M."+eurotv4n+".cloudtype_d.png"],
+                            SIR_DIR+"/msg_02dp"+s_eurotv4n+"%y%m%d%H%M.png_original")],
                  
                  "PGE02e":[(LOCAL_SIR_DIR+"/msg_02ep"+s_eurotv4n+"%y%m%d%H%M.png",
-                            SIR_DIR+"/msg_02ep"+s_eurotv4n+"%y%m%d%H%M.png_original"),
-                           FSERVER_CTYPEDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d_%H%M."+eurotv4n+".cloudtype_e.png"],
+                            SIR_DIR+"/msg_02ep"+s_eurotv4n+"%y%m%d%H%M.png_original")],
 
                  
                  "ir9":[(LOCAL_SIR_DIR+"/msg_ir9p"+s_eurotv4n+"%y%m%d%H%M.png",
-                         SIR_DIR+"/msg_ir9p"+s_eurotv4n+"%y%m%d%H%M.png_original"),
-                        FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurotv4n+"_bw_ch9.png"],
+                         SIR_DIR+"/msg_ir9p"+s_eurotv4n+"%y%m%d%H%M.png_original")],
                  
                  "overview":[(LOCAL_SIR_DIR+"/msg_ovwp"+s_eurotv4n+"%y%m%d%H%M.png",
-                              SIR_DIR+"/msg_ovwp"+s_eurotv4n+"%y%m%d%H%M.png_original"),
-                             FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+eurotv4n+"_rgb_overview.png"]}
+                              SIR_DIR+"/msg_ovwp"+s_eurotv4n+"%y%m%d%H%M.png_original")]}
             
 
             }
