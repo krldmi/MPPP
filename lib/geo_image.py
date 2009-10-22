@@ -130,22 +130,37 @@ class GeoImage:
         path,file = os.path.split(remote_filename)
         trash,tmpfilename = tempfile.mkstemp(suffix = ext,
                                              dir = path)
-        shutil.copy(local_filename,tmpfilename)
+
+        try:
+            shutil.copy(local_filename,tmpfilename)
+        except IOError, (errno, strerror):
+            import errno as err
+            msg_communications.msgwrite_log("ERROR","Copying file %s to %s failed"%(local_filename,tmpfilename),moduleid=MODULE_ID)
+            msg_communications.msgwrite_log("ERROR","I/O error(%d): %s"%(errno, strerror),moduleid=MODULE_ID)
+            if errno == err.ESTALE:
+                msg_communications.msgwrite_log("INFO","Retrying once...",moduleid=MODULE_ID)
+                try:
+                    shutil.copy(local_filename,tmpfilename)
+                except IOError, (errno, strerror):
+                    msg_communications.msgwrite_log("ERROR","Copying file %s to %s failed"%(local_filename,tmpfilename),moduleid=MODULE_ID)
+                    msg_communications.msgwrite_log("ERROR","I/O error(%d): %s"%(errno, strerror),moduleid=MODULE_ID)
+                    msg_communications.msgwrite_log("INFO","Retry did not succeed, skipping.",moduleid=MODULE_ID)
+
+
         try:
             os.rename(tmpfilename,remote_filename)
+            os.chmod(remote_filename, 0644)
         except OSError:
-            msg_communications.msgwrite_log("ERROR","Could not rename to %s ! Saving of this file failed !"%remote_filenam,moduleid=MODULE_ID)
-            if os.path.isfile(remote_filemame):
+            msg_communications.msgwrite_log("ERROR","Could not rename to %s !"%remote_filename,moduleid=MODULE_ID)
+            if os.path.isfile(remote_filename):
                 msg_communications.msgwrite_log("WARNING","The file already exists, skipping...",moduleid=MODULE_ID)
-                if os.path.isfile(tmpfilename):
-                    os.remove(tmpfilename)
             elif not os.path.isfile(tmpfilename):
                 msg_communications.msgwrite_log("ERROR","Copy to %s, failed ! skipping..."%tmpfilename,moduleid=MODULE_ID)
-            else:
-                msg_communications.msgwrite_log("WARNING","Temp file is %s, removing it"%tmpfilename,moduleid=MODULE_ID)
-            os.remove(tmpfilename)
+            if os.path.isfile(tmpfilename):
+                msg_communications.msgwrite_log("WARNING","Temp file is %s, removing it."%tmpfilename,moduleid=MODULE_ID)
+                os.remove(tmpfilename)
 
-        os.chmod(remote_filename, 0644)
+
 
     def save(self, filename):
         """Save the image to the given *filename*. If the extension is "tif",

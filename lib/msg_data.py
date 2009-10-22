@@ -265,7 +265,7 @@ class MSGSeviriChannels:
         
         msgctype_filename=None
         for ext in msgpp_config.MSG_PGE_EXTENTIONS:
-            match_str = "%s/%s*%s"%(msgpp_config.CTYPEDIR_IN,prefix,ext)
+            match_str = "%s/%s.%s"%(msgpp_config.CTYPEDIR_IN,prefix,ext)
             msg_communications.msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
             flist = glob.glob(match_str)
             msgctype=None
@@ -338,7 +338,7 @@ class MSGSeviriChannels:
                                          self.area_id)
         msgctth_filename=None
         for ext in msgpp_config.MSG_PGE_EXTENTIONS:
-            match_str = "%s/%s*%s"%(msgpp_config.CTTHDIR_IN,prefix,ext)
+            match_str = "%s/%s.%s"%(msgpp_config.CTTHDIR_IN,prefix,ext)
             msg_communications.msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
             flist = glob.glob(match_str)
             msgctth=None
