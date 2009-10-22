@@ -97,7 +97,8 @@ class Image(object):
                                              dir = path)
         self.save(tmpfilename)
         os.rename(tmpfilename,filename)
-        
+        os.chmod(filename, 0644)
+
     def double_save(self,local_filename,remote_filename):
         """Save the current image to *local_filename*, then copy it to
         *remote_filename*, using a temporary file at first, then renaming it to
@@ -112,9 +113,34 @@ class Image(object):
         path,file = os.path.split(remote_filename)
         trash,tmpfilename = tempfile.mkstemp(suffix = ext,
                                              dir = path)
-        shutil.copy(local_filename,tmpfilename)
-        os.rename(tmpfilename,remote_filename)
+        try:
+            shutil.copy(local_filename,tmpfilename)
+        except IOError, (errno, strerror):
+            import errno as err
+            msg_communications.msgwrite_log("ERROR","Copying file %s to %s failed"%(local_filename,tmpfilename),moduleid=MODULE_ID)
+            msg_communications.msgwrite_log("ERROR","I/O error(%d): %s"%(errno, strerror),moduleid=MODULE_ID)
+            if errno == err.ESTALE:
+                msg_communications.msgwrite_log("INFO","Retrying once...",moduleid=MODULE_ID)
+                try:
+                    shutil.copy(local_filename,tmpfilename)
+                except IOError, (errno, strerror):
+                    msg_communications.msgwrite_log("ERROR","Copying file %s to %s failed"%(local_filename,tmpfilename),moduleid=MODULE_ID)
+                    msg_communications.msgwrite_log("ERROR","I/O error(%d): %s"%(errno, strerror),moduleid=MODULE_ID)
+                    msg_communications.msgwrite_log("INFO","Retry did not succeed, skipping.",moduleid=MODULE_ID)
 
+
+        try:
+            os.rename(tmpfilename,remote_filename)
+            os.chmod(remote_filename, 0644)
+        except OSError:
+            msg_communications.msgwrite_log("ERROR","Could not rename to %s !"%remote_filename,moduleid=MODULE_ID)
+            if os.path.isfile(remote_filename):
+                msg_communications.msgwrite_log("WARNING","The file already exists, skipping...",moduleid=MODULE_ID)
+            elif not os.path.isfile(tmpfilename):
+                msg_communications.msgwrite_log("ERROR","Copy to %s, failed ! skipping..."%tmpfilename,moduleid=MODULE_ID)
+            if os.path.isfile(tmpfilename):
+                msg_communications.msgwrite_log("WARNING","Temp file is %s, removing it."%tmpfilename,moduleid=MODULE_ID)
+                os.remove(tmpfilename)
 
     def save(self, filename):
         """Save the image to the given *filename*. See also
@@ -302,6 +328,16 @@ class Image(object):
             raise NameError("Conversion from %s to %s not implemented !"
                             %(self.mode,mode))
             
+    def clip(self,c = True):
+        """Limit the values of the array to the default [0,1] range. *c* says
+        which channels should be clipped."""
+        if not (isinstance(c, tuple) or
+                isinstance(c, list)):
+            c = [c]*len(self.channels)
+            
+        for i in range(len(self.channels)):
+            if c[i]:
+                self.channels[i] = np.ma.clip(self.channels[i],0.0,1.0)
 
     def resize(self,shape):
         """Resize the image to the given *shape* tuple, in place.

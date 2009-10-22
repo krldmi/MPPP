@@ -47,7 +47,7 @@ class GeoImage(image.Image):
         self.area_id = area_id
         self.time_slot = time_slot
         super(GeoImage,self).__init__(channels, mode, range, fill_value, palette)
-        
+
     def save(self, filename):
         """Save the image to the given *filename*. If the extension is "tif",
         the image is saved to geotiff_ format. See also
@@ -72,8 +72,10 @@ class GeoImage(image.Image):
         .. _geotiff: http://trac.osgeo.org/geotiff/
         """
         raster = gdal.GetDriverByName("GTiff")
-        
+                    
         channels = self._finalize()
+
+        msg_communications.msgwrite_log("INFO","Saving to GeoTiff. ",moduleid=MODULE_ID)
 
         if(self.mode == "L"):
             misc_utils.ensure_dir(filename)
@@ -188,6 +190,10 @@ class GeoImage(image.Image):
         
         srs.SetWellKnownGeogCS('WGS84')
         dst_ds.SetProjection(srs.ExportToWkt())
+
+        tag = {'TIFFTAG_DATETIME':self.time_slot.strftime("%Y:%m:%d %H:%M:%S")}
+
+        dst_ds.SetMetadata(tag,'')
         
         # Close the dataset
         

@@ -39,6 +39,7 @@ class MSGSeviriChannels:
 
     cloudtype = None
     ctth = None
+    prestine4 = None
 
     def __init__(self, time_slot, area_id, hr = True,rad = True):
         self.time_slot = time_slot
@@ -48,6 +49,7 @@ class MSGSeviriChannels:
         self._load_rad = rad
         self.channels = [None,None,None,None,None,None,
                          None,None,None,None,None,None]
+        self.prestine4 = None
         self.cloudtype = None
         self.ctth = None
 
@@ -131,11 +133,17 @@ class MSGSeviriChannels:
 
         for i in range(len(self.channels)):
             if(self.channels[i] is not None):
-                # Cal is not the right thing to check here
-                if numpy.ma.count(self.channels[i]["CAL"]) == 0:
+                if((self.channels[i]["CAL"] is None and
+                    self.channels[i]["RAD"] is None) or
+                   # Cal is not the right thing to check here
+                   numpy.ma.count(self.channels[i]["CAL"]) == 0):
                     self.channels[i] = None
-        
-        self._co2corr_bt39
+
+        if(self.channels[3] is not None):
+            self.prestine4 = numpy.ma.array(self.channels[3]._bt)
+       
+        self._co2corr_bt39()
+
             
             
 
@@ -194,6 +202,8 @@ class MSGSeviriChannels:
             else:
                 res.channels.append(None)
 
+        res.prestine4 = coverage.project_array(self.prestine4)
+
         if self.cloudtype is not None:
             res.cloudtype = self.cloudtype.project(coverage, dest_area)
 
@@ -234,12 +244,12 @@ class MSGSeviriChannels:
         bt134 = self[11]["BT"]
         
         dt_co2 = (bt108-bt134)/4.0
-        a = bt108*bt108*bt108*bt108
-        b = (bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)*(bt108-dt_co2)
+        a = bt108 ** 4
+        b = (bt108-dt_co2) ** 4
         
         Rcorr = a - b
         
-        a = bt039*bt039*bt039*bt039
+        a = bt039 ** 4
         x = numpy.ma.where(a+Rcorr > 0.0,(a + Rcorr), 0)
                 
         self.channels[3]._bt = x ** 0.25
@@ -255,7 +265,7 @@ class MSGSeviriChannels:
         
         msgctype_filename=None
         for ext in msgpp_config.MSG_PGE_EXTENTIONS:
-            match_str = "%s/%s*%s"%(msgpp_config.CTYPEDIR_IN,prefix,ext)
+            match_str = "%s/%s.%s"%(msgpp_config.CTYPEDIR_IN,prefix,ext)
             msg_communications.msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
             flist = glob.glob(match_str)
             msgctype=None
@@ -281,7 +291,13 @@ class MSGSeviriChannels:
     def save_cloudtype(self,filename):
         try:
             ctype = msg_ctype.msg_ctype2ppsformat(self.cloudtype)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CType hdf file...",
+                                            moduleid=MODULE_ID)
             epshdf.write_cloudtype(filename, ctype, 6)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CType hdf file done !",
+                                            moduleid=MODULE_ID)
         except AttributeError:
             msg_communications.msgwrite_log("INFO",
                                             "Old version of satproj, converting to Numeric...",
@@ -322,7 +338,7 @@ class MSGSeviriChannels:
                                          self.area_id)
         msgctth_filename=None
         for ext in msgpp_config.MSG_PGE_EXTENTIONS:
-            match_str = "%s/%s*%s"%(msgpp_config.CTTHDIR_IN,prefix,ext)
+            match_str = "%s/%s.%s"%(msgpp_config.CTTHDIR_IN,prefix,ext)
             msg_communications.msgwrite_log("INFO","file-match: ",match_str,moduleid=MODULE_ID)
             flist = glob.glob(match_str)
             msgctth=None
@@ -348,7 +364,13 @@ class MSGSeviriChannels:
     def save_ctth(self,filename):
         try:
             ctth = msg_ctth.msg_ctth2ppsformat(self.ctth)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CTTH hdf file...",
+                                            moduleid=MODULE_ID)
             epshdf.write_cloudtop(filename, ctth, 6)
+            msg_communications.msgwrite_log("INFO",
+                                            "Saving CTTH hdf file done !",
+                                            moduleid=MODULE_ID)
         except AttributeError:
             msg_communications.msgwrite_log("INFO",
                                             "Old version of satproj, converting to Numeric...",
@@ -534,7 +556,8 @@ class MSGSeviriChannels:
 
         arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
 	a = numpy.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)
-	palette = _convert_palette(pps_array2image.ctth_height_legend())
+
+	palette = _convert_palette(ctth_height_legend())
 
         a = numpy.ma.array(a)
 
@@ -618,6 +641,35 @@ class MSGSeviriChannels:
         else:
             return None
         
+    def natural(self):
+        """Make a Natural Colors RGB image composite from SEVIRI channels.
+        """
+        if(self[1] is None or
+           self[2] is None or
+           self[3] is None):
+            return None
+        
+        ch1 = check_range(self[1]["REFL"])
+        ch2 = check_range(self[2]["REFL"])
+        ch3 = check_range(self[3]["REFL"])
+
+        im = geo_image.GeoImage((ch3,
+                                 ch2,
+                                 ch1),
+                                self.area_id,
+                                self.time_slot,
+                                mode = "RGB",
+                                range = ((0,45),
+                                         (0,45),
+                                         (0,45)))
+
+
+
+        im.enhance(gamma = 1.2)
+
+        return im
+
+
     def overview(self):
         """Make an Overview RGB image composite from SEVIRI channels.
         """
@@ -736,8 +788,9 @@ class MSGSeviriChannels:
         ch1 = check_range(self[1]["REFL"])
         ch3 = check_range(self[3]["REFL"])
 
+
         im = geo_image.GeoImage((self[5]["BT"] - self[6]["BT"],
-                                 self[4]["BT"] - self[9]["BT"],
+                                 self.prestine4 - self[9]["BT"],
                                  ch3 - ch1),
                                 self.area_id,
                                 self.time_slot,
@@ -745,6 +798,9 @@ class MSGSeviriChannels:
                                 range = ((-30, 0),
                                          (0, 55),
                                          (- 70, 20)))
+
+        im.clip()
+        im.enhance(stretch = "crude")
 
         return im
 
@@ -788,9 +844,15 @@ class MSGSeviriChannels:
                                 range = ((-4, 2),
                                          (0, 6),
                                          (243, 293)))
-
+        
         im.enhance(gamma = (1.0, 2.0, 1.0))
+        im.clip()
 
+
+# Old version, without co2 correction
+#        im.enhance(gamma = (1.0, 2.0, 1.0))
+#        im.clip()
+#        im.enhance(stretch = "crude")
         return im
 
     def cloudtop(self):
@@ -944,8 +1006,37 @@ def _convert_palette(p):
         palette.append((i[0] / 255.0,
                         i[1] / 255.0,
                         i[2] / 255.0))
-#    print palette
     return palette
+
+def ctth_height_legend():
+
+    legend = []    
+    legend.append((0,0,0))
+    legend.append((255,0,216)) # 0 meters
+    legend.append((126,0,43))
+    legend.append((153,20,47))
+    legend.append((178,51,0))
+    legend.append((255,76,0))
+    legend.append((255,102,0))
+    legend.append((255,164,0))
+    legend.append((255,216,0))
+    legend.append((216,255,0))
+    legend.append((178,255,0))
+    legend.append((153,255,0))
+    legend.append((0,255,0))
+    legend.append((0,140,48))
+    legend.append((0,178,255))
+    legend.append((0,216,255))
+    legend.append((0,255,255))
+    legend.append((238,214,210))
+    legend.append((239,239,223))
+    legend.append((255,255,255)) # 10,000 meters
+    for i in range(79):
+        legend.append((255,255,255)) 
+    legend.append((224,224,224)) 
+    
+    return legend
+
 # -----------------------------------------------------------------------------
 # Test the current module
 

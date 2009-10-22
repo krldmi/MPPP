@@ -188,7 +188,7 @@ class SatProjCov:
                                          self.rowidx,
                                          self.colidx,
                                          amask,
-                                         int(no_data))
+                                         0)
         except AttributeError:
             msgwrite_log("INFO",
                          "Old version of satproj, converting to Numeric...",

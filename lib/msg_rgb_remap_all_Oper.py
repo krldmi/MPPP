@@ -51,7 +51,8 @@
 
 # Global modules
 
-# PPS modules
+import glob
+import datetime
 
 # Local modules
 
@@ -100,14 +101,27 @@ if __name__ == "__main__":
             prods = [arg]
 
 
-    if len(args) != 1:
+    if len(args) > 1:
         usage()
         sys.exit(-9)
+    elif len(args) == 0:
+        import string
+        msgwrite_log("INFO",
+                     "No slots number specified, extrapolating... ",
+                     moduleid=MODULE_ID)
+        prefix="H-000-MSG?__-MSG?________-_________-EPI______-"
+        match_str = "%s/import/SEVIRI_data/%s*"%(MSG_DIR,prefix)
+        flist = glob.glob(match_str)
+        flist.sort(reverse = True)
+        tstr = flist[0][-15:-3]
+        time_slots = [datetime.datetime(string.atoi(tstr[:4]),
+                                        string.atoi(tstr[4:6]),
+                                        string.atoi(tstr[6:8]),
+                                        string.atoi(tstr[8:10]),
+                                        string.atoi(tstr[10:12]))]
     else:
         n_slots = string.atoi(args[0])
-
-
-    time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
+        time_slots = time_utils.time_slots(n_slots,DSEC_SLOTS/60)
 
     start_date = time_slots[0]
     end_date = time_slots[-1]
@@ -220,6 +234,8 @@ if __name__ == "__main__":
                     rgb = channels.night_fog()
                 elif(pkey == "cloudtop"):
                     rgb = channels.cloudtop()
+                elif(pkey == "natural"):
+                    rgb = channels.natural()
                 if(pkey == "hr_overview"):
                     rgb = channels.hr_overview()
 

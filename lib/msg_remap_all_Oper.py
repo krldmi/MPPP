@@ -73,6 +73,9 @@
 #
 
 
+import glob
+import datetime
+
 from msgpp_config import *
 
 import epshdf
@@ -89,14 +92,29 @@ MODULE_ID = "MSG_PROD_REMAP"
 
 # -----------------------------------------------------------------------
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) > 2:
         print "Usage: %s <n-slots back in time>"%(sys.argv[0])
         sys.exit(-9)
-    else:
+    elif len(sys.argv) == 2:
         import string
         n_slots = string.atoi(sys.argv[1])
+        time_slots = time_utils.time_slots(n_slots)
+    else:
+        import string
+        msgwrite_log("INFO",
+                     "No slots number specified, guestimating... ",
+                     moduleid=MODULE_ID)
+        prefix="H-000-MSG?__-MSG?________-_________-EPI______-"
+        match_str = "%s/import/SEVIRI_data/%s*"%(MSG_DIR,prefix)
+        flist = glob.glob(match_str)
+        flist.sort(reverse = True)
+        tstr = flist[0][-15:-3]
+        time_slots = [datetime.datetime(string.atoi(tstr[:4]),
+                                        string.atoi(tstr[4:6]),
+                                        string.atoi(tstr[6:8]),
+                                        string.atoi(tstr[8:10]),
+                                        string.atoi(tstr[10:12]))]
 
-    time_slots = time_utils.time_slots(n_slots)
 
     start_date = time_slots[0]
     end_date = time_slots[-1]
@@ -120,8 +138,17 @@ if __name__ == "__main__":
                                                 rad = False)
        
        seviri_data.load([1,2,9])
+       msgwrite_log("INFO",
+                    "Seviri channels loaded.",
+                    moduleid=MODULE_ID)
        seviri_data.load_cloudtype()
+       msgwrite_log("INFO",
+                     "Seviri ctype loaded.",
+                     moduleid=MODULE_ID)
        seviri_data.load_ctth()
+       msgwrite_log("INFO",
+                    "Seviri ctth loaded.",
+                    moduleid=MODULE_ID)
        
        if(seviri_data.cloudtype is None and
           seviri_data.ctth is None):
@@ -149,8 +176,8 @@ if __name__ == "__main__":
                              "Generating %s for area %s."%(pkey,akey),
                              moduleid=MODULE_ID)
              rgb = None
-             ctype = None
-             ctth = None
+             ctype = False
+             ctth = False
              nordrad = None
 
              if(pkey == "PGE02"):
@@ -170,44 +197,85 @@ if __name__ == "__main__":
              elif(pkey == "PGE03"):
                 rgb = channels.pge03()
              elif(pkey == "CtypeHDF"):
-                 if(isinstance(filename,tuple) and
-                    len(filename) == 2):
-                     channels.save_cloudtype(time_slot.strftime(filename[0]))
-                     channels.save_cloudtype(time_slot.strftime(filename[1]))
-                 else:
-                     channels.save_cloudtype(time_slot.strftime(filename))
+                 ctype = True
              elif(pkey == "CtthHDF"):
-                 if(isinstance(filename,tuple) and
-                    len(filename) == 2):
-                     channels.save_ctth(time_slot.strftime(filename[0]))
-                     channels.save_ctth(time_slot.strftime(filename[1]))
-                 else:
-                     channels.save_ctth(time_slot.strftime(filename))
+                 ctth = True
              elif(pkey == "NordRad"):
                 nordrad = channels.get_cloudtype()
 
              if rgb is not None:
-                for filename in PRODUCTS[akey][pkey]:
-                   if(isinstance(filename,tuple) and
-                      len(filename) == 2):
-                      rgb.double_save(time_slot.strftime(filename[0]),
-                                      time_slot.strftime(filename[1]))
-                   else:
-                      rgb.secure_save(time_slot.strftime(filename))
+                 for filename in PRODUCTS[akey][pkey]:
+                     if(isinstance(filename,tuple) and
+                        len(filename) == 2):
+                         filename0 = time_slot.strftime(filename[0])
+                         filename1 = time_slot.strftime(filename[1])
+                         msgwrite_log("INFO",
+                                      "Saving to %s."%(filename0),
+                                      moduleid=MODULE_ID)
+                         msgwrite_log("INFO",
+                                      "Saving to %s."%(filename1),
+                                      moduleid=MODULE_ID)
+                         rgb.double_save(time_slot.strftime(filename[0]),
+                                         time_slot.strftime(filename[1]))
+                     else:
+                         rgb.secure_save(time_slot.strftime(filename))
 
+             if ctype:
+                 for filename in PRODUCTS[akey][pkey]:
+                     if(isinstance(filename,tuple) and
+                        len(filename) == 2):
+                         filename0 = time_slot.strftime(filename[0])
+                         filename1 = time_slot.strftime(filename[1])
+                         msgwrite_log("INFO",
+                                      "Saving ctype hdf to %s."%(filename0),
+                                      moduleid=MODULE_ID)
+                         channels.save_cloudtype(time_slot.strftime(filename[0]))
+                         msgwrite_log("INFO",
+                                      "Saving ctype hdf to %s."%(filename1),
+                                      moduleid=MODULE_ID)
+                         channels.save_cloudtype(time_slot.strftime(filename[1]))
+                     else:
+                         filename0 = time_slot.strftime(filename)
+                         msgwrite_log("INFO",
+                                      "Saving ctype hdf to %s."%(filename0),
+                                      moduleid=MODULE_ID)
+                         channels.save_cloudtype(time_slot.strftime(filename))
+
+             if ctth:
+                 for filename in PRODUCTS[akey][pkey]:
+                     if(isinstance(filename,tuple) and
+                        len(filename) == 2):
+                         filename0 = time_slot.strftime(filename[0])
+                         filename1 = time_slot.strftime(filename[1])
+                         msgwrite_log("INFO",
+                                      "Saving ctth hdf to %s."%(filename0),
+                                      moduleid=MODULE_ID)
+                         channels.save_ctth(time_slot.strftime(filename[0]))
+                         msgwrite_log("INFO",
+                                      "Saving ctth hdf to %s."%(filename1),
+                                      moduleid=MODULE_ID)
+                         channels.save_ctth(time_slot.strftime(filename[1]))
+                     else:
+                         filename0 = time_slot.strftime(filename)
+                         msgwrite_log("INFO",
+                                      "Saving ctth hdf to %s."%(filename0),
+                                      moduleid=MODULE_ID)
+                         channels.save_ctth(time_slot.strftime(filename))
+
+                         
              if nordrad is not None:
-                for filename in PRODUCTS[akey][pkey]:
-                   filename = time_slot.strftime(filename)
-                   status = msg_ctype2radar.msg_writectype2nordradformat(nordrad,
-                                                                         filename,
-                                                                         time_string)
-                   if status:
-                      for tup in N2SERVERS_AND_PORTS:
-                         cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],filename)
-                         msgwrite_log("INFO","Command: %s"%(cmdstr),moduleid=MODULE_ID)
-                         os.system(cmdstr)
-                   else:
-                      msgwrite_log("ERROR","Failed writing cloudtype product for Nordrad!",moduleid=MODULE_ID)
-                      msgwrite_log("INFO","Filename = %s"%(filename),moduleid=MODULE_ID)
+                 for filename in PRODUCTS[akey][pkey]:
+                     filename = time_slot.strftime(filename)
+                     status = msg_ctype2radar.msg_writectype2nordradformat(nordrad,
+                                                                           filename,
+                                                                           time_string)
+                     if status:
+                         for tup in N2SERVERS_AND_PORTS:
+                             cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],filename)
+                             msgwrite_log("INFO","Command: %s"%(cmdstr),moduleid=MODULE_ID)
+                             os.system(cmdstr)
+                     else:
+                         msgwrite_log("ERROR","Failed writing cloudtype product for Nordrad!",moduleid=MODULE_ID)
+                         msgwrite_log("INFO","Filename = %s"%(filename),moduleid=MODULE_ID)
 
                    
