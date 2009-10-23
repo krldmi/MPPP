@@ -13,6 +13,7 @@ INSTALL_FILES=msg_remap_all_Oper.py \
 	      time_utils.py \
 	      image.py \
 	      geo_image.py \
+	      satellite.py \
 	      msg_data.py
 
 DEST_LIB_DIR = $(MSGPP_INSTALL_PATH)/lib/python2.5/site-packages

@@ -10,6 +10,7 @@
 .. toctree::
    :maxdepth: 2
 
+   satellite
    msg_data
    msg_coverage
    image

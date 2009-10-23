@@ -10,7 +10,11 @@ extern void free_2D_uchar_array(unsigned char ** array, int lines);
 extern void free_3D_float_array(float *** array, int lines);
 extern void free_3D_uchar_array(unsigned char *** array, int lines);
 
+extern int channel_number(char * channel_string);
+extern void channel_name_string(int channel, char * channel_string);
+
 extern int get_channel(char* c_time_slot, char* region_file, char* channel_string, float** rad, float** ref_or_bt, unsigned char ** mask);
+extern int get_channels(char* c_time_slot, char* region_file, int bandmask, float*** rad, float*** ref_or_bt, unsigned char *** mask);
 extern int get_all_channels(char* c_time_slot, char* region_file, float*** rad, float*** ref_or_bt, unsigned char *** mask);
 
 extern int get_channel_dims(char * region_file, char * channel_string, int * dims);

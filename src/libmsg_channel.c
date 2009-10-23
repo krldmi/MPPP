@@ -495,6 +495,7 @@ get_channel(char* c_time_slot, char* region_file, char* channel_string, float** 
 
   YYYYMMDDhhmm time_slot;
   int channel;
+  int status;
 
   /* Parse options */
   strcpy(time_slot,c_time_slot);
@@ -525,9 +526,11 @@ get_channel(char* c_time_slot, char* region_file, char* channel_string, float** 
 	}
     }
   if(rad != NULL)
-    MSG_read_channel(time_slot,region,&seviri,channel,TRUE);
+    status = MSG_read_channel(time_slot,region,&seviri,channel,TRUE);
   else
-    MSG_read_channel(time_slot,region,&seviri,channel,FALSE);
+    status = MSG_read_channel(time_slot,region,&seviri,channel,FALSE);
+  if(status == EXIT_FAILURE)
+    return EXIT_FAILURE;
 
   if(CheckSevBand(&seviri)!=pow(2,channel))
     {
@@ -559,13 +562,120 @@ get_channel(char* c_time_slot, char* region_file, char* channel_string, float** 
 
 
 /*
+ * get_channels
+ *
+ * Gets all non HR channels from MSG data defined in the bandmask. It fills in
+ * the radiance "rad" and the other array of values "ref_or_bt", which is
+ * reflectance or brightness temperature depending on the channel. "mask" is an
+ * array of booleans for the validity of the values (true for invalid values,
+ * typically in space).
+ * 
+ */
+
+int
+get_channels(char* c_time_slot, char* region_file, int bandmask, float*** rad, float*** ref_or_bt, unsigned char *** mask)
+{
+  Band_mask bands;
+  Psing_region region;
+  Seviri_struct seviri;
+
+  YYYYMMDDhhmm time_slot;
+  int channel;
+  int channel_id;
+  int band_res;
+  char channel_string[10];
+
+  int ch_count = 0;
+  int status;
+
+  printf("will prepare band mask.\n");
+  fflush(stdout);
+
+
+  for(channel = 0; channel < NUM_BANDS; channel++)
+    if((int)pow(2,channel) & bandmask)
+      bands[channel]=TRUE;
+    else
+      bands[channel]=FALSE;
+  bands[HRVIS]=FALSE;
+  
+  /* Parse options */
+  strcpy(time_slot,c_time_slot);
+
+  /* Initialize regions */
+  
+
+  printf("will now set region.\n");
+  fflush(stdout);
+
+  if (SetRegion(&region,region_file,VIS_IR) > WARNING ) 
+    {
+      error(0,0,"Could not initialize region...");
+      exit(EXIT_FAILURE);
+    }
+  
+  printf("will now MSGread.\n");
+  fflush(stdout);
+
+
+  if(rad != NULL)
+    status = MSG_read_channels(time_slot,region,&seviri,bands,TRUE);
+  else
+    status = MSG_read_channels(time_slot,region,&seviri,bands,FALSE);
+  if(status == EXIT_FAILURE)
+    {
+      error(0,0,"Could not read channel...");
+      exit(EXIT_FAILURE);
+    }
+    
+  printf("will now check.\n");
+  fflush(stdout);
+
+
+  band_res = CheckSevBand(&seviri) ^ bandmask;
+  
+  for(channel = 0; channel < NUM_BANDS; channel++)
+    {
+
+      if(band_res & (int)(pow(2,channel)))
+	{
+	  channel_name_string(channel,channel_string);
+	  fprintf(stderr,
+		  "Unable to read channel %s for %s at %s\n",
+		  channel_string,
+		  region_file,
+		  c_time_slot);
+	}
+      else if(bands[channel])
+	{
+	  if(rad != NULL)
+	    copy_and_cast(SevBand(seviri,channel,RAD),rad[ch_count],region.nb_lines,region.nb_cols);
+	  if(SevBand(seviri,channel,REFL)!=NULL)
+	    {
+	      copy_and_cast(SevBand(seviri,channel,REFL),ref_or_bt[ch_count],region.nb_lines,region.nb_cols);
+	      make_mask(SevBand(seviri,channel,REFL),mask[ch_count],region.nb_lines,region.nb_cols);
+	    }
+	  else
+	    {
+	      copy_and_cast(SevBand(seviri,channel,BT),ref_or_bt[ch_count],region.nb_lines,region.nb_cols);
+	      make_mask(SevBand(seviri,channel,BT),mask[ch_count],region.nb_lines,region.nb_cols);
+	    }
+          ch_count++;
+	}
+    }
+  SevFree(seviri);
+
+  return band_res;
+}
+
+/*
  * get_all_channels
  *
  * Gets all non HR channels from MSG data. It fills in the radiance
  * "rad" and the other array of values "ref_or_bt", which is
  * reflectance or brightness temperature depending on the
  * channel. "mask" is an array of booleans for the validity of the
- * values (typically false in space).
+ * values (true for invalid values, typically in space).
  * 
  */
 
@@ -582,6 +692,7 @@ get_all_channels(char* c_time_slot, char* region_file, float*** rad, float*** re
   int band_check;
   int band_res;
   char channel_string[10];
+  int status;
 
   for(channel = 0; channel < NUM_BANDS; channel++)
     bands[channel]=TRUE;
@@ -601,9 +712,13 @@ get_all_channels(char* c_time_slot, char* region_file, float*** rad, float*** re
     }
   
   if(rad != NULL)
-    MSG_read_channels(time_slot,region,&seviri,bands,TRUE);
+    status = MSG_read_channels(time_slot,region,&seviri,bands,TRUE);
   else
-    MSG_read_channels(time_slot,region,&seviri,bands,FALSE);
+    status = MSG_read_channels(time_slot,region,&seviri,bands,FALSE);
+  if(status == EXIT_FAILURE)
+    return EXIT_FAILURE;
+
+
   band_res = CheckSevBand(&seviri) ^ band_check;
   
   for(channel = 0; channel < NUM_BANDS - 1; channel++)
@@ -674,8 +789,9 @@ get_all_channels(char* c_time_slot, char* region_file, float*** rad, float*** re
     }
   SevFree(seviri);
 
-  return NUM_BANDS - 1;
+  return band_res;
 }
+
 
 /*
  *

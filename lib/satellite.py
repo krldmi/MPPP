@@ -1,4 +1,4 @@
-
+import numpy as np
 
 
 class SatelliteChannel(object):
@@ -31,8 +31,12 @@ class SatelliteChannel(object):
             self.shape = None
 
     def __cmp__(self,y):
-        return cmp(self.wavelength_range[1],y.wavelength_range[1])
-
+        if np.isnan(self.wavelength_range[1]):
+            return 1
+        elif np.isnan(y.wavelength_range[1]):
+            return -1
+        else:
+            return cmp(self.wavelength_range[1],y.wavelength_range[1])
 
     def __repr__(self):
         return ("'%s: lambda (%.3f,%.3f,%.3f)um, shape %s, resolution %sm'"%
@@ -42,6 +46,19 @@ class SatelliteChannel(object):
                  self.wavelength_range[2], 
                  self.shape, 
                  self.resolution))
+    
+    def _add_data(self,data):
+        self.data = data
+        self.shape = data.shape
+
+def _key_ch_cmp(x,y,key):
+    if np.isnan(y.wavelength_range[1]):
+        return -1
+    elif np.isnan(x.wavelength_range[1]):
+        return 1
+    else:
+        return cmp(x.wavelength_range[1] - key,
+                   y.wavelength_range[1] - key)
 
 class SatelliteInstrument(object):
     
@@ -58,9 +75,8 @@ class SatelliteInstrument(object):
                               self.channels)
             if(len(channels) >= 1):
                 channels = sorted(channels,
-                                  lambda ch1,ch2: 
-                                  cmp(abs(ch1.wavelength_range[1]-key),
-                                      abs(ch2.wavelength_range[1]-key)))
+                                  lambda ch1,ch2:
+                                  _key_ch_cmp(ch1,ch2,key))
 
                 return channels
             else:
@@ -96,7 +112,7 @@ class SatelliteInstrument(object):
             else:
                 return self[key[0]]
         else:
-            raise IndexError("Malformed key.")
+            raise KeyError("Malformed key.")
     
 
 class SatelliteSnapshot(SatelliteInstrument):
@@ -110,48 +126,3 @@ class SatelliteSnapshot(SatelliteInstrument):
 
 
 
-meteosat_seviri_channels = [["VIS06",(0.56,0.635,0.71),3000],
-                            ["VIS08",(0.74,0.81,0.88),3000],
-                            ["IR16",(1.50,1.64,1.78),3000],
-                            ["IR39",(3.48,3.92,4.36),3000],
-                            ["WV62",(5.35,6.25,7.15),3000],
-                            ["WV73",(6.85,7.35,7.85),3000],
-                            ["IR87",(8.30,8.70,9.10),3000],
-                            ["IR97",(9.38,9.66,9.94),3000],
-                            ["IR108",(9.80,10.80,11.80),3000],
-                            ["IR120",(11.00,12.00,13.00),3000],
-                            ["IR134",(12.40,13.40,14.40),3000],
-                            ["HRVIS",(0.50,0.75,0.90),1000]]
-
-class MeteoSatSeviriSnapshot(SatelliteSnapshot):
-    
-    def __init__(self,*args,**kwargs):
-        super(MeteoSatSeviriSnapshot,self).__init__(*args,**kwargs)
-        self.channels = [None] * len(meteosat_seviri_channels)
-        
-        i = 0
-        for name, w_range, resolution in meteosat_seviri_channels:
-            self.channels[i] = SatelliteChannel(name = name,
-                                                wavelength_range = w_range,
-                                                resolution = resolution)
-            i = i + 1
-            
-        
-
-    def load(self, channels = None):
-        import py_msg
-        if channels is None:
-            channels = []
-            for ch in self.channels:
-                channels.append(ch.name)
-
-        if not isinstance(channels,list):
-            raise ValueError("Channels must be a list or a tuple of names!")
-        
-        data = py_msg.get_all_channels(time_utils.time_string(time_slot), 
-                                       self.area, 
-                                       self._load_rad)
-        
-        
-def sattest():
-    a = MeteoSatSeviriSnapshot()

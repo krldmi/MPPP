@@ -168,7 +168,8 @@ class GeoImage(image.Image):
                 alpha = np.where(mask, 0, channels[3])
 
                 dst_ds.GetRasterBand(4).WriteArray(alpha)
-
+        else:
+            raise NotImplementedError("Saving to GeoTIFF using image mode %s is not implemented."%self.mode)
 
 
                 
