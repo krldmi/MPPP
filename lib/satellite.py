@@ -1,6 +1,9 @@
 import numpy as np
 
 
+class Satellite(object):
+    pass
+
 class SatelliteChannel(object):
     
     data = None
@@ -30,13 +33,14 @@ class SatelliteChannel(object):
         else:
             self.shape = None
 
-    def __cmp__(self,y):
+    def __cmp__(self, y, key = 0):
         if np.isnan(self.wavelength_range[1]):
             return 1
         elif np.isnan(y.wavelength_range[1]):
             return -1
         else:
-            return cmp(self.wavelength_range[1],y.wavelength_range[1])
+            return cmp(self.wavelength_range[1] - key,
+                       y.wavelength_range[1] - key)
 
     def __repr__(self):
         return ("'%s: lambda (%.3f,%.3f,%.3f)um, shape %s, resolution %sm'"%
@@ -50,15 +54,6 @@ class SatelliteChannel(object):
     def _add_data(self,data):
         self.data = data
         self.shape = data.shape
-
-def _key_ch_cmp(x,y,key):
-    if np.isnan(y.wavelength_range[1]):
-        return -1
-    elif np.isnan(x.wavelength_range[1]):
-        return 1
-    else:
-        return cmp(x.wavelength_range[1] - key,
-                   y.wavelength_range[1] - key)
 
 class SatelliteInstrument(object):
     
@@ -76,7 +71,7 @@ class SatelliteInstrument(object):
             if(len(channels) >= 1):
                 channels = sorted(channels,
                                   lambda ch1,ch2:
-                                  _key_ch_cmp(ch1,ch2,key))
+                                  ch1.__cmp__(ch2,key))
 
                 return channels
             else:
@@ -123,6 +118,5 @@ class SatelliteSnapshot(SatelliteInstrument):
     def __init__(self, time_slot = None, area = None):
         self.time_slot = time_slot
         self.area = area
-
 
 

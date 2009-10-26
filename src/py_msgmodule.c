@@ -20,28 +20,34 @@ channel_number(char * channel_string)
 
   if(strcmp(channel_string,"VIS06")==0 || atoi(channel_string)==1)
     channel=VIS06;
-  if(strcmp(channel_string,"VIS08")==0 || atoi(channel_string)==2)
+  else if(strcmp(channel_string,"VIS08")==0 || atoi(channel_string)==2)
     channel=VIS08;
-  if(strcmp(channel_string,"IR16")==0 || atoi(channel_string)==3)
+  else if(strcmp(channel_string,"IR16")==0 || atoi(channel_string)==3)
     channel=IR16;
-  if(strcmp(channel_string,"IR39")==0 || atoi(channel_string)==4)
+  else if(strcmp(channel_string,"IR39")==0 || atoi(channel_string)==4)
     channel=IR39;
-  if(strcmp(channel_string,"WV62")==0 || atoi(channel_string)==5)
+  else if(strcmp(channel_string,"WV62")==0 || atoi(channel_string)==5)
     channel=WV62;
-  if(strcmp(channel_string,"WV73")==0 || atoi(channel_string)==6)
+  else if(strcmp(channel_string,"WV73")==0 || atoi(channel_string)==6)
     channel=WV73;
-  if(strcmp(channel_string,"IR87")==0 || atoi(channel_string)==7)
+  else if(strcmp(channel_string,"IR87")==0 || atoi(channel_string)==7)
     channel=IR87;
-  if(strcmp(channel_string,"IR97")==0 || atoi(channel_string)==8)
+  else if(strcmp(channel_string,"IR97")==0 || atoi(channel_string)==8)
     channel=IR97;
-  if(strcmp(channel_string,"IR108")==0 || atoi(channel_string)==9)
+  else if(strcmp(channel_string,"IR108")==0 || atoi(channel_string)==9)
     channel=IR108;
-  if(strcmp(channel_string,"IR120")==0 || atoi(channel_string)==10)
+  else if(strcmp(channel_string,"IR120")==0 || atoi(channel_string)==10)
     channel=IR120;
-  if(strcmp(channel_string,"IR134")==0 || atoi(channel_string)==11)
+  else if(strcmp(channel_string,"IR134")==0 || atoi(channel_string)==11)
     channel=IR134;
-  if(strcmp(channel_string,"HRVIS")==0 || atoi(channel_string)==12)
+  else if(strcmp(channel_string,"HRVIS")==0 || atoi(channel_string)==12)
     channel=HRVIS;
+  else
+    {
+      PyErr_SetString(PyExc_KeyError,"Channel name not recognized.");
+      return -1;
+    }
+
 
   return channel;
 
@@ -109,11 +115,13 @@ msg_get_channels(PyObject *dummy, PyObject *args)
   char region_file[128];
   unsigned char read_rad = true;
   PyObject * channels;
-  int i;
+  int i, j;
   int ch;
   int channel;
   char channel_name[128];
   Band_mask bands;
+  int int_bandmask = 0;
+
 
   unsigned char got_hr = false;
   unsigned char got_nonhr = false;
@@ -138,18 +146,16 @@ msg_get_channels(PyObject *dummy, PyObject *args)
   
   if (!PyArg_ParseTuple(args, "ssO|b", &c_time_slot, &region_name, &channels, &read_rad))
     {
-      fprintf(stderr,"Impossible to parse arguments.");
-      fflush(stderr);
-      Py_RETURN_NONE;
+      PyErr_SetString(PyExc_RuntimeError,"Impossible to parse arguments.");
+      return NULL;
     }
   strcpy(time_slot,c_time_slot);
   sprintf(region_file,"safnwc_%s.cfg",region_name);
 
   if(!PyList_Check(channels))
     {
-      fprintf(stderr,"Channels is not a list.");
-      fflush(stderr);
-      Py_RETURN_NONE;
+      PyErr_SetString(PyExc_RuntimeError,"Channels arg is not a list.");
+      return NULL;
     }
 
   
@@ -161,7 +167,12 @@ msg_get_channels(PyObject *dummy, PyObject *args)
   for(i = 0; i < PyList_Size(channels); i++)
     {
       ch = channel_number(PyString_AsString(PyList_GetItem(channels,i)));
+      if(ch == -1)
+        return NULL;
+
       bands[ch] = true;
+
+      int_bandmask |= (int)pow(2,ch);
 
       if(ch == HRVIS)
         got_hr = true;
@@ -175,18 +186,19 @@ msg_get_channels(PyObject *dummy, PyObject *args)
     {
       if (SetRegion(&hr_region,region_file,HRV) > WARNING ) 
 	{
-	  error(0,0,"Could not initialize HR region...");
-	  exit(EXIT_FAILURE);
+          PyErr_SetString(PyExc_RuntimeError,"Could not initialize HR region.");
+          return NULL;
 	}     
       hr_dims[0] = hr_region.nb_lines;
       hr_dims[1] = hr_region.nb_cols;
     }
+
   if(got_nonhr)
     {
       if (SetRegion(&region,region_file,VIS_IR) > WARNING ) 
 	{
-	  error(0,0,"Could not initialize region...");
-	  exit(EXIT_FAILURE);
+          PyErr_SetString(PyExc_RuntimeError,"Could not initialize region.");
+          return NULL;
 	}
       dims[0] = region.nb_lines;
       dims[1] = region.nb_cols;
@@ -196,32 +208,29 @@ msg_get_channels(PyObject *dummy, PyObject *args)
 
   if(got_hr && (SevHRVInit(time_slot,hr_region,&hr_seviri)!=OK))
     {
-      error(0,0,"SevHVRInit failed");
-      SevFree(hr_seviri);
+      PyErr_SetString(PyExc_RuntimeError,"Cannot initialize HR Seviri reader.");
+      return NULL;
     }
  
   if(got_nonhr && (SevInit(time_slot,region,bands,&seviri)!=OK))
     {
-      error(0,0,"SevInit failed");
-      SevFree(seviri);
-      Py_RETURN_NONE;
+      PyErr_SetString(PyExc_RuntimeError,"Cannot initialize Seviri reader.");
+      return NULL;
     }
 
   // Read channels from msg
 
   if(got_hr && (SevReadHRV(hr_region, &hr_seviri) > WARNING))
     {
-      error(0,0,"SevReadHRV failed");
-      SevFree(hr_seviri);
-      Py_RETURN_NONE;
+      PyErr_SetString(PyExc_RuntimeError,"Cannot read HR Seviri data.");
+      goto error;
     }
     
-    if(got_nonhr && (SevRead(region, &seviri, bands) > WARNING))
-      {
-        error(0,0,"SevRead failed");
-        SevFree(seviri);
-        Py_RETURN_NONE;
-      }
+  if(got_nonhr && (SevRead(region, &seviri, bands) > WARNING))
+    {
+      PyErr_SetString(PyExc_RuntimeError,"Cannot read Seviri data.");
+      goto error;
+    }
 
   // Convert to radiances, reflectances, and bts.
 
@@ -251,13 +260,20 @@ msg_get_channels(PyObject *dummy, PyObject *args)
 
   // Check the channels
 
+  int_bandmask ^= CheckSevBand(&seviri);
+
+  j = 0;
+  for(i = int_bandmask; i != 0; i >>= 1)
+    if(i & 1)
+      bands[j] = false;
+    j++;
+
   // Append channels to a python dict
 
   if(!(chan_dict = PyDict_New()))
     {
-      fprintf(stderr,"Can't create a dict.");
-      fflush(stderr);
-      Py_RETURN_NONE;
+      PyErr_SetString(PyExc_RuntimeError,"Cannot create a new dictionnary.");
+      goto error;
     }
   
   for(channel = 0; channel < NUM_BANDS; channel++)
@@ -314,6 +330,17 @@ msg_get_channels(PyObject *dummy, PyObject *args)
   // Return the dict
   
   return chan_dict;
+
+  // In case of error
+
+ error:
+  if(got_hr)
+    SevFree(hr_seviri);
+  if(got_nonhr)
+    SevFree(seviri);
+
+  return NULL;
+  
   
 }
 

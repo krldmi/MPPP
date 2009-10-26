@@ -74,9 +74,9 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
                 try:
                     _channels.append(self[ch][0].name)
                 except TypeError:
-                    log.error("Channel "+str(ch)+" could not be loaded.")
+                    log.warning("Channel "+str(ch)+" not found, not loading.")
         else:
-            raise TypeError("Channels must be a list or a tuple of names!")
+            raise TypeError("Channels must be a list/tuple of channel keys!")
         
         
         data = py_msg.get_channels(time_utils.time_string(self.time_slot), 
@@ -86,13 +86,46 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         for ch in data:
             self[ch][0]._add_data(np.ma.array(data[ch]["CAL"], 
                                               mask = data[ch]["MASK"]))
+
+
         
+    def _co2corr_bt39(self):
+        """CO2 correction of the brightness temperature of the MSG 3.9 um
+        channel:
+        
+        T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
+        Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
+        dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
+        
+        """
+        if(self[4] is None or
+           self[9] is None or
+           self[11] is None):
+            msg_communications.msgwrite_log("WARNING","CO2 correction not performed, not enough channels loaded.",moduleid=MODULE_ID)
+            return
+
+        epsilon = 0.001
+        bt039 = self[4]["BT"]
+        bt108 = self[9]["BT"]
+        bt134 = self[11]["BT"]
+        
+        dt_co2 = (bt108-bt134)/4.0
+        a = bt108 ** 4
+        b = (bt108-dt_co2) ** 4
+        
+        Rcorr = a - b
+        
+        a = bt039 ** 4
+        x = numpy.ma.where(a+Rcorr > 0.0,(a + Rcorr), 0)
+                
+        self.channels[3]._bt = x ** 0.25
+
 if __name__ == "__main__":
     import datetime
     time_slot = datetime.datetime(2009,10,8,14,30)
     a = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = time_slot)
     print a[0.0]
-    a.load([0.0,6.2])
+    a.load([0.0,6.2,"truc"])
     print "loading done"
     print a[0.6]
     print a[6.2]
