@@ -87,8 +87,8 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         elif(isinstance(channels, (list, tuple))):
             for chn in channels:
                 try:
-                    _channels.append(self[chn][0].name)
-                except TypeError:
+                    _channels.append(self[chn].name)
+                except KeyError:
                     log.warning("Channel "+str(chn)+" not found, not loading.")
         else:
             raise TypeError("Channels must be a list/tuple of channel keys!")
@@ -99,13 +99,13 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
                                    _channels,
                                    False)
         for chn in data:
-            self[chn][0].add_data(np.ma.array(data[chn]["CAL"], 
+            self[chn].add_data(np.ma.array(data[chn]["CAL"], 
                                                mask = data[chn]["MASK"]))
 
 
         
-    def _co2corr_bt39(self):
-        """CO2 correction of the brightness temperature of the MSG 3.9 um
+    def _co2corr(self):
+        """CO2 correction of the brightness temperature of the MSG 3.9um
         channel:
         
         T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
@@ -113,15 +113,17 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
         
         """
-        if(self[4] is None or
-           self[9] is None or
-           self[11] is None):
+        try:
+            self.check_channels(3.9, 10.8, 13.4)
+        except RuntimeError:
             log.warning("CO2 correction not performed, channel data missing.")
             return
 
-        bt039 = self[4]["BT"]
-        bt108 = self[9]["BT"]
-        bt134 = self[11]["BT"]
+
+
+        bt039 = self[3.9].data
+        bt108 = self[10.8].data
+        bt134 = self[13.4].data
         
         dt_co2 = (bt108-bt134)/4.0
         a = bt108 ** 4
@@ -132,14 +134,21 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         a = bt039 ** 4
         x = numpy.ma.where(a+Rcorr > 0.0,(a + Rcorr), 0)
                 
-        self.channels[3]._bt = x ** 0.25
+        self.channels.append(SatelliteChannel(name = "IR39Corr",
+                                              wavelength_range = (0,0,0),
+                                              resolution = 0))
+        self["IR39Corr"].add_data(x ** 0.25)
 
 if __name__ == "__main__":
     import datetime
-    time_slot = datetime.datetime(2009, 10, 8, 14, 30)
-    a = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = time_slot)
-    print a[0.0]
-    a.load([0.0, 6.2, "kalle"])
+    T = datetime.datetime(2009, 10, 8, 14, 30)
+    A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
+    A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
     print "loading done"
-    print a[0.6]
-    print a[6.2]
+    print A[0.6]
+    print A[0.8]
+    print A[10.8]
+    print A.overview.prerequisites
+    #a.overview()
+    A.red_snow().save("./test.png")
+    #a.overview().save("./test.png")

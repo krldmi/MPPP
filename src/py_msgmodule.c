@@ -104,6 +104,26 @@ make_mask(PyArrayObject * in, PyArrayObject * out, npy_intp * dims)
   
 }
 
+void
+copy_to_2Dfloat_pyarray(Float_32 ** in, PyArrayObject * out, npy_intp * dims)
+{
+  Py_ssize_t i,j;
+  for(i=0;i<dims[0];i++)
+    for(j=0;j<dims[1];j++)
+      {
+	*((npy_float *)PyArray_GETPTR2(out,i,j))=(npy_float)in[i][j];
+      }
+  
+}
+
+PyObject *
+SimpleNewFromData(int nd, npy_intp* dims, int typenum, void* data)
+{
+  PyArrayObject * cal;
+  cal = (PyArrayObject *)PyArray_SimpleNew(nd,dims,typenum);
+  copy_to_2Dfloat_pyarray(data,cal,dims);
+  return (PyObject *)cal;
+}
 
 static PyObject *
 msg_get_channels(PyObject *dummy, PyObject *args)
@@ -282,18 +302,18 @@ msg_get_channels(PyObject *dummy, PyObject *args)
         if(channel == HRVIS)
           {
             if(read_rad)
-              rad = (PyArrayObject *)PyArray_SimpleNewFromData(2,hr_dims,NPY_FLOAT,
+              rad = (PyArrayObject *)SimpleNewFromData(2,hr_dims,NPY_FLOAT,
                                                                SevBand(hr_seviri,channel,RAD));
             else
               rad = (PyArrayObject *)PyArray_EMPTY(2, hr_dims, NPY_FLOAT,0);
             if(SevBand(hr_seviri,channel,REFL)!=NULL)
               {
-                cal = (PyArrayObject *)PyArray_SimpleNewFromData(2,hr_dims,NPY_FLOAT,
+                cal = (PyArrayObject *)SimpleNewFromData(2,hr_dims,NPY_FLOAT,
                                                                  SevBand(hr_seviri,channel,REFL));
               }
             else
               {
-                cal = (PyArrayObject *)PyArray_SimpleNewFromData(2,hr_dims,NPY_FLOAT,
+                cal = (PyArrayObject *)SimpleNewFromData(2,hr_dims,NPY_FLOAT,
                                                                  SevBand(hr_seviri,channel,BT));
               }
             mask = (PyArrayObject *)PyArray_SimpleNew(2, hr_dims, NPY_BOOL);
@@ -302,19 +322,25 @@ msg_get_channels(PyObject *dummy, PyObject *args)
         else
           {
             if(read_rad)
-              rad = (PyArrayObject *)PyArray_SimpleNewFromData(2,dims,NPY_FLOAT,
+              rad = (PyArrayObject *)SimpleNewFromData(2,dims,NPY_FLOAT,
                                                                SevBand(seviri,channel,RAD));
             else
               rad = (PyArrayObject *)PyArray_EMPTY(2, dims, NPY_FLOAT,0);
             if(SevBand(seviri,channel,REFL)!=NULL)
               {
-                cal = (PyArrayObject *)PyArray_SimpleNewFromData(2,dims,NPY_FLOAT,
-                                                                 SevBand(seviri,channel,REFL));
+                //cal = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_FLOAT);
+                //copy_to_2Dfloat_pyarray(SevBand(seviri,channel,REFL),cal,dims);
+                //cal = (PyArrayObject *)PyArray_SimpleNewFromData(2,dims,NPY_FLOAT,
+                //                                                 SevBand(seviri,channel,REFL));
+                cal = (PyArrayObject *)SimpleNewFromData(2,dims,NPY_FLOAT,
+                                                         SevBand(seviri,channel,REFL));
               }
             else
               {
-                cal = (PyArrayObject *)PyArray_SimpleNewFromData(2,dims,NPY_FLOAT,
-                                                                 SevBand(seviri,channel,BT));
+                cal = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_FLOAT);
+                copy_to_2Dfloat_pyarray(SevBand(seviri,channel,BT),cal,dims);
+                cal = (PyArrayObject *)SimpleNewFromData(2,dims,NPY_FLOAT,
+                                                         SevBand(seviri,channel,BT));
               }
             mask = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_BOOL);
             make_mask(cal, mask, dims);
