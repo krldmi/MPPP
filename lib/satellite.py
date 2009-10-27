@@ -1,25 +1,32 @@
+"""This module defines the basic interface for satellites, satellite
+instruments, and satellite snapshots.
+"""
 import numpy as np
 
 
 class Satellite(object):
+    """This is the satellite class.
+    """
     pass
 
 class SatelliteChannel(object):
-    
+    """This is the satellite channel class.
+    """
+
+    #Channel data.
     data = None
-    """Channel data."""
 
+    #Name of the channel.
     name = None
-    """Name of the channel."""
 
+    #Operationnal wavelength range of the channel, in micrometers.
     wavelength_range = None
-    """Operationnal wavelength range of the channel, in micrometers"""
 
+    #Shape of the channel data.
     shape = None
-    """Shape of the channel data."""
 
+    #Channel resolution, in meters.
     resolution = 0
-    """Channel resolution, in meters."""
 
     def __init__(self, resolution = 0, 
                  wavelength_range = None, 
@@ -33,14 +40,14 @@ class SatelliteChannel(object):
         else:
             self.shape = None
 
-    def __cmp__(self, y, key = 0):
+    def __cmp__(self, ch2, key = 0):
         if np.isnan(self.wavelength_range[1]):
             return 1
-        elif np.isnan(y.wavelength_range[1]):
+        elif np.isnan(ch2.wavelength_range[1]):
             return -1
         else:
             return cmp(self.wavelength_range[1] - key,
-                       y.wavelength_range[1] - key)
+                       ch2.wavelength_range[1] - key)
 
     def __repr__(self):
         return ("'%s: lambda (%.3f,%.3f,%.3f)um, shape %s, resolution %sm'"%
@@ -51,12 +58,16 @@ class SatelliteChannel(object):
                  self.shape, 
                  self.resolution))
     
-    def _add_data(self,data):
+    # Should be replaced by setitem !!!!
+    def add_data(self, data):
+        """Set the data of the channel.
+        """
         self.data = data
         self.shape = data.shape
 
 class SatelliteInstrument(object):
-    
+    """This is the satellite instrument class.
+    """
     channels = []
 
     def __init__(self):
@@ -64,38 +75,24 @@ class SatelliteInstrument(object):
 
     def __getitem__(self, key):
         if(isinstance(key, float)):
-            channels = filter(lambda channel: 
-                              channel.wavelength_range[0] <= key and 
-                              channel.wavelength_range[2] >= key, 
-                              self.channels)
-            if(len(channels) >= 1):
-                channels = sorted(channels,
-                                  lambda ch1,ch2:
-                                  ch1.__cmp__(ch2,key))
+            channels = [chn for chn in self.channels
+                        if(chn.wavelength_range[0] <= key and
+                           chn.wavelength_range[2] >= key)]
+            return sorted(channels,
+                          lambda ch1,ch2:
+                              ch1.__cmp__(ch2,key))
 
-                return channels
-            else:
-                return None
-        elif(isinstance(key,str)):
-            channels = filter(lambda channel: 
-                              channel.name == key, 
-                              self.channels)
-            if(len(channels) >= 1):
-                channels = sorted(channels)
-                return channels
-            else:
-                return None
-        elif(isinstance(key,int)):
-            channels = filter(lambda channel: 
-                              channel.resolution == key, 
-                              self.channels)
-            if(len(channels) >= 1):
-                channels = sorted(channels)
-                return channels
-            else:
-                return None
-        elif(isinstance(key, tuple) or
-             isinstance(key, list)):
+        elif(isinstance(key, str)):
+            channels = [chn for chn in self.channels
+                        if chn.name == key]
+            return sorted(channels)
+
+        elif(isinstance(key, int)):
+            channels = [chn for chn in self.channels
+                        if chn.resolution == key]
+            return sorted(channels)
+
+        elif(isinstance(key, (tuple, list))):
             if(len(key) > 1):
                 dummy_instance = SatelliteInstrument()
                 channels = self[key[0]]
@@ -111,11 +108,13 @@ class SatelliteInstrument(object):
     
 
 class SatelliteSnapshot(SatelliteInstrument):
-
+    """This is the satellite snapshot class.
+    """
     time_slot = None
     area = None
 
-    def __init__(self, time_slot = None, area = None):
+    def __init__(self, time_slot = None, area = None, *args, **kwargs):
+        super(SatelliteSnapshot, self).__init__(*args, **kwargs)
         self.time_slot = time_slot
         self.area = area
 
