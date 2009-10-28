@@ -2,8 +2,17 @@
 instruments, and satellite snapshots.
 """
 import numpy as np
+import copy
+import logging
+import logging.config
 
 import geo_image
+import coverage
+from msgpp_config import APPLDIR
+
+logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
+LOG = logging.getLogger('pp.satellite')
+
 
 class Satellite(object):
     """This is the satellite class.
@@ -42,9 +51,13 @@ class SatelliteChannel(object):
             self.shape = None
 
     def __cmp__(self, ch2, key = 0):
-        if np.isnan(self.wavelength_range[1]):
+        if(self.name == ch2.name):
+            return 0
+        elif(np.isnan(self.wavelength_range[1]) or
+           self.name[0] == '_'):
             return 1
-        elif np.isnan(ch2.wavelength_range[1]):
+        elif(np.isnan(ch2.wavelength_range[1]) or
+             ch2.name[0] == '_'):
             return -1
         else:
             return cmp(self.wavelength_range[1] - key,
@@ -72,12 +85,36 @@ class SatelliteChannel(object):
         """
         return self.data is not None
 
-class SatelliteInstrument(object):
+    def check_range(self, min_range = 1.0):
+        """Check that the data of the channels has a definition domain broader
+        than *min_range* and return the data, otherwise return zeros.
+        """
+        if((self.data.max() - self.data.min()) < min_range):
+            return np.ma.zeros(self.data.shape)
+        else:
+            return self.data
+
+    def project(self, coverage):
+        """Make a projected copy of the current channel using the given
+        *coverage*.
+        """
+        res = copy.copy(self)
+        if self.isloaded():
+            LOG.info("Projecting channel %s (%fum)..."
+                     %(self.name, self.wavelength_range[1]))
+            res.data = coverage.project_array(self.data)
+        else:
+            raise RuntimeError("Can't project, channel %s (%fum) not loaded."
+                               %(self.name, self.wavelength_range[1]))
+
+
+class SatelliteInstrument(Satellite):
     """This is the satellite instrument class.
     """
     channels = []
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super(SatelliteInstrument, self).__init__(*args, **kwargs)
         self.channels = []
 
     def __getitem__(self, key, aslist = False):
@@ -114,7 +151,19 @@ class SatelliteInstrument(object):
             return channels
         else:
             return channels[0]
-    
+
+    def check_channels(self, *channels):
+        """Check if the *channels* are loaded, raise an error otherwise.
+        """
+        for chan in channels:
+            if not self[chan].isloaded():
+                raise RuntimeError("Required channel not loaded, aborting.")
+
+
+    def loaded_channels(self):
+        """Return the set of loaded_channels.
+        """
+        return set([chan for chan in self.channels if chan.isloaded()])
 
 class SatelliteSnapshot(SatelliteInstrument):
     """This is the satellite snapshot class.
@@ -127,21 +176,13 @@ class SatelliteSnapshot(SatelliteInstrument):
         self.time_slot = time_slot
         self.area = area
 
-    def check_channels(self, *channels):
-        """Check if the *channels* are loaded, raise an error otherwise.
-        """
-
-        for chan in channels:
-            if not self[chan].isloaded():
-                raise RuntimeError("Channel not loaded.")
-
     def overview(self):
         """Make an overview RGB image composite.
         """
         self.check_channels(0.6, 0.8, 10.8)
 
-        ch1 = check_range(self[0.6].data)
-        ch2 = check_range(self[0.8].data)
+        ch1 = self[0.6].check_range()
+        ch2 = self[0.8].check_range()
         ch3 = -self[10.8].data
         
         img = geo_image.GeoImage((ch1, ch2, ch3),
@@ -154,7 +195,7 @@ class SatelliteSnapshot(SatelliteInstrument):
 
         return img
     
-    overview.prerequisites = (0.6, 0.8, 10.8)
+    overview.prerequisites = set([0.6, 0.8, 10.8])
 
     def airmass(self):
         """Make an airmass RGB image composite.
@@ -184,7 +225,7 @@ class SatelliteSnapshot(SatelliteInstrument):
                                          (243 - 70, 208 + 20)))
         return img
             
-    airmass.prerequisites = (6.2, 7.3, 9.7, 10.8)
+    airmass.prerequisites = set([6.2, 7.3, 9.7, 10.8])
 
     def ir108(self):
         """Make a black and white image of the IR 10.8um channel.
@@ -199,7 +240,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img.enhance(inverse = True)
         return img
 
-    ir108.prerequisites = (10.8)
+    ir108.prerequisites = set([10.8])
 
     def wv_high(self):
         """Make a black and white image of the IR 6.2um channel."""
@@ -212,7 +253,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img.enhance(inverse = True, stretch = "linear")
         return img
     
-    wv_high.prerequisites = (6.2)
+    wv_high.prerequisites = set([6.2])
 
     def wv_low(self):
         """Make a black and white image of the IR 7.3um channel."""
@@ -225,16 +266,16 @@ class SatelliteSnapshot(SatelliteInstrument):
         img.enhance(inverse = True, stretch = "linear")
         return img
 
-    wv_low.prerequisites = (7.3)
+    wv_low.prerequisites = set([7.3])
         
     def natural(self):
         """Make a Natural Colors RGB image composite.
         """
         self.check_channels(0.6, 0.8, 1.6)
         
-        ch1 = check_range(self[1.6].data)
-        ch2 = check_range(self[0.8].data)
-        ch3 = check_range(self[0.6].data)
+        ch1 = self[1.6].check_range()
+        ch2 = self[0.8].check_range()
+        ch3 = self[0.6].check_range()
 
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
@@ -250,7 +291,7 @@ class SatelliteSnapshot(SatelliteInstrument):
 
         return img
     
-    natural.prerequisites = (0.6, 0.8, 1.6)
+    natural.prerequisites = set([0.6, 0.8, 1.6])
     
 
     def green_snow(self):
@@ -258,8 +299,8 @@ class SatelliteSnapshot(SatelliteInstrument):
         """
         self.check_channels(0.8, 1.6, 10.8)
 
-        ch1 = check_range(self[1.6].data)
-        ch2 = check_range(self[0.8].data)
+        ch1 = self[1.6].check_range()
+        ch2 = self[0.8].check_range()
         ch3 = -self[10.8].data
         
         img = geo_image.GeoImage((ch1, ch2, ch3),
@@ -272,15 +313,15 @@ class SatelliteSnapshot(SatelliteInstrument):
 
         return img
 
-    green_snow.prerequisites = (0.8, 1.6, 10.8)
+    green_snow.prerequisites = set([0.8, 1.6, 10.8])
 
     def red_snow(self):
         """Make a Red Snow RGB image composite.
         """
         self.check_channels(0.6, 1.6, 10.8)        
 
-        ch1 = check_range(self[0.6].data)
-        ch2 = check_range(self[1.6].data)
+        ch1 = self[0.6].check_range()
+        ch2 = self[1.6].check_range()
         ch3 = -self[10.8].data
 
         img = geo_image.GeoImage((ch1, ch2, ch3),
@@ -292,7 +333,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         
         return img
 
-    red_snow.prerequisites = (0.6, 1.6, 10.8)
+    red_snow.prerequisites = set([0.6, 1.6, 10.8])
 
     def convection(self):
         """Make a Severe Convection RGB image composite.
@@ -301,7 +342,7 @@ class SatelliteSnapshot(SatelliteInstrument):
 
         ch1 = self[6.2].data - self[7.3].data
         ch2 = self[3.9].data - self[10.8].data
-        ch3 = check_range(self[0.6].data) - check_range(self[1.6].data)
+        ch3 = self[0.6].check_range() - self[1.6].check_range()
 
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
@@ -316,7 +357,7 @@ class SatelliteSnapshot(SatelliteInstrument):
 
         return img
 
-    convection.prerequisites = (0.6, 1.6, 3.9, 6.2, 7.3, 10.8)
+    convection.prerequisites = set([0.6, 1.6, 3.9, 6.2, 7.3, 10.8])
 
 
     def fog(self):
@@ -339,7 +380,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         
         return img
 
-    fog.prerequisites = (8.7, 10.8, 12.0)
+    fog.prerequisites = set([8.7, 10.8, 12.0])
 
     def night_fog(self):
         """Make a Night Fog RGB image composite.
@@ -361,13 +402,9 @@ class SatelliteSnapshot(SatelliteInstrument):
         img.enhance(gamma = (1.0, 2.0, 1.0))
         img.clip()
 
-# Old version, without co2 correction
-#        im.enhance(gamma = (1.0, 2.0, 1.0))
-#        im.clip()
-#        im.enhance(stretch = "crude")
         return img
 
-    night_fog.prerequisites = (3.9, 10.8, 12.0)
+    night_fog.prerequisites = set([3.9, 10.8, 12.0])
 
     def cloudtop(self):
         """Make a Cloudtop RGB image composite.
@@ -383,17 +420,59 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.time_slot,
                                  mode = "RGB")
 
-        img.enhance(stretch = (0.005,0.005))
+        img.enhance(stretch = (0.005, 0.005))
 
         return img
     
-    cloudtop.prerequisites = (3.9, 10.8, 12.0)
+    cloudtop.prerequisites = set([3.9, 10.8, 12.0])
 
-def check_range(arr, min_range = 1.0):
-    """Check that the given array *arr* has a definition domain broader than
-    *min_range*, otherwise return zeros.
-    """
-    if((arr.max() - arr.min()) < min_range):
-        return np.ma.zeros(arr.shape)
-    else:
-        return arr
+    def project(self, dest_area, channels = None):
+        """Make a copy of the current snapshot projected onto the
+        *dest_area*. Available areas are defined in the main configuration
+        file. *channels* tells which channels are going to be present in the
+        returned snapshot, and if None, all channels are copied over.
+
+        Note: channels have to be loaded to be projected, otherwise an
+        exception is raised.
+        """
+        if dest_area == self.area:
+            return self
+        
+        _channels = set([])
+
+        if channels is None:
+            for chn in self.loaded_channels():
+                _channels |= set([chn])
+
+        elif(isinstance(channels, (list, tuple, set))):
+            for chn in channels:
+                try:
+                    _channels |= set([self[chn]])
+                except KeyError:
+                    LOG.warning("Channel "+str(chn)+" not found,"
+                                "thus not projected.")
+        else:
+            raise TypeError("Channels must be a list/"
+                            "tuple/set of channel keys!")
+
+        res = copy.copy(self)
+        res.area = dest_area
+        res.channels = []
+
+        if not _channels <= self.loaded_channels():
+            raise RuntimeError("Cannot project nonloaded channels: %s."
+                               %(_channels - self.loaded_channels()))
+
+        cov = {}
+
+        for chan in _channels:
+            if chan.resolution not in cov:
+                cov[chan.resolution] = \
+                    coverage.SatProjCov(self, 
+                                        dest_area, 
+                                        chan.resolution)
+            res.channels.append(chan.project(cov[chan.resolution]))
+
+        return res
+            
+                

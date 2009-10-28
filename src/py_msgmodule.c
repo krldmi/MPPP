@@ -117,7 +117,7 @@ copy_to_2Dfloat_pyarray(Float_32 ** in, PyArrayObject * out, npy_intp * dims)
 }
 
 PyObject *
-SimpleNewFromData(int nd, npy_intp* dims, int typenum, void* data)
+SimpleNewFrom2DData(int nd, npy_intp* dims, int typenum, void* data)
 {
   PyArrayObject * cal;
   cal = (PyArrayObject *)PyArray_SimpleNew(nd,dims,typenum);
@@ -170,7 +170,6 @@ msg_get_channels(PyObject *dummy, PyObject *args)
       return NULL;
     }
   strcpy(time_slot,c_time_slot);
-  sprintf(region_file,"safnwc_%s.cfg",region_name);
 
   if(!PyList_Check(channels))
     {
@@ -201,6 +200,8 @@ msg_get_channels(PyObject *dummy, PyObject *args)
     }
 
   // Init region
+
+  sprintf(region_file,"safnwc_%s.cfg",region_name);
 
   if(got_hr)
     {
@@ -302,19 +303,19 @@ msg_get_channels(PyObject *dummy, PyObject *args)
         if(channel == HRVIS)
           {
             if(read_rad)
-              rad = (PyArrayObject *)SimpleNewFromData(2,hr_dims,NPY_FLOAT,
-                                                               SevBand(hr_seviri,channel,RAD));
+              rad = (PyArrayObject *)SimpleNewFrom2DData(2,hr_dims,NPY_FLOAT,
+                                                         SevBand(hr_seviri,channel,RAD));
             else
               rad = (PyArrayObject *)PyArray_EMPTY(2, hr_dims, NPY_FLOAT,0);
             if(SevBand(hr_seviri,channel,REFL)!=NULL)
               {
-                cal = (PyArrayObject *)SimpleNewFromData(2,hr_dims,NPY_FLOAT,
-                                                                 SevBand(hr_seviri,channel,REFL));
+                cal = (PyArrayObject *)SimpleNewFrom2DData(2,hr_dims,NPY_FLOAT,
+                                                           SevBand(hr_seviri,channel,REFL));
               }
             else
               {
-                cal = (PyArrayObject *)SimpleNewFromData(2,hr_dims,NPY_FLOAT,
-                                                                 SevBand(hr_seviri,channel,BT));
+                cal = (PyArrayObject *)SimpleNewFrom2DData(2,hr_dims,NPY_FLOAT,
+                                                           SevBand(hr_seviri,channel,BT));
               }
             mask = (PyArrayObject *)PyArray_SimpleNew(2, hr_dims, NPY_BOOL);
             make_mask(cal, mask, hr_dims);
@@ -322,25 +323,19 @@ msg_get_channels(PyObject *dummy, PyObject *args)
         else
           {
             if(read_rad)
-              rad = (PyArrayObject *)SimpleNewFromData(2,dims,NPY_FLOAT,
-                                                               SevBand(seviri,channel,RAD));
+              rad = (PyArrayObject *)SimpleNewFrom2DData(2,dims,NPY_FLOAT,
+                                                         SevBand(seviri,channel,RAD));
             else
               rad = (PyArrayObject *)PyArray_EMPTY(2, dims, NPY_FLOAT,0);
             if(SevBand(seviri,channel,REFL)!=NULL)
               {
-                //cal = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_FLOAT);
-                //copy_to_2Dfloat_pyarray(SevBand(seviri,channel,REFL),cal,dims);
-                //cal = (PyArrayObject *)PyArray_SimpleNewFromData(2,dims,NPY_FLOAT,
-                //                                                 SevBand(seviri,channel,REFL));
-                cal = (PyArrayObject *)SimpleNewFromData(2,dims,NPY_FLOAT,
-                                                         SevBand(seviri,channel,REFL));
+                cal = (PyArrayObject *)SimpleNewFrom2DData(2,dims,NPY_FLOAT,
+                                                           SevBand(seviri,channel,REFL));
               }
             else
               {
-                cal = (PyArrayObject *)PyArray_SimpleNew(2,dims,NPY_FLOAT);
-                copy_to_2Dfloat_pyarray(SevBand(seviri,channel,BT),cal,dims);
-                cal = (PyArrayObject *)SimpleNewFromData(2,dims,NPY_FLOAT,
-                                                         SevBand(seviri,channel,BT));
+                cal = (PyArrayObject *)SimpleNewFrom2DData(2,dims,NPY_FLOAT,
+                                                           SevBand(seviri,channel,BT));
               }
             mask = (PyArrayObject *)PyArray_SimpleNew(2, dims, NPY_BOOL);
             make_mask(cal, mask, dims);
@@ -352,6 +347,13 @@ msg_get_channels(PyObject *dummy, PyObject *args)
         channel_name_string(channel,channel_name);
         PyDict_SetItemString(chan_dict,channel_name,band);
       }
+
+  // Cleanup
+
+  if(got_hr)
+    SevFree(hr_seviri);
+  if(got_nonhr)
+    SevFree(seviri);
 
   // Return the dict
   
@@ -370,52 +372,80 @@ msg_get_channels(PyObject *dummy, PyObject *args)
   
 }
 
-/*
 static PyObject *
 msg_lat_lon_from_region(PyObject *dummy, PyObject *args)
 {
+
+  Float_32 ** MSG_lat;
+  Float_32 ** MSG_lon;
   
+  Psing_region region;
+
+  int channel;
+
   PyArrayObject *lat;
   PyArrayObject *lon;
 
   char * region_name;
   char region_file[128];
-  char * channel;
+  char * channel_name;
 
-  float **alat;
-  float **alon;
-
-  int dimensions[2];
   npy_intp dims[2];
-  int rank;
-  
-  if (!PyArg_ParseTuple(args, "ss", &region_name, &channel))
-    return NULL;
-  
-  
-  rank = get_channel_dims(region_file, channel, dimensions);
-  
-  alat = allocate_float_array(dimensions[0],dimensions[1]);
-  alon = allocate_float_array(dimensions[0],dimensions[1]);
 
-  lat_lon_from_region(region_file,channel, alat, alon);
-
-  dims[0]=dimensions[0];
-  dims[1]=dimensions[1];
-
-  lat = (PyArrayObject *)PyArray_SimpleNew(rank, dims, NPY_FLOAT);
-  lon = (PyArrayObject *)PyArray_SimpleNew(rank, dims, NPY_FLOAT);
-
-  copy_to_2Dfloat_pyarray(alat,lat,dimensions);
-  copy_to_2Dfloat_pyarray(alon,lon,dimensions);
-
-  free_2D_float_array(alat,dimensions[0]);
-  free_2D_float_array(alon,dimensions[0]);
+  // Parse arguments
   
+  if (!PyArg_ParseTuple(args, "ss", &region_name, &channel_name))
+    {
+      PyErr_SetString(PyExc_RuntimeError,"Impossible to parse arguments.");
+      return NULL;
+    }
+
+  channel = channel_number(channel_name);
+  if(channel==-1)
+    {
+      PyErr_SetString(PyExc_RuntimeError,"Unrecognized channel name.");
+      return NULL;
+    }
+
+  // Init region and get lat lon.
+
+  sprintf(region_file,"safnwc_%s.cfg",region_name);
+
+  if(channel==HRVIS)
+    {
+      if (SetRegion(&region,region_file,HRV) > WARNING ) 
+	{
+          PyErr_SetString(PyExc_RuntimeError,"Could not initialize HR region.");
+          return NULL;
+	}
+      GetLatLon(region, HRVIS, &MSG_lat, &MSG_lon);
+    }
+  else
+    {
+      if (SetRegion(&region,region_file,VIS_IR) > WARNING ) 
+	{
+          PyErr_SetString(PyExc_RuntimeError,"Could not initialize region.");
+          return NULL;
+	}
+      GetLatLon(region, VIS_IR, &MSG_lat, &MSG_lon);
+    }
+  
+  // Copy to numpy arrays
+
+  dims[0] = region.nb_lines;
+  dims[1] = region.nb_cols;
+
+  lat = (PyArrayObject *)SimpleNewFrom2DData(2, dims, NPY_FLOAT, MSG_lat);
+  lon = (PyArrayObject *)SimpleNewFrom2DData(2, dims, NPY_FLOAT, MSG_lon);
+
+  // Cleanup
+
+  FreeLatLon(region, MSG_lat, MSG_lon);
+
+  // Return
+
   return Py_BuildValue("(N,N)",PyArray_Return(lat),PyArray_Return(lon));
 }
-*/
-
 
 
 static PyObject *
@@ -427,8 +457,8 @@ msg_missing_value()
 static PyMethodDef MsgMethods[] = {
     {"get_channels",  msg_get_channels, METH_VARARGS,
      "Gets a list of Seviri channels from MSG."},
-    /*{"lat_lon_from_region",  msg_lat_lon_from_region, METH_VARARGS,
-     "Gets latitudes and longitudes for a given region file."},*/
+    {"lat_lon_from_region",  msg_lat_lon_from_region, METH_VARARGS,
+     "Gets latitudes and longitudes for a given region file."},
     {"missing_value",  msg_missing_value, METH_VARARGS,
      "Gets the fill value for missing data."},
     {NULL, NULL, 0, NULL}        /* Sentinel */

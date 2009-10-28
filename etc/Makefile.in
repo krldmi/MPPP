@@ -6,7 +6,8 @@ SOURCE_DIRS=init.d
 
 INSTALL_FILES=.profile_msgpp \
                msgpp_config.py \
-	       products.py
+	       products.py \
+	       logging.conf
 
 all:
 	@for i in $(SOURCE_DIRS) ; \

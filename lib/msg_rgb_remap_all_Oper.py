@@ -59,11 +59,9 @@ import datetime
 from msg_communications import *
 from msgpp_config import *
 from misc_utils import *
-import msg_coverage
 import msg_data
 import time_utils
-import geo_image
-from products import *
+from products import PRODUCTS
 
 seviri_data = None
 

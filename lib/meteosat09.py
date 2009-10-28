@@ -5,27 +5,17 @@ its Seviri instrument.
 import os
 import numpy as np
 import logging
+import logging.config
+from msgpp_config import APPLDIR
 
-LOG_FILENAME = '/tmp/logging_example.out'
-#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG,)
-log = logging.getLogger('MET09')
-
-# create filehandler and set level to debug
-#ch = logging.FileHandler(filename = LOG_FILENAME)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-# create formatter
-formatter = logging.Formatter("[%(levelname)s: %(asctime)s : %(name)s] %(message)s")
-# add formatter to ch
-ch.setFormatter(formatter)
-# add ch to logger
-log.addHandler(ch)
-
-
+import py_msg
 from satellite import SatelliteSnapshot, SatelliteChannel
+import geo_image
 import msgpp_config
 import time_utils
 
+logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
+LOG = logging.getLogger("pp.meteosat09")
 
 os.environ['SAFNWC'] = msgpp_config.MSG_DIR
 os.environ['SAFNWC_BIN'] = msgpp_config.MSG_DIR+"/bin"
@@ -37,7 +27,6 @@ os.environ['BUFR_TABLES'] = (os.environ['SAFNWC']+
                              "/src/bufr_000360/bufrtables/")
 os.environ['LOCAL_DEFINITION_TEMPLATES'] = (os.environ['SAFNWC']+
                                             "/src/gribex_000360/gribtemplates/")
-
 
 MET09_SEVIRI = [["VIS06", (0.56, 0.635, 0.71), 3000],
                 ["VIS08", (0.74, 0.81, 0.88), 3000],
@@ -76,35 +65,47 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         containing channels we will load data into. If None, all channels are
         loaded.
         """
-        import py_msg
-        
-        _channels = []
+        LOG.info("Loading channels...")
+        _channels = set([])
+
+        do_correct = False
 
         if channels is None:
             for chn in self.channels:
-                _channels.append(chn.name)
+                _channels |= set([chn.name])
 
-        elif(isinstance(channels, (list, tuple))):
+        elif(isinstance(channels, (list, tuple, set))):
             for chn in channels:
                 try:
-                    _channels.append(self[chn].name)
+                    _channels |= set([self[chn].name])
                 except KeyError:
-                    log.warning("Channel "+str(chn)+" not found, not loading.")
+                    if chn == "_IR39Corr":
+                        do_correct = True
+                    else:
+                        LOG.warning("Channel "+str(chn)+" not found,"
+                                    "thus not loaded.")
         else:
-            raise TypeError("Channels must be a list/tuple of channel keys!")
+            raise TypeError("Channels must be a list/"
+                            "tuple/set of channel keys!")
         
+        if do_correct:
+            for chn in self.co2corr.prerequisites:
+                _channels |= set([self[chn].name])
         
         data = py_msg.get_channels(time_utils.time_string(self.time_slot), 
                                    self.area, 
-                                   _channels,
+                                   list(_channels),
                                    False)
+
         for chn in data:
             self[chn].add_data(np.ma.array(data[chn]["CAL"], 
                                                mask = data[chn]["MASK"]))
 
-
+        if do_correct:
+            self.channels.append(self.co2corr())
+        LOG.info("Loading channels done.")
         
-    def _co2corr(self):
+    def co2corr(self):
         """CO2 correction of the brightness temperature of the MSG 3.9um
         channel:
         
@@ -116,7 +117,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         try:
             self.check_channels(3.9, 10.8, 13.4)
         except RuntimeError:
-            log.warning("CO2 correction not performed, channel data missing.")
+            LOG.warning("CO2 correction not performed, channel data missing.")
             return
 
 
@@ -126,29 +127,174 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         bt134 = self[13.4].data
         
         dt_co2 = (bt108-bt134)/4.0
-        a = bt108 ** 4
-        b = (bt108-dt_co2) ** 4
+        rcorr = bt108 ** 4 - (bt108-dt_co2) ** 4
         
-        Rcorr = a - b
         
-        a = bt039 ** 4
-        x = numpy.ma.where(a+Rcorr > 0.0,(a + Rcorr), 0)
-                
-        self.channels.append(SatelliteChannel(name = "IR39Corr",
-                                              wavelength_range = (0,0,0),
-                                              resolution = 0))
-        self["IR39Corr"].add_data(x ** 0.25)
+        t4_co2corr = bt039 ** 4 + rcorr
+        t4_co2corr = np.ma.where(t4_co2corr > 0.0, t4_co2corr, 0)
+        t4_co2corr = t4_co2corr ** 0.25
+        
+        ir39corr = SatelliteChannel(name = "_IR39Corr",
+                                    wavelength_range = 
+                                    self[3.9].wavelength_range,
+                                    resolution = 
+                                    self[3.9].resolution,
+                                    data = t4_co2corr)
+
+        
+
+        return ir39corr
+
+    co2corr.prerequisites = set([3.9, 10.8, 13.4])
+
+    def cloudtop(self):
+        """Make a Cloudtop RGB image composite from Seviri channels.
+        """
+        self.check_channels("_IR39Corr", 10.8, 12.0)
+
+        ch1 = -self["_IR39Corr"].data
+        ch2 = -self[10.8].data
+        ch3 = -self[12.0].data
+
+        img = geo_image.GeoImage((ch1, ch2, ch3),
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "RGB")
+
+        img.enhance(stretch = (0.005, 0.005))
+
+        return img
+    
+    cloudtop.prerequisites = set(["_IR39Corr", 10.8, 12.0])
+
+    def night_fog(self):
+        """Make a Night Fog RGB image composite from Seviri channels.
+        """
+        self.check_channels("_IR39Corr", 10.8, 12.0)
+
+        ch1 = self[12.0].data - self[10.8].data
+        ch2 = self[10.8].data - self["_IR39Corr"].data
+        ch3 = self[10.8].data
+        
+        img = geo_image.GeoImage((ch1, ch2, ch3),
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "RGB",
+                                 range = ((-4, 2),
+                                          (0, 6),
+                                          (243, 293)))
+        
+        img.enhance(gamma = (1.0, 2.0, 1.0))
+        img.clip()
+
+# Old version, without co2 correction
+#        im.enhance(gamma = (1.0, 2.0, 1.0))
+#        im.clip()
+#        im.enhance(stretch = "crude")
+        return img
+
+    night_fog.prerequisites = set(["_IR39Corr", 10.8, 12.0])
+
+
+    def hr_overview(self):
+        """Make a High Resolution Overview RGB image composite from Seviri
+        channels.
+        """
+        self.check_channels(0.6, 0.8, 10.8, "HRVIS")
+
+        ch1 = self[0.6].check_range()
+        ch2 = self[0.8].check_range()
+        ch3 = -self[10.8].data
+
+        img = geo_image.GeoImage((ch1, ch2, ch3),
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "RGB")
+
+        img.enhance(stretch = "crude")
+        img.enhance(gamma = [1.6, 1.6, 1.1])
+        
+        luminance = geo_image.GeoImage((self["HRVIS"].data),
+                                       self.area,
+                                       self.time_slot,
+                                       mode = "L")
+
+        luminance.enhance(stretch = "crude")
+        luminance.enhance(gamma = 2.0)
+
+        img.replace_luminance(luminance.channels[0])
+        
+        return img
+
+    hr_overview.prerequisites = set(["HRVIS", 0.6, 0.8, 10.8])
+
+    def get_lat_lon(self, resolution):
+        """Get the latitude and longitude grids of the current region for the
+        given *resolution*.
+        """
+        if not isinstance(resolution, int):
+            raise TypeError("Resolution must be an integer number of meters.")
+        channel = self[resolution]
+        return py_msg.lat_lon_from_region(self.area, channel.name)
+
+def _dummy():
+    """dummy function.
+    """
+    return None
+
+_dummy.prerequisites = set([])
 
 if __name__ == "__main__":
     import datetime
     T = datetime.datetime(2009, 10, 8, 14, 30)
-    A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
-    A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
-    print "loading done"
-    print A[0.6]
-    print A[0.8]
-    print A[10.8]
-    print A.overview.prerequisites
-    #a.overview()
-    A.red_snow().save("./test.png")
-    #a.overview().save("./test.png")
+    #A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
+    #A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
+    #A.load(A.red_snow.prerequisites)
+    #print "loading done"
+    #print A[0.6]
+    #print A[0.8]
+    #print A[10.8]
+    #print A.overview.prerequisites
+    #A.overview()
+    #A.red_snow().save("./test.png")
+    #A.overview().save("./test.png")
+
+    from products import PRODUCTS
+
+    metsat_data = MeteoSatSeviriSnapshot(time_slot = T, area = "EuropeCanary")
+    
+    cases = {
+        "overview": metsat_data.overview,
+        "natural": metsat_data.natural,
+        "fog": metsat_data.fog,
+        "nightfog": metsat_data.night_fog,
+        "convection": metsat_data.convection,
+        "airmass": metsat_data.airmass,
+        "ir108": metsat_data.ir108,
+        "wv_low": metsat_data.wv_low,
+        "wv_high": metsat_data.wv_high,
+        "greensnow": metsat_data.green_snow,
+        "redsnow": metsat_data.red_snow,
+        "cloudtop": metsat_data.cloudtop,
+        "hr_overview": metsat_data.hr_overview
+        }
+
+    _channels = set([])
+
+
+    for akey in PRODUCTS:
+        for pkey in PRODUCTS[akey]:
+            fun = cases.get(pkey, _dummy)
+            _channels |= fun.prerequisites
+
+    metsat_data.load(_channels)
+    
+    for akey in PRODUCTS:
+        if akey == "globe":
+            continue
+        _channels = set([])
+        for pkey in PRODUCTS[akey]:
+            fun = cases.get(pkey, _dummy)
+            _channels |= fun.prerequisites
+        local_data = metsat_data.project(akey, _channels)
+        
