@@ -26,13 +26,6 @@ def gamma_corr(g,arr):
     
     return retv
 
-def gamma_correction(arr,g):
-    """Perform gamma correction *g* to an array *arr*, which is assumed
-    to be in the range [0.0,1.0], and return the resulting array (same
-    range). 
-    """
-    return arr ** (1.0 / g)
-
 def stretch_hist_equalize(arr):
     """Stretch a monochromatic masked array *arr* by performing
     histogram equalization. The stretched array is returned.
@@ -99,7 +92,14 @@ def stretch_linear(arr,cutoffs=[0.005,0.005]):
 
     return res
 
-def crude_stretch(arr, norm = 255, min = None, max = None):
+def gamma_correction(arr,g):
+    """Perform gamma correction *g* to an array *arr*, which is assumed
+    to be in the range [0.0,1.0], and return the resulting array (same
+    range). 
+    """
+    return arr ** (1.0 / g)
+
+def crude_stretch(arr, norm = 1, min = None, max = None):
     """Perform simple linear stretching (without any cutoff) and normalize."""
 
     if(min is None):

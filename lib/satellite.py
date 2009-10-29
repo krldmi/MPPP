@@ -7,7 +7,9 @@ import logging
 import logging.config
 
 import geo_image
+import image_processing
 import coverage
+import palettes
 from msgpp_config import APPLDIR
 
 logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
@@ -94,15 +96,15 @@ class SatelliteChannel(object):
         else:
             return self.data
 
-    def project(self, coverage):
+    def project(self, coverage_instance):
         """Make a projected copy of the current channel using the given
-        *coverage*.
+        *coverage_instance*.
         """
         res = copy.copy(self)
         if self.isloaded():
             LOG.info("Projecting channel %s (%fum)..."
                      %(self.name, self.wavelength_range[1]))
-            res.data = coverage.project_array(self.data)
+            res.data = coverage_instance.project_array(self.data)
             return res
         else:
             raise RuntimeError("Can't project, channel %s (%fum) not loaded."
@@ -344,7 +346,7 @@ class SatelliteSnapshot(SatelliteInstrument):
 
         ch1 = self[6.2].data - self[7.3].data
         ch2 = self[3.9].data - self[10.8].data
-        ch3 = self[0.6].check_range() - self[1.6].check_range()
+        ch3 = self[1.6].check_range() - self[0.6].check_range()
 
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
@@ -427,6 +429,164 @@ class SatelliteSnapshot(SatelliteInstrument):
         return img
     
     cloudtop.prerequisites = set([3.9, 10.8, 12.0])
+
+    def pge02(self):
+        """Make a Cloudtype RGB image composite.
+        """
+        self.check_channels(["CloudType"])
+
+        ch1 = self["CloudType"].data
+        palette = palettes.cms_modified()
+
+        img = geo_image.GeoImage(ch1,
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "P",
+                                 palette = palette)
+
+        return img
+
+    pge02.prerequisites = set(["CloudType"])
+
+    def pge02b(self):
+        """Make a Cloudtype RGB image composite, depicting low clouds with
+        palette colors, and the other as in the IR 10.8 channel.
+        """
+        self.check_channels([10.8, "CloudType"])
+
+        ctype = self["CloudType"].data
+        clouds = self[10.8].data
+
+        palette = palettes.vv_legend()
+        clouds = image_processing.crude_stretch(clouds)
+        clouds = image_processing.gamma_correction(clouds, 1.6)
+        clouds = 1 - clouds
+        clouds = (clouds * 248 + 7).astype(np.uint8)
+        clouds = np.ma.where(ctype <= 2, ctype, clouds)
+        clouds = np.ma.where(4 < ctype < 9, ctype - 2, clouds)
+        
+        img = geo_image.GeoImage(clouds,
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "P",
+                                 palette = palette)
+
+        return img
+
+    pge02b.prerequisites = set(["CloudType", 10.8])
+
+    def pge02b_with_overlay(self):
+        """Same as :meth:`pge02b`, with borders overlay.
+        """
+        self.check_channels([10.8, "CloudType"])
+        
+        img = self.pge02b()
+        
+        img.add_overlay()
+
+        return img
+
+    pge02b_with_overlay.prerequisites = set(["CloudType", 10.8])
+
+    def pge02c(self):
+        """Make an RGB composite showing clouds as depicted with the IR 10.8um
+        channel, and cloudfree areas with land in green and sea in blue.
+        """
+        self.check_channels([10.8, "CloudType"])
+        
+        ctype = self["CloudType"].data
+        clouds = self[10.8].data
+
+        palette = palettes.tv_legend()
+
+        clouds = (clouds - 205.0) / (295.0 - 205.0)
+        clouds = (1 - clouds).clip(0, 1)
+        clouds = (clouds * 250 + 5).astype(np.uint8)
+        clouds = np.ma.where(ctype <= 4, ctype, clouds)
+
+        img = geo_image.GeoImage(clouds,
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "P",
+                                 palette = palette)
+        
+        return img
+
+    pge02c.prequisites = set(["CloudType", 10.8])
+        
+    def pge02c_with_overlay(self):
+        """Same as :meth:`pge02c` with borders overlay.
+        """
+        self.check_channels([10.8, "CloudType"])
+
+        img = self.pge02c()
+
+        img.add_overlay()
+
+        return img
+
+    pge02c_with_overlay.prerequisites = set(["CloudType", 10.8])
+
+    def pge02d(self):
+        """Same as :meth:`pge02c` with transparent cloud-free areas.
+        """
+        self.check_channels([10.8, "CloudType"])
+
+        ctype = self["CloudType"].data
+
+        img = self.pge02c()
+
+        alpha = np.ma.where(ctype < 5, 0.0, 1.0)
+        alpha = np.ma.where(ctype == 15, 0.5, alpha)
+        alpha = np.ma.where(ctype == 19, 0.5, alpha)
+
+        img.putalpha(alpha)
+        
+        return img
+        
+    pge02d.prerequisites = set(["CloudType", 10.8])
+        
+    def pge02e(self):
+        """Same as :meth:`pge02d` with clouds as in :meth:`overview`.
+        """
+        self.check_channels([0.6, 0.8, 10.8, "CloudType"])
+
+        img = self.overview()
+
+        ctype = self["CloudType"].data
+
+        alpha = np.ma.where(ctype < 5, 0.0, 1.0)
+        alpha = np.ma.where(ctype == 15, 0.5, alpha)
+        alpha = np.ma.where(ctype == 19, 0.5, alpha)
+
+        img.putalpha(alpha)
+        
+        return img
+
+    pge02e.prerequisites = set(["CloudType", 0.6, 0.8, 10.8])    
+
+    def pge03(self):
+        """Make an RGB composite of the CTTH.
+        """
+        self.check_channels(["CTTH"])
+
+        ctth = self["CTTH"].data
+        
+        arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
+        ctth_data = np.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)
+        ctth_data = np.ma.array(ctth_data)
+
+        palette = palettes.ctth_height()
+
+        img = geo_image.GeoImage(ctth_data.astype(np.uint8),
+                                 self.area,
+                                 self.time_slot,
+                                 mode = "P",
+                                 palette = palette)
+
+        return img
+        
+    pge03.prerequisites = set(["CTTH"])    
 
     def project(self, dest_area, channels = None):
         """Make a copy of the current snapshot projected onto the

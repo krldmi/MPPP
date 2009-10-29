@@ -1,8 +1,8 @@
 ============================================
- Geographical coverage: :mod:`msg_coverage`
+ Geographical coverage: :mod:`coverage`
 ============================================
 
-.. automodule:: msg_coverage
+.. automodule:: coverage
    :members:
    :undoc-members:
 

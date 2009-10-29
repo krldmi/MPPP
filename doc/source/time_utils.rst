@@ -1,5 +1,6 @@
-Time utilities: :mod:`time_utils`
-=================================
+===================================
+ Time utilities: :mod:`time_utils`
+===================================
 
 .. automodule:: time_utils
    :members:

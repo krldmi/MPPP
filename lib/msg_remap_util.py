@@ -16,37 +16,6 @@ class SeviriChannelData:
 
 
 # ------------------------------------------------------------------
-# Read raw (unprojected BT&RAD or REF) SEVIRI channel data from hdf5
-def read_raw_channels_hdf5(filename):
-    import _pyhl
-    aNodeList=_pyhl.read_nodelist(filename)
-    aNodeList.selectAll()
-    aNodeList.fetch()
-
-    retv = SeviriChannelData()
-
-    # Get the info dictionary:
-    aNode=aNodeList.getNode("/info/description")
-    retv.info["description"]=aNode.data()
-    aNode=aNodeList.getNode("/info/nodata")
-    retv.info["nodata"]=aNode.data()
-    aNode=aNodeList.getNode("/info/num_of_columns")
-    retv.info["num_of_columns"]=aNode.data()
-    aNode=aNodeList.getNode("/info/num_of_rows")
-    retv.info["num_of_rows"]=aNode.data()
-
-    # Crude test to check if there are Tb's and Rad's or Refl's:
-    if retv.info["description"].find("Reflectivities") >= 0:
-        print "Channel is VIS/NIR"
-        retv.ref = aNode=aNodeList.getNode("/ref").data()
-    else:
-        print "Channel is IR"
-        retv.rad = aNode=aNodeList.getNode("/rad").data()
-        retv.bt = aNode=aNodeList.getNode("/bt").data()
-        
-    return retv
-
-# ------------------------------------------------------------------
 def read_msg_lonlat(geofile):
     import numpy
     

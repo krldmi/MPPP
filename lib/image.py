@@ -9,6 +9,7 @@ import numpy as np
 import shutil
 import logging
 import logging.config
+import errno as err
 
 from msgpp_config import APPLDIR
 import misc_utils
@@ -114,53 +115,81 @@ class Image(object):
         os.rename(tmpfilename, filename)
         os.chmod(filename, 0644)
 
-
     def double_save(self, local_filename, remote_filename):
         """Save the current image to *local_filename*, then copy it to
         *remote_filename*, using a temporary file at first, then renaming it to
-        the final remote filename. See also :meth:`save` and
-        :meth:`secure_save`.
+        the final remote filename. See also :meth:`GeoImage.save` and
+        :meth:`GeoImage.secure_save`.
         """
         self.secure_save(local_filename)
-
         misc_utils.ensure_dir(remote_filename)
 
-        file, ext = os.path.splitext(remote_filename)
-        path, file = os.path.split(remote_filename)
-        trash, tmpfilename = tempfile.mkstemp(suffix = ext,
-                                              dir = path)
+        trash, ext = os.path.splitext(remote_filename)
+        path, trash = os.path.split(remote_filename)
+        trash, tmpfilename = tempfile.mkstemp(suffix = ext, dir = path)
+        del trash
 
         try:
-            shutil.copy(local_filename, tmpfilename)
-        except IOError, (errno, strerror):
-            import errno as err
-            LOG.error("Copying file %s to %s failed"
-                      %(local_filename, tmpfilename))
-            LOG.error("I/O error(%d): %s"%(errno, strerror))
+            os.chmod(tmpfilename, 0644)
+        except OSError, (errno, strerror):
+            LOG.error("Could not chmod %s !\n"
+                      "OS error(%d): %s"
+                      %(tmpfilename, errno, strerror))
             if errno == err.ESTALE:
-                log.info("Retrying once...")
+                LOG.info("Retrying...")
+                try:
+                    os.chmod(tmpfilename, 0644)
+                    LOG.info("Success! Continuing...")
+                except OSError, (errno, strerror):
+                    LOG.error("Chmoding file %s failed\n"
+                              "OS error(%d): %s"
+                              %(tmpfilename, errno, strerror))
+                    LOG.info("Retry did not succeed, skipping.")
+                    
+        try:
+            shutil.copy(local_filename, tmpfilename)
+        except (IOError, OSError), (errno, strerror):
+            LOG.error("Copying file %s to %s failed"
+                      "I/O error(%d): %s"
+                      %(local_filename, tmpfilename, errno, strerror))
+            if errno == err.ESTALE:
+                LOG.info("Retrying...")
                 try:
                     shutil.copy(local_filename, tmpfilename)
+                    LOG.info("Success! Continuing...")
                 except IOError, (errno, strerror):
-                    LOG.error("Copying file %s to %s failed"
-                              %(local_filename,tmpfilename))
-                    LOG.error("I/O error(%d): %s"%(errno, strerror))
+                    LOG.error("Copying file %s to %s failed.\n"
+                              "I/O error(%d): %s"
+                              %(local_filename, tmpfilename, errno, strerror))
                     LOG.info("Retry did not succeed, skipping.")
 
 
         try:
-            os.chmod(remote_filename, 0644)
             os.rename(tmpfilename, remote_filename)
-        except OSError:
+        except OSError, (errno, strerror):
             LOG.error("Could not rename to %s !"%remote_filename)
-            if os.path.isfile(remote_filename):
+            LOG.error("OS error(%d): %s"%(errno, strerror))
+
+            if errno == err.ESTALE:
+                LOG.info("Retrying...")
+                try:
+                    os.rename(tmpfilename, remote_filename)
+                    LOG.info("Success! Continuing...")
+                except OSError, (errno, strerror):
+                    LOG.error("Could not rename to %s !\n"
+                              "OS error(%d): %s"
+                              %(remote_filename, errno, strerror))
+                    LOG.info("Retry did not succeed, skipping.")
+
+            elif os.path.isfile(remote_filename):
                 LOG.warning("The file already exists, skipping...")
+
             elif not os.path.isfile(tmpfilename):
                 LOG.error("Copy to %s, failed ! skipping..."%tmpfilename)
+
             if os.path.isfile(tmpfilename):
                 LOG.warning("Temp file is %s, removing it."%tmpfilename)
                 os.remove(tmpfilename)
-
 
     def save(self, filename):
         """Save the image to the given *filename*. See also
@@ -505,9 +534,7 @@ class Image(object):
         """Stretch the current image's colors by performing histogram
         equalization on channel *ch_nb*.
         """
-        com.msgwrite_log("INFO",
-                         "Perform a histogram equalized contrast stretch.",
-                         moduleid=MODULE_ID)
+        LOG.info("Perform a histogram equalized contrast stretch.")
 
         arr = self.channels[ch_nb]
 
@@ -529,9 +556,7 @@ class Image(object):
         """Stretch linearly the contrast of the current image on channel
         *ch_nb*, using *cutoffs* for left and right trimming.
         """
-        com.msgwrite_log("INFO",
-                         "Perform a linear contrast stretch.",
-                         moduleid=MODULE_ID)
+        LOG.info("Perform a linear contrast stretch.")
 
         nwidth = 2048.0
 
@@ -561,19 +586,15 @@ class Image(object):
 
         right = bins[i+1]
         delta_x = (right - left)
-        com.msgwrite_log("INFO",
-                         "Interval: left=%f,right=%f width=%f"%
-                         (left,right,delta_x),
-                         moduleid=MODULE_ID)
+        LOG.debug("Interval: left=%f,right=%f width=%f"
+                  %(left,right,delta_x))
+
         if delta_x > 0.0:
             self.channels[ch_nb] = np.ma.array((arr - left) / delta_x, 
                                                mask = arr.mask)
         else:
             self.channels[ch_nb] = np.ma.zeros(arr.shape)
-            com.msgwrite_log("WARNING",
-                             "Unable to make a contrast stretch!",
-                             moduleid=MODULE_ID)
-
+            LOG.warning("Unable to make a contrast stretch!")
 
     def crude_stretch(self, ch_nb, min_stretch = None, max_stretch = None):
         """Perform simple linear stretching (without any cutoff) on the channel

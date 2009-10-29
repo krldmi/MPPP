@@ -6,13 +6,16 @@ import os
 import numpy as np
 import logging
 import logging.config
-from msgpp_config import APPLDIR
+import glob
 
+from msgpp_config import APPLDIR
 import py_msg
 from satellite import SatelliteSnapshot, SatelliteChannel
 import geo_image
 import msgpp_config
 import time_utils
+import msg_ctype
+import msg_ctth
 
 logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
 LOG = logging.getLogger("pp.meteosat09")
@@ -81,6 +84,10 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
                 except KeyError:
                     if chn == "_IR39Corr":
                         do_correct = True
+                    elif chn == "CloudType":
+                        self.channels.append(self.cloudtype())
+                    elif chn == "CTTH":
+                        self.channels.append(self.ctth())
                     else:
                         LOG.warning("Channel "+str(chn)+" not found,"
                                     "thus not loaded.")
@@ -104,7 +111,85 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         if do_correct:
             self.channels.append(self.co2corr())
         LOG.info("Loading channels done.")
+
+    def ctth(self):
+        """Load the ctth into the channel list.
+        """
+        time_string = time_utils.time_string(self.time_slot)
+
+        prefix = ("SAFNWC_MSG?_CTTH_%s_%s"%(time_string, self.area))
+
+        msgctth_filename = None
+        for ext in msgpp_config.MSG_PGE_EXTENTIONS:
+            match_str = ("%s/%s.%s"
+                         %(msgpp_config.CTTHDIR_IN, prefix, ext))
+            LOG.info("file-match: %s"%match_str)
+            flist = glob.glob(match_str)
+
+            if len(flist) > 1:
+                LOG.error("More than one matching input file: N = %d"
+                          %len(flist))
+                raise RuntimeError("Cannot choose input CTTH file.")
+            elif len(flist) == 0:
+                LOG.warning("No matching input file.")
+            else:
+                # File found:
+                LOG.info("MSG CTTH file found: %s"%flist[0])
+                msgctth_filename = flist[0]
+                break
+             
+        if msgctth_filename is not None:
+            # Read the MSG file if not already done...
+            LOG.info("Read MSG CTTH file: %s"%msgctth_filename)
+            self.channels.append(SatelliteChannel(resolution = 3000,
+                                                  wavelength_range = (0,0,0),
+                                                  name = "CTTH"))
+            self["CTTH"].add_data(msg_ctth.msgCTTH())
+            self["CTTH"].data.read_msgCtth(msgctth_filename)
+        else:
+            LOG.error("No MSG CT input file found!")
+            raise RuntimeError("No input CTTH file.")
+
+    def cloudtype(self):
+        """Load cloudtype information into the current object.
+        """
+        time_string = time_utils.time_string(self.time_slot)
+
+        prefix = ("SAFNWC_MSG?_CT___%s_%s"%(time_string, self.area))
         
+        msgctype_filename = None
+        
+        for ext in msgpp_config.MSG_PGE_EXTENTIONS:
+            match_str = ("%s/%s.%s"%(msgpp_config.CTYPEDIR_IN, prefix, ext))
+            LOG.info("file-match: %s"%match_str)
+            flist = glob.glob(match_str)
+
+            if len(flist) > 1:
+                LOG.error("More than one matching input file: N = %d"
+                          %len(flist))
+                raise RuntimeError("Cannot choose input CType file.")
+            elif len(flist) == 0:
+                LOG.warning("No matching input file")
+            else:
+                # File found:
+                LOG.info("MSG CT file found: %s"%flist[0])
+                msgctype_filename = flist[0]
+                break
+
+        if msgctype_filename is not None:
+            # Read the MSG file if not already done...
+            LOG.info("Read MSG CT file: %s"%msgctype_filename)
+            
+            self.channels.append(SatelliteChannel(resolution = 3000,
+                                                  wavelength_range = (0,0,0),
+                                                  name = "CloudType"))
+            ctype = msg_ctype.msgCloudType().read_msgCtype(msgctype_filename)
+            self["CloudType"].add_data(msg_ctype.msg_ctype2ppsformat(ctype))
+        else:
+            LOG.error("No MSG CT input file found!")
+            raise RuntimeError("No input CType file.")
+
+
     def co2corr(self):
         """CO2 correction of the brightness temperature of the MSG 3.9um
         channel:
@@ -112,7 +197,6 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
         Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
         dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
-        
         """
         try:
             self.check_channels(3.9, 10.8, 13.4)
@@ -247,15 +331,15 @@ _dummy.prerequisites = set([])
 if __name__ == "__main__":
     import datetime
     T = datetime.datetime(2009, 10, 8, 14, 30)
-    A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
-    A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
+    #A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
+    #A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
     #A.load(A.red_snow.prerequisites)
     #print "loading done"
     #print A[0.6]
     #print A[0.8]
     #print A[10.8]
     #print A.overview.prerequisites
-    A.wv_low().save("./test.png")
+    #A.wv_low().save("./test.png")
     #A.red_snow().save("./test.png")
     #A.overview().save("./test.png")
 

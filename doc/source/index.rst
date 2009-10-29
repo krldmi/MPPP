@@ -10,17 +10,24 @@
 .. toctree::
    :maxdepth: 2
 
-   satellite
-   msg_data
-   msg_coverage
-   image
-   geo_image
+   quickstart
+   satellites_h
+   coverage
+   rs_images
    time_utils
+   ctype
+   ctth
+   misc_utils
+   palettes
 
 Introduction
 ============
+        
+This is the documentation for the Post Processing package.
 
-This is the documentation for the Post Processing package, MSG part.
+
+
+
 
 
 Indices and tables
@@ -31,52 +38,5 @@ Indices and tables
 * :ref:`search`
 
 
-MSG_rgb_remap_all_Oper
-======================
 
-.. automodule:: msg_rgb_remap_all_Oper
-   :members:
-   :undoc-members:
-
-MSG_remap_all_Oper
-==================
-
-.. automodule:: msg_remap_all_Oper
-   :members:
-   :undoc-members:
-
-MSG_communications
-==================
-
-.. automodule:: msg_communications
-   :members:
-   :undoc-members:
-
-MSG_ctype
-=========
-
-.. automodule:: msg_ctype
-   :members:
-   :undoc-members:
-
-MSG_ctth
-========
-
-.. automodule:: msg_ctth
-   :members:
-   :undoc-members:
-
-MSG_remap_util
-==============
-
-.. automodule:: msg_remap_util
-   :members:
-   :undoc-members:
-
-misc_utils
-==========
-
-.. automodule:: misc_utils
-   :members:
-   :undoc-members:
 

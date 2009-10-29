@@ -166,22 +166,21 @@ class msgCloudType:
         aNode=aNodeList.getNode("/CT_QUALITY/ID")
         self.processing_flags.id=aNode.data()
         # ------------------------
+
+    def save_cloudtype(self,filename):
+        ctype = msg_ctype2ppsformat(self)
+        msg_communications.msgwrite_log("INFO",
+                                        "Saving CType hdf file...",
+                                        moduleid=MODULE_ID)
+        epshdf.write_cloudtype(filename, ctype, 6)
+        msg_communications.msgwrite_log("INFO",
+                                        "Saving CType hdf file done !",
+                                        moduleid=MODULE_ID)
+
     
     def project(self,coverage,dest_area):
-        """
-        Remaps the NWCSAF/MSG Cloud Type to cartographic map-projection on
+        """Remaps the NWCSAF/MSG Cloud Type to cartographic map-projection on
         area give by a pre-registered area-id. Faster version of msg_remap!
-        
-        @type coverage: Coverage type
-        @param coverage: xxx
-        @type msgctype: msgCloudType instance
-        @param msgctype: NWCSAF/MSG Cloud Type instance 
-        @type dest_area: String
-        @param dest_area: Area id of output result
-        @type a: area instance
-        @param a: Area instance of output area
-        @rtype: msgCloudType instance
-        @return: NWCSAF/MSG Cloud Type instance
         """
         import string
         import area
@@ -416,25 +415,6 @@ def msg_remap(msgctype,lon,lat,areaid):
     msgctype.cloudphase.data = _satproj.project(b.coverage,b.rowidx,b.colidx,msgctype.cloudphase.data)
     msgctype.processing_flags.data = _satproj.project(b.coverage,b.rowidx,b.colidx,msgctype.processing_flags.data)    
     del b
-
-    msgctype.region_name = areaid
-    msgctype.projection_name = a.pcs.id
-    msgctype.num_of_columns = a.xsize
-    msgctype.num_of_lines = a.ysize
-    msgctype.cloudtype.num_of_columns = a.xsize
-    msgctype.cloudtype.num_of_lines = a.ysize
-    msgctype.cloudphase.num_of_columns = a.xsize
-    msgctype.cloudphase.num_of_lines = a.ysize
-    msgctype.processing_flags.num_of_columns = a.xsize
-    msgctype.processing_flags.num_of_lines = a.ysize    
-
-    return msgctype
-
-# ------------------------------------------------------------------
-def OLDmsgCtype_remap_fast(cov,msgctype,areaid,a):
-    msgctype.cloudtype.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.cloudtype.data)
-    msgctype.cloudphase.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.cloudphase.data)
-    msgctype.processing_flags.data = _satproj.project(cov.coverage,cov.rowidx,cov.colidx,msgctype.processing_flags.data)    
 
     msgctype.region_name = areaid
     msgctype.projection_name = a.pcs.id
