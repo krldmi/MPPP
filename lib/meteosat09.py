@@ -247,15 +247,15 @@ _dummy.prerequisites = set([])
 if __name__ == "__main__":
     import datetime
     T = datetime.datetime(2009, 10, 8, 14, 30)
-    #A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
-    #A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
+    A = MeteoSatSeviriSnapshot(area = "EuropeCanary", time_slot = T)
+    A.load([0.6, 0.8, 10.8, 6.2, 7.3, 9.7, 38.0])
     #A.load(A.red_snow.prerequisites)
     #print "loading done"
     #print A[0.6]
     #print A[0.8]
     #print A[10.8]
     #print A.overview.prerequisites
-    #A.overview()
+    A.wv_low().save("./test.png")
     #A.red_snow().save("./test.png")
     #A.overview().save("./test.png")
 
@@ -270,7 +270,7 @@ if __name__ == "__main__":
         "nightfog": metsat_data.night_fog,
         "convection": metsat_data.convection,
         "airmass": metsat_data.airmass,
-        "ir108": metsat_data.ir108,
+        "ir9": metsat_data.ir108,
         "wv_low": metsat_data.wv_low,
         "wv_high": metsat_data.wv_high,
         "greensnow": metsat_data.green_snow,
@@ -289,12 +289,52 @@ if __name__ == "__main__":
 
     metsat_data.load(_channels)
     
+    LOG.debug("Loaded %s"%metsat_data.loaded_channels())
+
     for akey in PRODUCTS:
         if akey == "globe":
             continue
         _channels = set([])
         for pkey in PRODUCTS[akey]:
+            LOG.debug("Getting prerequisites for %s."%pkey)
             fun = cases.get(pkey, _dummy)
             _channels |= fun.prerequisites
         local_data = metsat_data.project(akey, _channels)
-        
+        cases = {
+            "overview": local_data.overview,
+            "natural": local_data.natural,
+            "fog": local_data.fog,
+            "nightfog": local_data.night_fog,
+            "convection": local_data.convection,
+            "airmass": local_data.airmass,
+            "ir9": local_data.ir108,
+            "wv_low": local_data.wv_low,
+            "wv_high": local_data.wv_high,
+            "greensnow": local_data.green_snow,
+            "redsnow": local_data.red_snow,
+            "cloudtop": local_data.cloudtop,
+            "hr_overview": local_data.hr_overview
+            }
+
+        for pkey in PRODUCTS[akey]:
+            LOG.debug("Getting prerequisites for %s."%pkey)
+            fun = cases.get(pkey, _dummy)
+
+            LOG.info("Running %s..."%pkey)
+            rgb = fun()
+            LOG.info("Done running %s."%pkey)
+            if rgb is not None:
+                for filename in PRODUCTS[akey][pkey]:
+                    if(isinstance(filename, tuple) and
+                       len(filename) == 2):
+                        filename0 = T.strftime(filename[0])
+                        filename1 = T.strftime(filename[1])
+                        LOG.info("Saving to %s."%(filename0))
+                        LOG.info("Saving to %s."%(filename1))
+                        rgb.double_save(filename0, filename1)
+                        LOG.info("Savings done.")
+                    else:
+                        filename0 = T.strftime(filename)
+                        LOG.info("Saving to %s."%(filename0))
+                        rgb.secure_save(filename0)
+                        LOG.info("Saving done.")

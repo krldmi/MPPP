@@ -7,10 +7,15 @@ import tempfile
 import Image as Pil
 import numpy as np
 import shutil
-import misc_utils
-import msg_communications as com
+import logging
+import logging.config
 
-MODULE_ID = "IMAGE"
+from msgpp_config import APPLDIR
+import misc_utils
+
+logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
+LOG = logging.getLogger("pp.image")
+
 
 class Image(object):
     """This class defines images. As such, it contains data of the different
@@ -109,166 +114,52 @@ class Image(object):
         os.rename(tmpfilename, filename)
         os.chmod(filename, 0644)
 
+
     def double_save(self, local_filename, remote_filename):
         """Save the current image to *local_filename*, then copy it to
         *remote_filename*, using a temporary file at first, then renaming it to
         the final remote filename. See also :meth:`save` and
         :meth:`secure_save`.
         """
-        self.save(local_filename)
+        self.secure_save(local_filename)
 
         misc_utils.ensure_dir(remote_filename)
 
-        trash, ext = os.path.splitext(remote_filename)
-        path, trash = os.path.split(remote_filename)
+        file, ext = os.path.splitext(remote_filename)
+        path, file = os.path.split(remote_filename)
         trash, tmpfilename = tempfile.mkstemp(suffix = ext,
                                               dir = path)
-        del trash
+
         try:
             shutil.copy(local_filename, tmpfilename)
         except IOError, (errno, strerror):
             import errno as err
-            com.msgwrite_log("ERROR", 
-                             "Copying file %s to %s failed"%
-                             (local_filename,tmpfilename),
-                             moduleid=MODULE_ID)
-            com.msgwrite_log("ERROR",
-                             "I/O error(%d): %s"%
-                             (errno, strerror),
-                             moduleid=MODULE_ID)
+            LOG.error("Copying file %s to %s failed"
+                      %(local_filename, tmpfilename))
+            LOG.error("I/O error(%d): %s"%(errno, strerror))
             if errno == err.ESTALE:
-                com.msgwrite_log("INFO",
-                                 "Retrying once...",
-                                 moduleid=MODULE_ID)
+                log.info("Retrying once...")
                 try:
                     shutil.copy(local_filename, tmpfilename)
-                    com.msgwrite_log("INFO",
-                                     "Worked this time.",
-                                     moduleid=MODULE_ID)
                 except IOError, (errno, strerror):
-                    com.msgwrite_log("ERROR",
-                                     "Copying file %s to %s failed"%
-                                     (local_filename,tmpfilename),
-                                     moduleid=MODULE_ID)
-                    com.msgwrite_log("ERROR",
-                                     "I/O error(%d): %s"%
-                                     (errno, strerror),
-                                     moduleid=MODULE_ID)
-                    com.msgwrite_log("INFO",
-                                     "Retry did not succeed, skipping.",
-                                     moduleid=MODULE_ID)
-            else:
-                com.msgwrite_log("WARNING",
-                                 "Error not handled, skipping...",
-                                 moduleid=MODULE_ID)
-        except OSError, (errno, strerror):
-            import errno as err
-            com.msgwrite_log("ERROR",
-                             "Copying file %s to %s failed"%
-                             (local_filename,tmpfilename),
-                             moduleid=MODULE_ID)
-            com.msgwrite_log("ERROR",
-                             "OS error(%d): %s"%
-                             (errno, strerror),
-                             moduleid=MODULE_ID)
-            if errno == err.ESTALE:
-                com.msgwrite_log("INFO",
-                                 "Retrying once...",
-                                 moduleid=MODULE_ID)
-                try:
-                    shutil.copy(local_filename, tmpfilename)
-                    com.msgwrite_log("INFO",
-                                     "Worked this time.",
-                                     moduleid=MODULE_ID)
-                except OSError, (errno, strerror):
-                    com.msgwrite_log("ERROR",
-                                     "Copying file %s to %s failed"%
-                                     (local_filename,tmpfilename),
-                                     moduleid=MODULE_ID)
-                    com.msgwrite_log("ERROR",
-                                     "OS error(%d): %s"%
-                                     (errno, strerror),
-                                     moduleid=MODULE_ID)
-                    com.msgwrite_log("INFO",
-                                     "Retry did not succeed, skipping.",
-                                     moduleid=MODULE_ID)
-            else:
-                com.msgwrite_log("WARNING",
-                                 "Error not handled, skipping...",
-                                 moduleid=MODULE_ID)
-       
+                    LOG.error("Copying file %s to %s failed"
+                              %(local_filename,tmpfilename))
+                    LOG.error("I/O error(%d): %s"%(errno, strerror))
+                    LOG.info("Retry did not succeed, skipping.")
+
 
         try:
-            os.rename(tmpfilename, remote_filename)
-        except OSError, (errno, strerror):
-            com.msgwrite_log("ERROR", 
-                             "Could not rename to %s !"%
-                             remote_filename,
-                             moduleid=MODULE_ID)
-            com.msgwrite_log("ERROR", 
-                             "OS error(%d): %s"%
-                             (errno, strerror),
-                             moduleid=MODULE_ID)
-            if errno == err.ESTALE:
-                com.msgwrite_log("INFO",
-                                 "Retrying once...",moduleid=MODULE_ID)
-                try:
-                    os.rename(tmpfilename, remote_filename)
-                    com.msgwrite_log("INFO",
-                                     "Worked this time.",
-                                     moduleid=MODULE_ID)
-                except OSError, (errno, strerror):
-                    com.msgwrite_log("ERROR",
-                                     "Renaming from %s to %s failed"%
-                                     (tmpfilename, remote_filename),
-                                     moduleid=MODULE_ID)
-                    com.msgwrite_log("ERROR",
-                                     "OS error(%d): %s"%
-                                     (errno, strerror),
-                                     moduleid=MODULE_ID)
-                    com.msgwrite_log("INFO",
-                                     "Retry did not succeed, skipping.",
-                                     moduleid=MODULE_ID)
-            
-            elif os.path.isfile(remote_filename):
-                com.msgwrite_log("WARNING",
-                                 "The file already exists, skipping...",
-                                 moduleid=MODULE_ID)
-            elif not os.path.isfile(tmpfilename):
-                com.msgwrite_log("ERROR",
-                                 "Copy to %s, failed ! skipping..."%
-                                 tmpfilename,
-                                 moduleid=MODULE_ID)
-            if os.path.isfile(tmpfilename):
-                com.msgwrite_log("WARNING", "Temp file is %s, removing it."%
-                                 tmpfilename,
-                                 moduleid=MODULE_ID)
-                os.remove(tmpfilename)
-                
-        try:
             os.chmod(remote_filename, 0644)
-        except OSError, (errno, strerror):
-            com.msgwrite_log("ERROR", "Could not chmod %s !"%
-                             remote_filename,
-                             moduleid=MODULE_ID)
-            com.msgwrite_log("ERROR", "OS error(%d): %s"%
-                             (errno, strerror),
-                             moduleid=MODULE_ID)
-            if errno == err.ESTALE:
-                com.msgwrite_log("INFO", 
-                                 "Retrying once...", 
-                                 moduleid=MODULE_ID)
-                try:
-                    os.chmod(remote_filename, 0644)
-                    com.msgwrite_log("INFO", "Worked this time.",
-                                     moduleid=MODULE_ID)
-                except OSError, (errno, strerror):
-                    com.msgwrite_log("ERROR", "Could not chmod %s"%
-                                     (remote_filename),moduleid=MODULE_ID)
-                    com.msgwrite_log("ERROR", "OS error(%d): %s"%
-                                     (errno, strerror),moduleid=MODULE_ID)
-                    com.msgwrite_log("INFO", "Retry did not succeed, skipping.",
-                                     moduleid=MODULE_ID)
+            os.rename(tmpfilename, remote_filename)
+        except OSError:
+            LOG.error("Could not rename to %s !"%remote_filename)
+            if os.path.isfile(remote_filename):
+                LOG.warning("The file already exists, skipping...")
+            elif not os.path.isfile(tmpfilename):
+                LOG.error("Copy to %s, failed ! skipping..."%tmpfilename)
+            if os.path.isfile(tmpfilename):
+                LOG.warning("Temp file is %s, removing it."%tmpfilename)
+                os.remove(tmpfilename)
 
 
     def save(self, filename):
@@ -644,18 +535,18 @@ class Image(object):
 
         nwidth = 2048.0
 
+
         arr = self.channels[ch_nb]
 
         carr = arr.compressed()
-
-        hist, bins = np.histogram(carr, nwidth)
+        hist, bins = np.histogram(carr, nwidth, new = True)
 
         ndim = carr.size
 
         left = 0
         hist_sum = 0.0
         i = 0
-        while i <= nwidth and sum < cutoffs[0]*ndim:
+        while i <= nwidth and hist_sum < cutoffs[0]*ndim:
             hist_sum = hist_sum + hist[i]
             i = i + 1
 
@@ -664,7 +555,7 @@ class Image(object):
         right = 0
         hist_sum = 0.0
         i = nwidth - 1
-        while i >= 0 and sum < cutoffs[1]*ndim:
+        while i >= 0 and hist_sum < cutoffs[1]*ndim:
             hist_sum = hist_sum + hist[i]
             i = i - 1
 

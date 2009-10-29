@@ -103,10 +103,11 @@ class SatelliteChannel(object):
             LOG.info("Projecting channel %s (%fum)..."
                      %(self.name, self.wavelength_range[1]))
             res.data = coverage.project_array(self.data)
+            return res
         else:
             raise RuntimeError("Can't project, channel %s (%fum) not loaded."
                                %(self.name, self.wavelength_range[1]))
-
+        
 
 class SatelliteInstrument(Satellite):
     """This is the satellite instrument class.
@@ -118,6 +119,7 @@ class SatelliteInstrument(Satellite):
         self.channels = []
 
     def __getitem__(self, key, aslist = False):
+        LOG.debug("Getting item %s."%key)
         if(isinstance(key, float)):
             channels = [chn for chn in self.channels
                         if(chn.wavelength_range[0] <= key and
