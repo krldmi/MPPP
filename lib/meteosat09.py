@@ -79,16 +79,16 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
 
         elif(isinstance(channels, (list, tuple, set))):
             for chn in channels:
-                try:
-                    _channels |= set([self[chn].name])
-                except KeyError:
-                    if chn == "_IR39Corr":
-                        do_correct = True
-                    elif chn == "CloudType":
-                        self.channels.append(self.cloudtype())
-                    elif chn == "CTTH":
-                        self.channels.append(self.ctth())
-                    else:
+                if chn == "_IR39Corr":
+                    do_correct = True
+                elif chn == "CloudType":
+                    self.channels.append(self.cloudtype())
+                elif chn == "CTTH":
+                    self.channels.append(self.ctth())
+                else:
+                    try:
+                        _channels |= set([self[chn].name])
+                    except KeyError:
                         LOG.warning("Channel "+str(chn)+" not found,"
                                     "thus not loaded.")
         else:
@@ -113,7 +113,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         LOG.info("Loading channels done.")
 
     def ctth(self):
-        """Load the ctth into the channel list.
+        """Create and return a ctth channel.
         """
         time_string = time_utils.time_string(self.time_slot)
 
@@ -141,17 +141,19 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         if msgctth_filename is not None:
             # Read the MSG file if not already done...
             LOG.info("Read MSG CTTH file: %s"%msgctth_filename)
-            self.channels.append(SatelliteChannel(resolution = 3000,
-                                                  wavelength_range = (0,0,0),
-                                                  name = "CTTH"))
-            self["CTTH"].add_data(msg_ctth.msgCTTH())
-            self["CTTH"].data.read_msgCtth(msgctth_filename)
+            chan = SatelliteChannel(resolution = 3000,
+                                    wavelength_range = (0,0,0),
+                                    name = "CTTH")
+            ctth = msg_ctth.msgCTTH()
+            ctth.read_msgCtth(msgctth_filename)
+            chan.add_data(ctth)
+            return chan
         else:
             LOG.error("No MSG CT input file found!")
             raise RuntimeError("No input CTTH file.")
 
     def cloudtype(self):
-        """Load cloudtype information into the current object.
+        """Create and return a cloudtype channel.
         """
         time_string = time_utils.time_string(self.time_slot)
 
@@ -180,11 +182,13 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
             # Read the MSG file if not already done...
             LOG.info("Read MSG CT file: %s"%msgctype_filename)
             
-            self.channels.append(SatelliteChannel(resolution = 3000,
-                                                  wavelength_range = (0,0,0),
-                                                  name = "CloudType"))
-            ctype = msg_ctype.msgCloudType().read_msgCtype(msgctype_filename)
-            self["CloudType"].add_data(msg_ctype.msg_ctype2ppsformat(ctype))
+            chan = SatelliteChannel(resolution = 3000,
+                                    wavelength_range = (0,0,0),
+                                    name = "CloudType")
+            ctype = msg_ctype.msgCloudType()
+            ctype.read_msgCtype(msgctype_filename)
+            chan.add_data(msg_ctype.msg_ctype2ppsformat(ctype))
+            return chan
         else:
             LOG.error("No MSG CT input file found!")
             raise RuntimeError("No input CType file.")

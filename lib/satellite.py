@@ -80,7 +80,10 @@ class SatelliteChannel(object):
         """Set the data of the channel.
         """
         self.data = data
-        self.shape = data.shape
+        if isinstance(data, (np.ndarray, np.ma.core.MaskedArray)):
+            self.shape = data.shape
+        else:
+            self.shape = np.nan
 
     def isloaded(self):
         """Tells if a channel contains loaded data.
