@@ -38,8 +38,8 @@ We want more !
 ==============
 
 Now, this last step worked because the channels needed for the overview are
-loaded. If I try now to generate a natural color composite, it will result in
-an error::
+loaded. If we try to generate a natural color composite, it will result in an
+error::
 
    
    >>> img = global_data.natural()
@@ -79,12 +79,12 @@ and add as many `| global_data.mymethod.prerequisites` as needed.
 Retrieving channels
 ===================
 
-Retrieving channels is dead easy::
+Retrieving channels is dead easy. From the center wavelength::
 
    >>> global_data[0.6]
    'VIS06: lambda (0.560,0.635,0.710)um, shape (1200, 3000), resolution 3000m'
 
-or::
+or from the channel name::
 
    >>> global_data["VIS06"]
    'VIS06: lambda (0.560,0.635,0.710)um, shape (1200, 3000), resolution 3000m'
@@ -110,7 +110,7 @@ Here is how we do that::
     [INFO: 2009-10-30 10:31:53 : pp.satellite] Projecting channel IR108 (10.800000um)...
     [INFO: 2009-10-30 10:31:55 : pp.satellite] Projecting channel IR16 (1.640000um)...
 
-Now we have projected data in the `local_data` variable and we can operate as
+Now we have projected data onto the "eurol" area in the `local_data` variable and we can operate as
 before to generate and play with RGB composites.
 
 PGEs

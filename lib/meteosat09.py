@@ -16,6 +16,7 @@ import msgpp_config
 import time_utils
 import msg_ctype
 import msg_ctth
+from msg_ctype2radar import NordRadCType
 
 logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
 LOG = logging.getLogger("pp.meteosat09")
@@ -82,9 +83,11 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
                 if chn == "_IR39Corr":
                     do_correct = True
                 elif chn == "CloudType":
-                    self.channels.append(self.cloudtype())
+                    if chn not in self.channels:
+                        self.channels.append(self.cloudtype_channel())
                 elif chn == "CTTH":
-                    self.channels.append(self.ctth())
+                    if chn not in self.channels:
+                        self.channels.append(self.ctth_channel())
                 else:
                     try:
                         _channels |= set([self[chn].name])
@@ -112,7 +115,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
             self.channels.append(self.co2corr())
         LOG.info("Loading channels done.")
 
-    def ctth(self):
+    def ctth_channel(self):
         """Create and return a ctth channel.
         """
         time_string = time_utils.time_string(self.time_slot)
@@ -141,18 +144,15 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         if msgctth_filename is not None:
             # Read the MSG file if not already done...
             LOG.info("Read MSG CTTH file: %s"%msgctth_filename)
-            chan = SatelliteChannel(resolution = 3000,
-                                    wavelength_range = (0,0,0),
-                                    name = "CTTH")
-            ctth = msg_ctth.msgCTTH()
+            ctth = msg_ctth.MsgCTTH(resolution = 3000)
             ctth.read_msgCtth(msgctth_filename)
-            chan.add_data(ctth)
-            return chan
+            LOG.debug("MSG CTTH area: %s"%ctth.region_name)
+            return ctth
         else:
             LOG.error("No MSG CT input file found!")
             raise RuntimeError("No input CTTH file.")
 
-    def cloudtype(self):
+    def cloudtype_channel(self):
         """Create and return a cloudtype channel.
         """
         time_string = time_utils.time_string(self.time_slot)
@@ -179,16 +179,11 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
                 break
 
         if msgctype_filename is not None:
-            # Read the MSG file if not already done...
             LOG.info("Read MSG CT file: %s"%msgctype_filename)
-            
-            chan = SatelliteChannel(resolution = 3000,
-                                    wavelength_range = (0,0,0),
-                                    name = "CloudType")
-            ctype = msg_ctype.msgCloudType()
-            ctype.read_msgCtype(msgctype_filename)
-            chan.add_data(msg_ctype.msg_ctype2ppsformat(ctype))
-            return chan
+            ctype = msg_ctype.MsgCloudType(resolution = 3000)
+            ctype.read_msg_ctype(msgctype_filename)
+            LOG.debug("MSG CT area: %s"%ctype.region_name)
+            return ctype
         else:
             LOG.error("No MSG CT input file found!")
             raise RuntimeError("No input CType file.")
@@ -268,9 +263,9 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
                                  self.area,
                                  self.time_slot,
                                  mode = "RGB",
-                                 range = ((-4, 2),
-                                          (0, 6),
-                                          (243, 293)))
+                                 crange = ((-4, 2),
+                                           (0, 6),
+                                           (243, 293)))
         
         img.enhance(gamma = (1.0, 2.0, 1.0))
         img.clip()
@@ -322,8 +317,31 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         """
         if not isinstance(resolution, int):
             raise TypeError("Resolution must be an integer number of meters.")
-        channel = self[resolution]
+        channel = self[0.6, resolution]
         return py_msg.lat_lon_from_region(self.area, channel.name)
+
+    def cloudtype(self):
+        """Return the cloudtype.
+        """
+        return self["CloudType"]
+    
+    cloudtype.prerequisites = set(["CloudType"])
+
+    def nordrad(self):
+        """Return the cloudtype in NordRad format.
+        """
+        datestr = self.time_slot.strftime("%Y%m%d%H%M")
+        return NordRadCType(self["CloudType"], datestr)
+    
+    nordrad.prerequisites = set(["CloudType"])
+
+    def ctth(self):
+        """Return the ctth.
+        """
+        return self["CTTH"]
+    
+    ctth.prerequisites = set(["CTTH"])
+    
 
 def _dummy():
     """dummy function.
@@ -331,6 +349,28 @@ def _dummy():
     return None
 
 _dummy.prerequisites = set([])
+
+
+import Queue
+import threading
+
+queue = Queue.Queue()
+          
+class ThreadSave(threading.Thread):
+    """Threaded Url Grab"""
+    def __init__(self, myqueue):
+        threading.Thread.__init__(self)
+        self.queue = myqueue
+
+    def run(self):
+        """Run the thread.
+        """
+        while True:
+            tosave = self.queue.get()
+            tosave[0].save(tosave[1])
+            self.queue.task_done()
+
+
 
 if __name__ == "__main__":
     import datetime
@@ -364,10 +404,26 @@ if __name__ == "__main__":
         "greensnow": metsat_data.green_snow,
         "redsnow": metsat_data.red_snow,
         "cloudtop": metsat_data.cloudtop,
-        "hr_overview": metsat_data.hr_overview
+        "hr_overview": metsat_data.hr_overview,
+        "PGE02": metsat_data.pge02,
+        "PGE02b": metsat_data.pge02b,
+        "PGE02bj": metsat_data.pge02b_with_overlay,
+        "PGE02c": metsat_data.pge02c,
+        "PGE02cj": metsat_data.pge02c_with_overlay,
+        "PGE02d": metsat_data.pge02d,
+        "PGE02e": metsat_data.pge02e,
+        "PGE03": metsat_data.pge03,
+        "CtypeHDF": metsat_data.cloudtype,
+        "NordRad": metsat_data.nordrad,
+        "CtthHDF": metsat_data.ctth
         }
 
     _channels = set([])
+
+
+    t = ThreadSave(queue)
+    t.setDaemon(True)
+    t.start()
 
 
     for akey in PRODUCTS:
@@ -401,7 +457,18 @@ if __name__ == "__main__":
             "greensnow": local_data.green_snow,
             "redsnow": local_data.red_snow,
             "cloudtop": local_data.cloudtop,
-            "hr_overview": local_data.hr_overview
+            "hr_overview": local_data.hr_overview,
+            "PGE02": local_data.pge02,
+            "PGE02b": local_data.pge02b,
+            "PGE02bj": local_data.pge02b_with_overlay,
+            "PGE02c": local_data.pge02c,
+            "PGE02cj": local_data.pge02c_with_overlay,
+            "PGE02d": local_data.pge02d,
+            "PGE02e": local_data.pge02e,
+            "PGE03": local_data.pge03,
+            "CtypeHDF": local_data.cloudtype,
+            "NordRad": local_data.nordrad,
+            "CtthHDF": local_data.ctth
             }
 
         for pkey in PRODUCTS[akey]:
@@ -414,7 +481,8 @@ if __name__ == "__main__":
             if rgb is not None:
                 for filename in PRODUCTS[akey][pkey]:
                     if(isinstance(filename, tuple) and
-                       len(filename) == 2):
+                       len(filename) == 2 and
+                       isinstance(rgb, geo_image.GeoImage)):
                         filename0 = T.strftime(filename[0])
                         filename1 = T.strftime(filename[1])
                         LOG.info("Saving to %s."%(filename0))
@@ -424,5 +492,7 @@ if __name__ == "__main__":
                     else:
                         filename0 = T.strftime(filename)
                         LOG.info("Saving to %s."%(filename0))
-                        rgb.secure_save(filename0)
+                        queue.put((rgb, filename0))
+                        #rgb.save(filename0)
                         LOG.info("Saving done.")
+    queue.join()

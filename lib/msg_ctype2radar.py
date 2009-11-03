@@ -1,122 +1,135 @@
+"""Ctype2radar allow saving for nordrad format
+"""
 
-from msg_communications import *
 
-from msgpp_config import *
-from msg_ctype import *
+from msgpp_config import COMPRESS_LVL
+
+class NordRadCType(object):
+    """Wrapper aroud the msg_ctype channel.
+    """
+
+    def __init__(self, ctype_instance, datestr):
+        self.ctype = ctype_instance
+        self.datestr = datestr
+    
 
 # ------------------------------------------------------------------
-def msg_writectype2nordradformat(msgctype,filename,datestr,satid="Meteosat 8"):
-    import string
-    import _pyhl
-    status = 1
-    
-    a=_pyhl.nodelist()
+    def save(self, filename):
+        """Save the current instance to nordrad hdf format.
+        """
+        import _pyhl
+        status = 1
 
-    # What
-    b=_pyhl.node(_pyhl.GROUP_ID,"/what")
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/what/object")
-    b.setScalarValue(-1,"IMAGE","string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/what/sets")
-    b.setScalarValue(-1,1,"int",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/what/version")
-    b.setScalarValue(-1,"H5rad 1.2","string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/what/date")
-    #yyyymmdd = msgctype.nominal_product_time[0:8]
-    yyyymmdd = datestr[0:8]
-    hourminsec = datestr[8:12]+'00'
-    b.setScalarValue(-1,yyyymmdd,"string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/what/time")
-    b.setScalarValue(-1,hourminsec,"string",-1)
-    a.addNode(b)    
+        msgctype = self.ctype
 
-    # Where
-    b=_pyhl.node(_pyhl.GROUP_ID,"/where")
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/projdef")
-    b.setScalarValue(-1,msgctype.pcs_def,"string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/xsize")
-    b.setScalarValue(-1,msgctype.num_of_columns,"int",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/ysize")
-    b.setScalarValue(-1,msgctype.num_of_lines,"int",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/xscale")
-    b.setScalarValue(-1,msgctype.xscale,"float",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/yscale")
-    b.setScalarValue(-1,msgctype.yscale,"float",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/LL_lon")
-    b.setScalarValue(-1,msgctype.LL_lon,"float",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/LL_lat")
-    b.setScalarValue(-1,msgctype.LL_lat,"float",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/UR_lon")
-    b.setScalarValue(-1,msgctype.UR_lon,"float",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/where/UR_lat")
-    b.setScalarValue(-1,msgctype.UR_lat,"float",-1)
-    a.addNode(b)
+        node_list = _pyhl.nodelist()
 
-    # How
-    b=_pyhl.node(_pyhl.GROUP_ID,"/how")
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/how/area")
-    b.setScalarValue(-1,msgctype.region_name,"string",-1)
-    a.addNode(b)
+        # What
+        node = _pyhl.node(_pyhl.GROUP_ID, "/what")
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/what/object")
+        node.setScalarValue(-1, "IMAGE", "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/what/sets")
+        node.setScalarValue(-1, 1, "int", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/what/version")
+        node.setScalarValue(-1, "H5rad 1.2", "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/what/date")
+        yyyymmdd = self.datestr[0:8]
+        hourminsec = self.datestr[8:12]+'00'
+        node.setScalarValue(-1, yyyymmdd, "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/what/time")
+        node.setScalarValue(-1, hourminsec, "string", -1)
+        node_list.addNode(node)    
 
-    # image1
-    b=_pyhl.node(_pyhl.GROUP_ID,"/image1")
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.DATASET_ID,"/image1/data")
-    b.setArrayValue(1,[msgctype.num_of_columns,msgctype.num_of_lines],msgctype.cloudtype.data,"uchar",-1)
-    a.addNode(b)
+        # Where
+        node = _pyhl.node(_pyhl.GROUP_ID, "/where")
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/projdef")
+        node.setScalarValue(-1, msgctype.pcs_def, "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/xsize")
+        node.setScalarValue(-1, msgctype.num_of_columns, "int", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/ysize")
+        node.setScalarValue(-1, msgctype.num_of_lines, "int", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/xscale")
+        node.setScalarValue(-1, msgctype.xscale, "float", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/yscale")
+        node.setScalarValue(-1, msgctype.yscale, "float", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/LL_lon")
+        node.setScalarValue(-1, msgctype.ll_lon, "float", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/LL_lat")
+        node.setScalarValue(-1, msgctype.ll_lat, "float", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/UR_lon")
+        node.setScalarValue(-1, msgctype.ur_lon, "float", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/where/UR_lat")
+        node.setScalarValue(-1, msgctype.ur_lat, "float", -1)
+        node_list.addNode(node)
 
-    b=_pyhl.node(_pyhl.GROUP_ID,"/image1/what")
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/product")
-    # We should eventually try to use the msg-parameters "package", "product_algorithm_version", and "product_name":
-    b.setScalarValue(1,'MSGCT',"string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/prodpar")
-    b.setScalarValue(1,0.0,"float",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/quantity")
-    b.setScalarValue(1,"ct","string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/startdate")
-    b.setScalarValue(-1,yyyymmdd,"string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/starttime")
-    b.setScalarValue(-1,hourminsec,"string",-1)
-    a.addNode(b)    
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/enddate")
-    b.setScalarValue(-1,yyyymmdd,"string",-1)
-    a.addNode(b)
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/endtime")
-    b.setScalarValue(-1,hourminsec,"string",-1)
-    a.addNode(b)    
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/gain")
-    b.setScalarValue(-1,1.0,"float",-1)
-    a.addNode(b)    
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/offset")
-    b.setScalarValue(-1,0.0,"float",-1)
-    a.addNode(b)    
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/nodata")
-    b.setScalarValue(-1,0.0,"float",-1)
-    a.addNode(b)
-    # What we call missingdata in PPS:
-    b=_pyhl.node(_pyhl.ATTRIBUTE_ID,"/image1/what/undetect")
-    b.setScalarValue(-1,20.0,"float",-1)
-    a.addNode(b)    
-        
-    a.write(filename,COMPRESS_LVL)    
-    return status
+        # How
+        node = _pyhl.node(_pyhl.GROUP_ID, "/how")
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/how/area")
+        node.setScalarValue(-1, msgctype.region_name, "string", -1)
+        node_list.addNode(node)
+
+        # image1
+        node = _pyhl.node(_pyhl.GROUP_ID, "/image1")
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.DATASET_ID, "/image1/data")
+        node.setArrayValue(1, [msgctype.num_of_columns, msgctype.num_of_lines],
+                           msgctype.cloudtype.data, "uchar", -1)
+        node_list.addNode(node)
+
+        node = _pyhl.node(_pyhl.GROUP_ID, "/image1/what")
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/product")
+        #We should eventually try to use the msg-parameters "package",
+        #"product_algorithm_version", and "product_name":
+        node.setScalarValue(1, 'MSGCT', "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/prodpar")
+        node.setScalarValue(1, 0.0, "float", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/quantity")
+        node.setScalarValue(1, "ct", "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/startdate")
+        node.setScalarValue(-1, yyyymmdd, "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/starttime")
+        node.setScalarValue(-1, hourminsec, "string", -1)
+        node_list.addNode(node)    
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/enddate")
+        node.setScalarValue(-1, yyyymmdd, "string", -1)
+        node_list.addNode(node)
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/endtime")
+        node.setScalarValue(-1, hourminsec, "string", -1)
+        node_list.addNode(node)    
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/gain")
+        node.setScalarValue(-1, 1.0, "float", -1)
+        node_list.addNode(node)    
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/offset")
+        node.setScalarValue(-1, 0.0, "float", -1)
+        node_list.addNode(node)    
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/nodata")
+        node.setScalarValue(-1, 0.0, "float", -1)
+        node_list.addNode(node)
+        # What we call missingdata in PPS:
+        node = _pyhl.node(_pyhl.ATTRIBUTE_ID, "/image1/what/undetect")
+        node.setScalarValue(-1, 20.0, "float", -1)
+        node_list.addNode(node)    
+
+        node_list.write(filename, COMPRESS_LVL)    
+        return status
 

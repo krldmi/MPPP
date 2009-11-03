@@ -1,4 +1,4 @@
-"""This module defines the basic interface for satellites, satellite
+"""The satellite module defines the basic interface for satellites, satellite
 instruments, and satellite snapshots.
 """
 import numpy as np
@@ -21,24 +21,42 @@ class Satellite(object):
     """
     pass
 
-class SatelliteChannel(object):
-    """This is the satellite channel class.
+class GenericChannel(object):
+    """This is an abstract channel class.
     """
-
-    #Channel data.
-    data = None
-
-    #Name of the channel.
+    #: Name of the channel.
     name = None
 
-    #Operationnal wavelength range of the channel, in micrometers.
+    #: Channel resolution, in meters.
+    resolution = 0
+
+    def __cmp__(self, ch2):
+        if(isinstance(ch2, str)):
+            return cmp(self.name, ch2)
+        else:
+            return cmp(self.name, ch2.name)
+
+
+class SatelliteChannel(GenericChannel):
+    """This is the satellite channel class. It defines satellite channels as a
+    container tfor channel data. The data calibrated channels data or mor
+    elaborate such as cloudtype or CTTH.
+
+    The *resolution* sets the resolution of the channel, in meters. The
+    *wavelength_range* is a 3 member tuple, containing the lowest-, center-,
+    and highest-wavelength values of the channel. *name* is simply the given
+    name of the channel, and *data* is the data it should hold.
+    """
+
+    #: Channel data.
+    data = None
+
+    #: Operationnal wavelength range of the channel, in micrometers.
+    #: This is a triplet containing min-, central-, and max-wavelength.
     wavelength_range = None
 
-    #Shape of the channel data.
+    #: Shape of the channel data.
     shape = None
-
-    #Channel resolution, in meters.
-    resolution = 0
 
     def __init__(self, resolution = 0, 
                  wavelength_range = None, 
@@ -53,12 +71,15 @@ class SatelliteChannel(object):
             self.shape = None
 
     def __cmp__(self, ch2, key = 0):
-        if(self.name == ch2.name):
+        if(isinstance(ch2, str)):
+            return cmp(self.name, ch2)
+        elif(self.name == ch2.name):
             return 0
         elif(np.isnan(self.wavelength_range[1]) or
            self.name[0] == '_'):
             return 1
-        elif(np.isnan(ch2.wavelength_range[1]) or
+        elif(not hasattr(ch2,"wavelength_range") or
+             np.isnan(ch2.wavelength_range[1]) or
              ch2.name[0] == '_'):
             return -1
         else:
@@ -102,12 +123,15 @@ class SatelliteChannel(object):
     def project(self, coverage_instance):
         """Make a projected copy of the current channel using the given
         *coverage_instance*.
+
+        See also the :mod:`coverage` module.
         """
         res = copy.copy(self)
         if self.isloaded():
             LOG.info("Projecting channel %s (%fum)..."
                      %(self.name, self.wavelength_range[1]))
             res.data = coverage_instance.project_array(self.data)
+            res.shape = res.data.shape
             return res
         else:
             raise RuntimeError("Can't project, channel %s (%fum) not loaded."
@@ -124,10 +148,13 @@ class SatelliteInstrument(Satellite):
         self.channels = []
 
     def __getitem__(self, key, aslist = False):
-        LOG.debug("Getting item %s."%key)
+        if not isinstance(key, (tuple, list)):
+            LOG.debug("Getting item %s"%key)
+            
         if(isinstance(key, float)):
             channels = [chn for chn in self.channels
-                        if(chn.wavelength_range[0] <= key and
+                        if(hasattr(chn, "wavelength_range") and
+                           chn.wavelength_range[0] <= key and
                            chn.wavelength_range[2] >= key)]
             channels = sorted(channels,
                               lambda ch1,ch2:
@@ -144,11 +171,11 @@ class SatelliteInstrument(Satellite):
             channels = sorted(channels)
 
         elif(isinstance(key, (tuple, list))):
-            channels = self[key[0], True]
+            channels = self.__getitem__(key[0], aslist = True)
             if(len(key) > 1 and len(channels) > 0):
                 dummy_instance = SatelliteInstrument()
                 dummy_instance.channels = channels
-                channels = dummy_instance[key[1:]]
+                channels = dummy_instance.__getitem__(key[1:], aslist = True)
         else:
             raise KeyError("Malformed key.")
 
@@ -164,13 +191,15 @@ class SatelliteInstrument(Satellite):
         """
         for chan in channels:
             if not self[chan].isloaded():
-                raise RuntimeError("Required channel not loaded, aborting.")
+                raise RuntimeError("Required channel %s not loaded, aborting."
+                                   %chan)
 
 
     def loaded_channels(self):
         """Return the set of loaded_channels.
         """
         return set([chan for chan in self.channels if chan.isloaded()])
+
 
 class SatelliteSnapshot(SatelliteInstrument):
     """This is the satellite snapshot class.
@@ -182,6 +211,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         super(SatelliteSnapshot, self).__init__(*args, **kwargs)
         self.time_slot = time_slot
         self.area = area
+
 
     def overview(self):
         """Make an overview RGB image composite.
@@ -227,9 +257,9 @@ class SatelliteSnapshot(SatelliteInstrument):
                                 self.area,
                                 self.time_slot,
                                 mode = "RGB",
-                                range = ((-25,0),
-                                         (-40,5),
-                                         (243 - 70, 208 + 20)))
+                                crange = ((-25,0),
+                                          (-40,5),
+                                          (243 - 70, 208 + 20)))
         return img
             
     airmass.prerequisites = set([6.2, 7.3, 9.7, 10.8])
@@ -243,7 +273,7 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.area,
                                  self.time_slot,
                                  mode = "L",
-                                 range = (-70+273.15,57.5+273.15))
+                                 crange = (-70+273.15,57.5+273.15))
         img.enhance(inverse = True)
         return img
 
@@ -288,7 +318,7 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.area,
                                  self.time_slot,
                                  mode = "RGB",
-                                 range = ((0,45),
+                                 crange = ((0,45),
                                           (0,45),
                                           (0,45)))
 
@@ -355,9 +385,9 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.area,
                                  self.time_slot,
                                  mode = "RGB",
-                                 range = ((-30, 0),
-                                          (0, 55),
-                                          (- 70, 20)))
+                                 crange = ((-30, 0),
+                                           (0, 55),
+                                           (- 70, 20)))
 
         img.clip()
         img.enhance(stretch = "crude")
@@ -379,9 +409,9 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.area,
                                  self.time_slot,
                                  mode = "RGB",
-                                 range = ((-4, 2),
-                                          (0, 6),
-                                          (243, 283)))
+                                 crange = ((-4, 2),
+                                           (0, 6),
+                                           (243, 283)))
 
         img.enhance(gamma = (1.0, 2.0, 1.0))
         
@@ -402,9 +432,9 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.area,
                                  self.time_slot,
                                  mode = "RGB",
-                                 range = ((-4, 2),
-                                          (0, 6),
-                                          (243, 293)))
+                                 crange = ((-4, 2),
+                                           (0, 6),
+                                           (243, 293)))
         
         img.enhance(gamma = (1.0, 2.0, 1.0))
         img.clip()
@@ -436,9 +466,9 @@ class SatelliteSnapshot(SatelliteInstrument):
     def pge02(self):
         """Make a Cloudtype RGB image composite.
         """
-        self.check_channels(["CloudType"])
+        self.check_channels("CloudType")
 
-        ch1 = self["CloudType"].data
+        ch1 = self["CloudType"].cloudtype.data
         palette = palettes.cms_modified()
 
         img = geo_image.GeoImage(ch1,
@@ -455,9 +485,9 @@ class SatelliteSnapshot(SatelliteInstrument):
         """Make a Cloudtype RGB image composite, depicting low clouds with
         palette colors, and the other as in the IR 10.8 channel.
         """
-        self.check_channels([10.8, "CloudType"])
+        self.check_channels(10.8, "CloudType")
 
-        ctype = self["CloudType"].data
+        ctype = self["CloudType"].cloudtype.data
         clouds = self[10.8].data
 
         palette = palettes.vv_legend()
@@ -466,7 +496,10 @@ class SatelliteSnapshot(SatelliteInstrument):
         clouds = 1 - clouds
         clouds = (clouds * 248 + 7).astype(np.uint8)
         clouds = np.ma.where(ctype <= 2, ctype, clouds)
-        clouds = np.ma.where(4 < ctype < 9, ctype - 2, clouds)
+        clouds = np.ma.where(np.logical_and(4 < ctype,
+                                            ctype < 9),
+                             ctype - 2,
+                             clouds)
         
         img = geo_image.GeoImage(clouds,
                                  self.area,
@@ -481,7 +514,7 @@ class SatelliteSnapshot(SatelliteInstrument):
     def pge02b_with_overlay(self):
         """Same as :meth:`pge02b`, with borders overlay.
         """
-        self.check_channels([10.8, "CloudType"])
+        self.check_channels(10.8, "CloudType")
         
         img = self.pge02b()
         
@@ -495,9 +528,9 @@ class SatelliteSnapshot(SatelliteInstrument):
         """Make an RGB composite showing clouds as depicted with the IR 10.8um
         channel, and cloudfree areas with land in green and sea in blue.
         """
-        self.check_channels([10.8, "CloudType"])
+        self.check_channels(10.8, "CloudType")
         
-        ctype = self["CloudType"].data
+        ctype = self["CloudType"].cloudtype.data
         clouds = self[10.8].data
 
         palette = palettes.tv_legend()
@@ -515,12 +548,12 @@ class SatelliteSnapshot(SatelliteInstrument):
         
         return img
 
-    pge02c.prequisites = set(["CloudType", 10.8])
+    pge02c.prerequisites = set(["CloudType", 10.8])
         
     def pge02c_with_overlay(self):
         """Same as :meth:`pge02c` with borders overlay.
         """
-        self.check_channels([10.8, "CloudType"])
+        self.check_channels(10.8, "CloudType")
 
         img = self.pge02c()
 
@@ -533,9 +566,9 @@ class SatelliteSnapshot(SatelliteInstrument):
     def pge02d(self):
         """Same as :meth:`pge02c` with transparent cloud-free areas.
         """
-        self.check_channels([10.8, "CloudType"])
+        self.check_channels(10.8, "CloudType")
 
-        ctype = self["CloudType"].data
+        ctype = self["CloudType"].cloudtype.data
 
         img = self.pge02c()
 
@@ -552,11 +585,11 @@ class SatelliteSnapshot(SatelliteInstrument):
     def pge02e(self):
         """Same as :meth:`pge02d` with clouds as in :meth:`overview`.
         """
-        self.check_channels([0.6, 0.8, 10.8, "CloudType"])
+        self.check_channels(0.6, 0.8, 10.8, "CloudType")
 
         img = self.overview()
 
-        ctype = self["CloudType"].data
+        ctype = self["CloudType"].cloudtype.data
 
         alpha = np.ma.where(ctype < 5, 0.0, 1.0)
         alpha = np.ma.where(ctype == 15, 0.5, alpha)
@@ -571,9 +604,11 @@ class SatelliteSnapshot(SatelliteInstrument):
     def pge03(self):
         """Make an RGB composite of the CTTH.
         """
-        self.check_channels(["CTTH"])
-
-        ctth = self["CTTH"].data
+        self.check_channels("CTTH")
+        # This is ugly. format should not matter here.
+        # FIXME
+        import msg_ctth
+        ctth = msg_ctth.msg_ctth2ppsformat(self["CTTH"])
         
         arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
         ctth_data = np.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)

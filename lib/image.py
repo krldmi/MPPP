@@ -199,6 +199,13 @@ class Image(object):
 
         misc_utils.ensure_dir(filename)
 
+        cases = {"png": "png",
+                 "jpg": "jpeg",
+                 "tif": "tiff"}
+
+        fileext =  os.path.splitext(filename)[1][1:4]
+        fileformat = cases[fileext]
+
         if(self.mode == "L"):
             misc_utils.ensure_dir(filename)
             if self.fill_value is not None:
@@ -211,7 +218,7 @@ class Image(object):
                 alpha = np.where(mask, alpha, 255)
                 pil_alpha = Pil.fromarray(alpha)
                 
-                Pil.merge("LA", (img, pil_alpha)).save(filename)
+                Pil.merge("LA", (img, pil_alpha)).save(filename, fileformat)
 
         elif(self.mode == "RGB"):
             misc_utils.ensure_dir(filename)
@@ -219,7 +226,8 @@ class Image(object):
                 pil_r = Pil.fromarray(channels[0].filled(self.fill_value[0]))
                 pil_g = Pil.fromarray(channels[1].filled(self.fill_value[1]))
                 pil_b = Pil.fromarray(channels[2].filled(self.fill_value[2]))
-                Pil.merge("RGB", (pil_r, pil_g, pil_b)).save(filename)
+                Pil.merge("RGB", (pil_r, pil_g, pil_b)).save(filename,
+                                                             fileformat)
             else:
                 pil_r = Pil.fromarray(channels[0].filled(0))
                 pil_g = Pil.fromarray(channels[1].filled(0))
@@ -232,7 +240,8 @@ class Image(object):
                 alpha = np.where(mask, alpha, 255)
                 pil_a = Pil.fromarray(alpha)
 
-                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename)
+                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename,
+                                                                     fileformat)
 
         elif(self.mode == "RGBA"):
             misc_utils.ensure_dir(filename)
@@ -241,7 +250,8 @@ class Image(object):
                 pil_g = Pil.fromarray(channels[1].filled(self.fill_value[1]))
                 pil_b = Pil.fromarray(channels[2].filled(self.fill_value[2]))
                 pil_a = Pil.fromarray(channels[3].filled(self.fill_value[3]))
-                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename)
+                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename,
+                                                                     fileformat)
             else:
                 pil_r = Pil.fromarray(channels[0].filled(0))
                 pil_g = Pil.fromarray(channels[1].filled(0))
@@ -255,7 +265,8 @@ class Image(object):
                 alpha = np.where(mask, 0, channels[3])
                 pil_a = Pil.fromarray(alpha)
 
-                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename)
+                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename,
+                                                                     fileformat)
                     
 
     def putalpha(self, alpha):

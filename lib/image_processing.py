@@ -107,8 +107,8 @@ def crude_stretch(arr, norm = 1, min = None, max = None):
     if(max is None):
         max = arr.max()
 
-    res = (arr-min) * (norm * 1.0)/(max - min)
+    res = (arr - min) * (norm * 1.0) / (max - min)
     res = numpy.where(res > norm, norm, res)
     res = numpy.where(res < 0, 0, res)
 
-    return res.astype(numpy.uint8)
+    return res

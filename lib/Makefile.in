@@ -6,7 +6,7 @@ INSTALL_FILES=msg_remap_all_Oper.py \
               msg_rgb_remap_all_Oper.py \
               msg_remap_util.py \
 	      smhi_safnwc_legends.py \
-	      msg_communications.py msg_ctype2radar.py \
+	      msg_ctype2radar.py \
 	      misc_utils.py \
 	      coverage.py \
 	      image_processing.py \
@@ -15,8 +15,7 @@ INSTALL_FILES=msg_remap_all_Oper.py \
 	      geo_image.py \
 	      satellite.py \
 	      meteosat09.py \
-	      palettes.py \
-	      msg_data.py
+	      palettes.py
 
 DEST_LIB_DIR = $(MSGPP_INSTALL_PATH)/lib/python2.5/site-packages
 DEST_BIN_DIR = $(MSGPP_INSTALL_PATH)/bin

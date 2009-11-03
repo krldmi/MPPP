@@ -23,8 +23,6 @@ Meteosat 8 and 9.
    coverage
    rs_images
    time_utils
-   ctype
-   ctth
    misc_utils
    palettes
 
