@@ -1,8 +1,12 @@
 """Ctype2radar allow saving for nordrad format
 """
 
+import logging
+import logging.config
+from msgpp_config import COMPRESS_LVL, N2SERVERS_AND_PORTS, N2INJECT, APPLDIR
 
-from msgpp_config import COMPRESS_LVL
+logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
+LOG = logging.getLogger("nordrad")
 
 class NordRadCType(object):
     """Wrapper aroud the msg_ctype channel.
@@ -130,6 +134,17 @@ class NordRadCType(object):
         node.setScalarValue(-1, 20.0, "float", -1)
         node_list.addNode(node)    
 
-        node_list.write(filename, COMPRESS_LVL)    
+        node_list.write(filename, COMPRESS_LVL)
+
+        if status:
+            for tup in N2SERVERS_AND_PORTS:
+                cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],filename)
+                LOG.info("Command: %s"%(cmdstr))
+                os.system(cmdstr)
+            else:
+                LOG.error("Failed writing cloudtype product for Nordrad!")
+                LOG.info("Filename = %s"%(filename))
+                
+        
         return status
 

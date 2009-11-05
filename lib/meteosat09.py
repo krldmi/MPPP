@@ -353,9 +353,9 @@ _dummy.prerequisites = set([])
 
 import Queue
 import threading
+import tempfile
+import shutil
 
-queue = Queue.Queue()
-          
 class ThreadSave(threading.Thread):
     """Threaded Url Grab"""
     def __init__(self, myqueue):
@@ -366,11 +366,131 @@ class ThreadSave(threading.Thread):
         """Run the thread.
         """
         while True:
-            tosave = self.queue.get()
-            tosave[0].save(tosave[1])
+            obj, files_by_ext = self.queue.get()
+            for extkey in files_by_ext:
+                path, trash = os.path.split(files_by_ext[extkey][0])
+                handle, tmpfilename = tempfile.mkstemp(extkey,
+                                                      "msgpp_tmp",
+                                                      path)
+                del trash
+                obj.save(tmpfilename)
+                os.fsync(handle)
+                os.chmod(tmpfilename, 0644)
+                os.fsync(handle)
+                for filename in files_by_ext[extkey][1:]:
+                    path2, trash = os.path.split(filename)
+                    handle2, tmpfilename2 = tempfile.mkstemp(extkey,
+                                                             "msgpp_tmp",
+                                                             path2)
+                    del trash
+                    
+                    shutil.copy(tmpfilename, tmpfilename2)
+                    os.fsync(handle2)
+                    os.chmod(tmpfilename2, 0644)
+                    os.fsync(handle2)
+                    os.rename(tmpfilename2, filename)
+                    os.fsync(handle2)
+                    os.close(handle2)
+                os.rename(tmpfilename, files_by_ext[extkey][0])
+                os.fsync(handle)
+                os.close(handle)
             self.queue.task_done()
 
 
+class ThreadArea(threading.Thread):
+    """Threaded Url Grab"""
+    def __init__(self, area_queue, save_queue):
+        threading.Thread.__init__(self)
+        self.area_queue = area_queue
+        self.save_queue = save_queue
+
+    def run(self):
+        """Run the thread.
+        """
+        while True:
+            local_data = self.area_queue.get()
+            start = datetime.datetime.now()
+            akey = local_data.area
+            LOG.info("Starting processing area %s."%akey)
+            cases = {
+                "overview": local_data.overview,
+                "natural": local_data.natural,
+                "fog": local_data.fog,
+                "nightfog": local_data.night_fog,
+                "convection": local_data.convection,
+                "airmass": local_data.airmass,
+                "ir9": local_data.ir108,
+                "wv_low": local_data.wv_low,
+                "wv_high": local_data.wv_high,
+                "greensnow": local_data.green_snow,
+                "redsnow": local_data.red_snow,
+                "cloudtop": local_data.cloudtop,
+                "hr_overview": local_data.hr_overview,
+                "PGE02": local_data.pge02,
+                "PGE02b": local_data.pge02b,
+                "PGE02bj": local_data.pge02b_with_overlay,
+                "PGE02c": local_data.pge02c,
+                "PGE02cj": local_data.pge02c_with_overlay,
+                "PGE02d": local_data.pge02d,
+                "PGE02e": local_data.pge02e,
+                "PGE03": local_data.pge03,
+                "CtypeHDF": local_data.cloudtype,
+                "NordRad": local_data.nordrad,
+                "CtthHDF": local_data.ctth
+                }
+
+            for pkey in PRODUCTS[akey]:
+                LOG.debug("Getting prerequisites for %s."%pkey)
+                fun = cases.get(pkey, _dummy)
+
+                LOG.info("Running %s..."%pkey)
+                rgb = fun()
+                LOG.info("Done running %s."%pkey)
+                files = []
+                for filename in PRODUCTS[akey][pkey]:
+                    files.append(T.strftime(filename))
+
+                types = {}
+                for filename in files:
+                    file_tuple = os.path.splitext(filename)
+                    ext = file_tuple[1][:4]
+                    types[ext] = types.get(ext, []) + [filename]
+
+                if rgb is not None:
+                    LOG.info("Queueing for saving %s."%(types))
+                    self.save_queue.put((rgb, types))
+                    LOG.info("Queueing done.")
+            
+            self.area_queue.task_done()
+            LOG.info("Area %s processed in %s."
+                     %(akey, datetime.datetime.now() - start))
+            del local_data
+
+def detect_cpus():
+    """Detects the number of CPUs on a system. Cribbed from pp.
+
+    From python 2.6 this function should become unnecessary, since we could
+    use::
+    
+    import multiprocessing
+    cpus=multiprocessing.cpu_count()
+    
+    """
+    # Linux, Unix and MacOS:
+    if hasattr(os, "sysconf"):
+        if os.sysconf_names.has_key("SC_NPROCESSORS_ONLN"):
+            # Linux & Unix:
+            ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
+            if isinstance(ncpus, int) and ncpus > 0:
+                return ncpus
+        else: # OSX:
+            return int(os.popen2("sysctl -n hw.ncpu")[1].read())
+    # Windows:
+    if os.environ.has_key("NUMBER_OF_PROCESSORS"):
+        ncpus = int(os.environ["NUMBER_OF_PROCESSORS"])
+        if ncpus > 0:
+            return ncpus
+    return 1 # Default
 
 if __name__ == "__main__":
     import datetime
@@ -388,6 +508,8 @@ if __name__ == "__main__":
     #A.overview().save("./test.png")
 
     from products import PRODUCTS
+
+    start_time = datetime.datetime.now()
 
     metsat_data = MeteoSatSeviriSnapshot(time_slot = T, area = "EuropeCanary")
     
@@ -420,13 +542,25 @@ if __name__ == "__main__":
 
     _channels = set([])
 
+    save_queue = Queue.Queue()
 
-    t = ThreadSave(queue)
+    t = ThreadSave(save_queue)
     t.setDaemon(True)
     t.start()
 
 
+    area_queue = Queue.Queue()
+
+    nb_cpus = detect_cpus()
+
+    for i in range(max(nb_cpus - 2, 2)):
+        t = ThreadArea(area_queue, save_queue)
+        t.setDaemon(True)
+        t.start()
+
     for akey in PRODUCTS:
+        if akey == "globe":
+            continue
         for pkey in PRODUCTS[akey]:
             fun = cases.get(pkey, _dummy)
             _channels |= fun.prerequisites
@@ -435,64 +569,33 @@ if __name__ == "__main__":
     
     LOG.debug("Loaded %s"%metsat_data.loaded_channels())
 
+
     for akey in PRODUCTS:
-        if akey == "globe":
-            continue
         _channels = set([])
         for pkey in PRODUCTS[akey]:
             LOG.debug("Getting prerequisites for %s."%pkey)
             fun = cases.get(pkey, _dummy)
             _channels |= fun.prerequisites
-        local_data = metsat_data.project(akey, _channels)
-        cases = {
-            "overview": local_data.overview,
-            "natural": local_data.natural,
-            "fog": local_data.fog,
-            "nightfog": local_data.night_fog,
-            "convection": local_data.convection,
-            "airmass": local_data.airmass,
-            "ir9": local_data.ir108,
-            "wv_low": local_data.wv_low,
-            "wv_high": local_data.wv_high,
-            "greensnow": local_data.green_snow,
-            "redsnow": local_data.red_snow,
-            "cloudtop": local_data.cloudtop,
-            "hr_overview": local_data.hr_overview,
-            "PGE02": local_data.pge02,
-            "PGE02b": local_data.pge02b,
-            "PGE02bj": local_data.pge02b_with_overlay,
-            "PGE02c": local_data.pge02c,
-            "PGE02cj": local_data.pge02c_with_overlay,
-            "PGE02d": local_data.pge02d,
-            "PGE02e": local_data.pge02e,
-            "PGE03": local_data.pge03,
-            "CtypeHDF": local_data.cloudtype,
-            "NordRad": local_data.nordrad,
-            "CtthHDF": local_data.ctth
-            }
+        if akey == "globe":
+            local_data = MeteoSatSeviriSnapshot(time_slot = T, area = "globe")
+            local_data.load(_channels)
+        else:
+            local_data = metsat_data.project(akey, _channels)
 
-        for pkey in PRODUCTS[akey]:
-            LOG.debug("Getting prerequisites for %s."%pkey)
-            fun = cases.get(pkey, _dummy)
+        area_queue.put(local_data)
 
-            LOG.info("Running %s..."%pkey)
-            rgb = fun()
-            LOG.info("Done running %s."%pkey)
-            if rgb is not None:
-                for filename in PRODUCTS[akey][pkey]:
-                    if(isinstance(filename, tuple) and
-                       len(filename) == 2 and
-                       isinstance(rgb, geo_image.GeoImage)):
-                        filename0 = T.strftime(filename[0])
-                        filename1 = T.strftime(filename[1])
-                        LOG.info("Saving to %s."%(filename0))
-                        LOG.info("Saving to %s."%(filename1))
-                        rgb.double_save(filename0, filename1)
-                        LOG.info("Savings done.")
-                    else:
-                        filename0 = T.strftime(filename)
-                        LOG.info("Saving to %s."%(filename0))
-                        queue.put((rgb, filename0))
-                        #rgb.save(filename0)
-                        LOG.info("Saving done.")
-    queue.join()
+
+    LOG.info("Finished projecting in %s, starting a new area thread."
+             %(datetime.datetime.now() - start_time))
+    t = ThreadArea(area_queue, save_queue)
+    t.setDaemon(True)
+    t.start()
+
+
+    area_queue.join()
+    LOG.info("All areas processed in %s."
+             %(datetime.datetime.now() - start_time))
+
+    LOG.info("Waiting for saving thread to finish.")
+    save_queue.join()
+    LOG.info("Done, exiting.")
