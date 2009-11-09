@@ -1,0 +1,3 @@
+include pp/doc/Makefile
+include pp/doc/source/*
+include etc/*.py

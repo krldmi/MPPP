@@ -10,8 +10,8 @@
 #include <numpy/arrayobject.h>
 #include <string.h>
 #include <error.h>
-#include <libnwc.h>
-#include <sevext.h>
+#include <NWCLIB/libnwc.h>
+#include <NWCLIB/sevext.h>
 
 int
 channel_number(char * channel_string)
