@@ -1,1 +1,1 @@
-./configure --prefix=/local_disk/usr/test --with-acpg=/local_disk/usr/dists/ACPG --with-msg=/local_disk/usr/src/msg --without-n2
+./configure --prefix=/local_disk/usr/test --with-acpg=/local_disk/usr/dists/ACPG --with-msg=/local_disk/usr/src/msg --without-n2 --with-hlhdf=/local_disk/usr/dists/v0.7.7
