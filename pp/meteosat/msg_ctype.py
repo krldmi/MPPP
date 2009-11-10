@@ -11,10 +11,16 @@ import satellite
 import logging
 import logging.config
 
-from msgpp_config import APPLDIR
+import ConfigParser
 
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
-LOG = logging.getLogger('msg.ctype')
+CONF = ConfigParser.ConfigParser()
+CONF.read("meteosat.cfg")
+MSG_DIR = CONF.get('dirs', 'msg_dir')
+MSG_LIB = CONF.get('dirs', 'msg_lib')
+MSG_BIN = CONF.get('dirs', 'msg_bin')
+
+
+LOG = logging.getLogger('pp.meteosat')
 
 
 # ----------------------------------------

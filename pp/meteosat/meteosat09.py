@@ -7,23 +7,33 @@ import numpy as np
 import logging
 import logging.config
 import glob
+import ConfigParser
 
-from msgpp_config import APPLDIR
 import py_msg
 from satellite import SatelliteSnapshot, SatelliteChannel
 import geo_image
-import msgpp_config
 import time_utils
 import msg_ctype
 import msg_ctth
 from msg_ctype2radar import NordRadCType
 
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
-LOG = logging.getLogger("pp.meteosat09")
 
-os.environ['SAFNWC'] = msgpp_config.MSG_DIR
-os.environ['SAFNWC_BIN'] = msgpp_config.MSG_DIR+"/bin"
-os.environ['SAFNWC_LIB'] = msgpp_config.MSG_DIR+"/lib"
+CONF = ConfigParser.ConfigParser()
+CONF.read("meteosat.cfg")
+
+MSG_DIR = CONF.get('dirs', 'msg_dir')
+MSG_LIB = CONF.get('dirs', 'msg_lib')
+MSG_BIN = CONF.get('dirs', 'msg_bin')
+CTYPE_DIR = CONF.get('dirs', 'ctype_dir')
+CTTH_DIR = CONF.get('dirs', 'ctth_dir')
+
+MSG_PGE_EXTENTIONS = ["PLAX.CTTH.0.h5","PLAX.CLIM.0.h5","h5"]
+
+LOG = logging.getLogger("pp.meteosat")
+
+os.environ['SAFNWC'] = MSG_DIR
+os.environ['SAFNWC_BIN'] = MSG_BIN
+os.environ['SAFNWC_LIB'] = MSG_LIB
 os.environ['PATH'] = os.environ['PATH']+":"+os.environ['SAFNWC_BIN']
 os.environ['LD_LIBRARY_PATH'] = (os.environ['LD_LIBRARY_PATH']+
                                  ":"+os.environ['SAFNWC_LIB'])
@@ -123,9 +133,9 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         prefix = ("SAFNWC_MSG?_CTTH_%s_%s"%(time_string, self.area))
 
         msgctth_filename = None
-        for ext in msgpp_config.MSG_PGE_EXTENTIONS:
+        for ext in MSG_PGE_EXTENTIONS:
             match_str = ("%s/%s.%s"
-                         %(msgpp_config.CTTHDIR_IN, prefix, ext))
+                         %(CTTH_DIR, prefix, ext))
             LOG.info("file-match: %s"%match_str)
             flist = glob.glob(match_str)
 
@@ -161,8 +171,8 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         
         msgctype_filename = None
         
-        for ext in msgpp_config.MSG_PGE_EXTENTIONS:
-            match_str = ("%s/%s.%s"%(msgpp_config.CTYPEDIR_IN, prefix, ext))
+        for ext in MSG_PGE_EXTENTIONS:
+            match_str = ("%s/%s.%s"%(CTYPE_DIR, prefix, ext))
             LOG.info("file-match: %s"%match_str)
             flist = glob.glob(match_str)
 
