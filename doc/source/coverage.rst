@@ -2,7 +2,7 @@
  Geographical coverage: :mod:`coverage`
 ============================================
 
-.. automodule:: coverage
+.. automodule:: pp.satellite.coverage
    :members:
    :undoc-members:
 

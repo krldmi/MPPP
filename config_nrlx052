@@ -1,1 +1,0 @@
-./configure --prefix=/local_disk/usr/test --with-acpg=/local_disk/usr/dists/ACPG --with-msg=/local_disk/usr/src/msg --without-n2

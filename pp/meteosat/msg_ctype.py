@@ -10,15 +10,6 @@ from pp.satellite.satellite import GenericChannel
 
 import logging
 
-import ConfigParser
-
-CONF = ConfigParser.ConfigParser()
-CONF.read("etc/meteosat.cfg")
-MSG_DIR = CONF.get('dirs_in', 'msg_dir')
-MSG_LIB = CONF.get('dirs_in', 'msg_lib')
-MSG_BIN = CONF.get('dirs_in', 'msg_bin')
-
-
 LOG = logging.getLogger('pp.meteosat')
 
 

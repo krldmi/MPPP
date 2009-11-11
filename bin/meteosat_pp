@@ -14,7 +14,7 @@ from products import PRODUCTS
 BASE_PATH = os.path.sep.join(os.path.dirname(
     os.path.realpath(__file__)).split(os.path.sep)[:-1])
 
-logging.config.fileConfig(os.path.join(BASE_PATH, "etc", "logging.conf"))
+logging.config.fileConfig(os.path.join(BASE_PATH, "etc", "logging.cfg"))
 LOG = logging.getLogger("pp")
 
 def _dummy():

@@ -2,6 +2,6 @@
  Generic satellite interface
 =============================
 
-.. automodule:: satellite
+.. automodule:: pp.satellite.satellite
    :members:
    :undoc-members:

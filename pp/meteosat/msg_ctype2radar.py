@@ -3,7 +3,7 @@
 
 import logging
 
-LOG = logging.getLogger("pp.nordrad")
+LOG = logging.getLogger("pp.meteosat")
 
 COMPRESS_LVL = 6
 

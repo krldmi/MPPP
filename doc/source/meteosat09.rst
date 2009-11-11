@@ -7,20 +7,20 @@
 Main implementation
 ===================
 
-.. automodule:: meteosat09
+.. automodule:: pp.meteosat.meteosat09
    :members:
    :undoc-members:
 
 Cloudtype channel
 =================
 
-.. automodule:: msg_ctype
+.. automodule:: pp.meteosat.msg_ctype
    :members:
    :undoc-members:
 
 CTTH channel
 ============
 
-.. automodule:: msg_ctth
+.. automodule:: pp.meteosat.msg_ctth
    :members:
    :undoc-members:

@@ -2,6 +2,6 @@
  Miscellaneous Utilities
 =========================
 
-.. automodule:: misc_utils
+.. automodule:: pp.utils
    :members:
    :undoc-members:
