@@ -6,18 +6,17 @@ import pps_gisdata # From NWCSAF/PPS - ACPG
 
 import epshdf # From NWCSAF/PPS - ACPG
 import area
-import satellite
+from pp.satellite.satellite import GenericChannel
 
 import logging
-import logging.config
 
 import ConfigParser
 
 CONF = ConfigParser.ConfigParser()
-CONF.read("meteosat.cfg")
-MSG_DIR = CONF.get('dirs', 'msg_dir')
-MSG_LIB = CONF.get('dirs', 'msg_lib')
-MSG_BIN = CONF.get('dirs', 'msg_bin')
+CONF.read("etc/meteosat.cfg")
+MSG_DIR = CONF.get('dirs_in', 'msg_dir')
+MSG_LIB = CONF.get('dirs_in', 'msg_lib')
+MSG_BIN = CONF.get('dirs_in', 'msg_bin')
 
 
 LOG = logging.getLogger('pp.meteosat')
@@ -36,7 +35,7 @@ class MsgCloudTypeData(object):
         self.product = ""
         self.id = ""
         
-class MsgCloudType(satellite.GenericChannel):
+class MsgCloudType(GenericChannel):
     """NWCSAF/MSG Cloud Type data structure as retrieved from HDF5
     file. Resolution sets the nominal resolution of the data.
     """

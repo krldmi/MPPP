@@ -1,5 +1,4 @@
 
-from msgpp_config import *
 import numpy
 
 # ----------------------------------------
@@ -17,7 +16,6 @@ class SeviriChannelData:
 
 # ------------------------------------------------------------------
 def read_msg_lonlat(geofile):
-    import numpy
     
     fd = open(geofile,"r")
     s = fd.read()

@@ -11,11 +11,14 @@ import image
 from pp.utils import ensure_dir
 from osgeo import gdal
 from osgeo import osr
-
-
 import logging
 
+from __init__ import BASE_PATH
+
+
 LOG = logging.getLogger("pp.geo_image")
+
+
 
 class GeoImage(image.Image):
     """This class defines geographic images. As such, it contains not only data
@@ -199,7 +202,13 @@ class GeoImage(image.Image):
         """
         self.convert("RGB")
 
+        import ConfigParser
+        conf = ConfigParser.ConfigParser()
+        conf.read(os.path.join(BASE_PATH, "etc", "geo_image.cfg"))
 
+        coast_dir = os.path.join(BASE_PATH, conf.get('coasts', 'coast_dir'))
+        coast_file = os.path.join(BASE_PATH, conf.get('coasts', 'coast_file'))
+        
         arr = np.zeros(self.channels[0].shape, np.uint8)
         
         LOG.info("Add coastlines and political borders to image. "
@@ -208,7 +217,7 @@ class GeoImage(image.Image):
         rimg.info["nodata"] = 255
         rimg.data = arr
         area_overlayfile = ("%s/coastlines_%s.asc"
-                            %(msgpp_config.AUX_DIR, self.area_id))
+                            %(coast_dir, self.area_id))
         LOG.info("Read overlay. Try find something prepared on the area...")
         try:
             overlay = _acpgpilext.read_overlay(area_overlayfile)
@@ -216,7 +225,7 @@ class GeoImage(image.Image):
         except:            
             LOG.info("Didn't find an area specific overlay."
                      " Have to read world-map...")
-            overlay = _acpgpilext.read_overlay(msgpp_config.COAST_FILE)
+            overlay = _acpgpilext.read_overlay(coast_file)
         LOG.info("Add overlay.")
         overlay_image = pps_array2image.add_overlay(rimg,
                                                     overlay,

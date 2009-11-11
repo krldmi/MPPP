@@ -5,7 +5,8 @@ import numpy as np
 import copy
 import logging
 
-import pp.geo_image.geo_image
+import pp.geo_image.geo_image as geo_image
+import pp.geo_image.image_processing as image_processing
 import coverage
 import palettes
 
@@ -597,30 +598,6 @@ class SatelliteSnapshot(SatelliteInstrument):
 
     pge02e.prerequisites = set(["CloudType", 0.6, 0.8, 10.8])    
 
-    def pge03(self):
-        """Make an RGB composite of the CTTH.
-        """
-        self.check_channels("CTTH")
-        # This is ugly. format should not matter here.
-        # FIXME
-        import msg_ctth
-        ctth = msg_ctth.msg_ctth2ppsformat(self["CTTH"])
-        
-        arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
-        ctth_data = np.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)
-        ctth_data = np.ma.array(ctth_data)
-
-        palette = palettes.ctth_height()
-
-        img = geo_image.GeoImage(ctth_data.astype(np.uint8),
-                                 self.area,
-                                 self.time_slot,
-                                 mode = "P",
-                                 palette = palette)
-
-        return img
-        
-    pge03.prerequisites = set(["CTTH"])    
 
     def project(self, dest_area, channels = None):
         """Make a copy of the current snapshot projected onto the

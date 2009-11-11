@@ -2,11 +2,10 @@
 """
 
 import logging
-import logging.config
-from msgpp_config import COMPRESS_LVL, N2SERVERS_AND_PORTS, N2INJECT, APPLDIR
 
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
-LOG = logging.getLogger("nordrad")
+LOG = logging.getLogger("pp.nordrad")
+
+COMPRESS_LVL = 6
 
 class NordRadCType(object):
     """Wrapper aroud the msg_ctype channel.
@@ -136,14 +135,14 @@ class NordRadCType(object):
 
         node_list.write(filename, COMPRESS_LVL)
 
-        if status:
-            for tup in N2SERVERS_AND_PORTS:
-                cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],filename)
-                LOG.info("Command: %s"%(cmdstr))
-                os.system(cmdstr)
-            else:
-                LOG.error("Failed writing cloudtype product for Nordrad!")
-                LOG.info("Filename = %s"%(filename))
+#         if status:
+#             for tup in N2SERVERS_AND_PORTS:
+#                 cmdstr = "%s %s:%d %s"%(N2INJECT,tup[0],tup[1],filename)
+#                 LOG.info("Command: %s"%(cmdstr))
+#                 os.system(cmdstr)
+#             else:
+#                 LOG.error("Failed writing cloudtype product for Nordrad!")
+#                 LOG.info("Filename = %s"%(filename))
                 
         
         return status

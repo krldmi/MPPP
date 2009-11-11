@@ -5,17 +5,13 @@
 import epshdf
 import area
 import numpy
-import satellite
+from pp.satellite.satellite import GenericChannel
 
 from msg_remap_util import get_bit_from_flags
 
 import logging
-import logging.config
 
-from msgpp_config import APPLDIR
-
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
-LOG = logging.getLogger('msg.ctth')
+LOG = logging.getLogger('pp.meteosat')
 
 
 # ----------------------------------------
@@ -31,7 +27,7 @@ class MsgCTTHData(object):
         self.product = ""
         self.id = ""
         
-class MsgCTTH(satellite.GenericChannel):
+class MsgCTTH(GenericChannel):
     """CTTH channel.
     """
     def __init__(self, resolution = None):

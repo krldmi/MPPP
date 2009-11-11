@@ -1,4 +1,15 @@
-from msgpp_config import *
+import ConfigParser
+
+CONF = ConfigParser.ConfigParser()
+CONF.read("etc/meteosat.cfg")
+
+LOCAL_SIR_DIR = CONF.get('dirs_out', 'local_sir')
+SIR_DIR = CONF.get('dirs_out', 'sir_dir')
+FSERVER_RGBDIR_OUT = CONF.get('dirs_out', 'rgb_dir')
+FSERVER_CTYPEDIR_OUT = CONF.get('dirs_out', 'ctype_dir')
+FSERVER_CTTHDIR_OUT = CONF.get('dirs_out', 'ctth_dir')
+BOKART_OUT = CONF.get('dirs_out', 'bokart_dir')
+MSG_SATELLITE = CONF.get('satellite', 'name')
 
 euro = "euro"
 euro4 = "euro4"
@@ -29,7 +40,7 @@ s_globe = globe.ljust(8,"_")
 PRODUCTS = {"globe":
                 {"overview":[LOCAL_SIR_DIR+"/msg_ovwp"+s_globe+"%y%m%d%H%M.png",
                              SIR_DIR+"/msg_ovwp"+s_globe+"%y%m%d%H%M.png_original",
-                              FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+globe+"_rgb_overview.png"]},
+                             FSERVER_RGBDIR_OUT+"/"+MSG_SATELLITE+"_%Y%m%d%H%M_"+globe+"_rgb_overview.png"]},
             
             "euro4":
                 {"PGE02":[LOCAL_SIR_DIR+"/msg_02a_"+s_euro4+"%y%m%d%H%M.tif",

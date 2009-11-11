@@ -54,7 +54,7 @@ class SatProjCov(object):
             raise ValueError("The resolution must be an integer!")
 
         self._filename = ("%s/msg_coverage_%s.%s.%d.hdf"
-                          %(DATADIR, self.in_area_id, 
+                          %("/tmp", self.in_area_id, 
                             self.out_area_id, self.resolution))
 
 

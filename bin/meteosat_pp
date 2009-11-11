@@ -1,0 +1,268 @@
+#!/usr/bin/env python
+
+import os.path
+import Queue
+import threading
+import tempfile
+import shutil
+import datetime
+import logging
+import logging.config
+import pp.meteosat.meteosat09 as met09
+from products import PRODUCTS
+
+BASE_PATH = os.path.sep.join(os.path.dirname(
+    os.path.realpath(__file__)).split(os.path.sep)[:-1])
+
+logging.config.fileConfig(os.path.join(BASE_PATH, "etc", "logging.conf"))
+LOG = logging.getLogger("pp")
+
+def _dummy():
+    """dummy function.
+    """
+    return None
+
+_dummy.prerequisites = set([])
+
+
+
+
+class ThreadSave(threading.Thread):
+    """Threaded saving"""
+    def __init__(self, myqueue):
+        threading.Thread.__init__(self)
+        self.queue = myqueue
+
+    def run(self):
+        """Run the thread.
+        """
+        while True:
+            obj, files_by_ext = self.queue.get()
+            for extkey in files_by_ext:
+                path, trash = os.path.split(files_by_ext[extkey][0])
+                del trash
+                                
+                handle, tmpfilename = tempfile.mkstemp(extkey,
+                                                      "msgpp_tmp",
+                                                      path)
+                os.fsync(handle)
+                obj.save(tmpfilename)
+                os.fsync(handle)
+                os.chmod(tmpfilename, 0644)
+                os.fsync(handle)
+                for filename in files_by_ext[extkey][1:]:
+                    path2, trash = os.path.split(filename)
+                    del trash
+
+                    handle2, tmpfilename2 = tempfile.mkstemp(extkey,
+                                                             "msgpp_tmp",
+                                                             path2)
+                    os.fsync(handle2)
+
+                    shutil.copy(tmpfilename, tmpfilename2)
+                    os.fsync(handle2)
+
+                    os.rename(tmpfilename2, filename)
+                    os.fsync(handle2)
+                    os.close(handle2)
+
+                os.rename(tmpfilename, files_by_ext[extkey][0])
+                os.fsync(handle)
+                os.close(handle)
+            self.queue.task_done()
+
+
+def process_area(local_data, save_queue):
+    akey = local_data.area
+    LOG.info("Starting processing area %s."%akey)
+    cases = {
+        "overview": local_data.overview,
+        "natural": local_data.natural,
+        "fog": local_data.fog,
+        "nightfog": local_data.night_fog,
+        "convection": local_data.convection,
+        "airmass": local_data.airmass,
+        "ir9": local_data.ir108,
+        "wv_low": local_data.wv_low,
+        "wv_high": local_data.wv_high,
+        "greensnow": local_data.green_snow,
+        "redsnow": local_data.red_snow,
+        "cloudtop": local_data.cloudtop,
+        "hr_overview": local_data.hr_overview,
+        "PGE02": local_data.pge02,
+        "PGE02b": local_data.pge02b,
+        "PGE02bj": local_data.pge02b_with_overlay,
+        "PGE02c": local_data.pge02c,
+        "PGE02cj": local_data.pge02c_with_overlay,
+        "PGE02d": local_data.pge02d,
+        "PGE02e": local_data.pge02e,
+        "PGE03": local_data.pge03,
+        "CtypeHDF": local_data.cloudtype,
+        "NordRad": local_data.nordrad,
+        "CtthHDF": local_data.ctth
+        }
+
+    for pkey in PRODUCTS[akey]:
+        LOG.debug("Getting function for %s."%pkey)
+        fun = cases.get(pkey, _dummy)
+
+        LOG.info("Running %s..."%pkey)
+        rgb = fun()
+        LOG.info("Done running %s."%pkey)
+        files = []
+        for filename in PRODUCTS[akey][pkey]:
+            files.append(T.strftime(filename))
+
+        types = {}
+        for filename in files:
+            file_tuple = os.path.splitext(filename)
+            ext = file_tuple[1][:4]
+            types[ext] = types.get(ext, []) + [filename]
+
+        if rgb is not None:
+            LOG.info("Queueing for saving %s."%(types))
+            save_queue.put((rgb, types))
+            LOG.info("Queueing done.")
+
+class ThreadArea(threading.Thread):
+    """Threaded area processor"""
+    def __init__(self, area_queue, save_queue):
+        threading.Thread.__init__(self)
+        self.area_queue = area_queue
+        self.save_queue = save_queue
+
+    def run(self):
+        """Run the thread.
+        """
+        while True:
+            local_data = self.area_queue.get()
+            start = datetime.datetime.now()
+            process_area(local_data, self.save_queue)
+            self.area_queue.task_done()
+            LOG.info("Area %s processed in %s."
+                     %(akey, datetime.datetime.now() - start))
+            del local_data
+
+def detect_cpus():
+    """Detects the number of CPUs on a system. Cribbed from pp.
+
+    From python 2.6 this function should become unnecessary, since we could
+    use::
+    
+    import multiprocessing
+    cpus=multiprocessing.cpu_count()
+    
+    """
+    # Linux, Unix and MacOS:
+    if hasattr(os, "sysconf"):
+        if os.sysconf_names.has_key("SC_NPROCESSORS_ONLN"):
+            # Linux & Unix:
+            ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
+            if isinstance(ncpus, int) and ncpus > 0:
+                return ncpus
+        else: # OSX:
+            return int(os.popen2("sysctl -n hw.ncpu")[1].read())
+    # Windows:
+    if os.environ.has_key("NUMBER_OF_PROCESSORS"):
+        ncpus = int(os.environ["NUMBER_OF_PROCESSORS"])
+        if ncpus > 0:
+            return ncpus
+    return 1 # Default
+
+
+T = datetime.datetime(2009, 10, 8, 14, 30)
+
+start_time = datetime.datetime.now()
+
+metsat_data = met09.MeteoSatSeviriSnapshot(time_slot = T, area = "EuropeCanary")
+
+cases = {
+    "overview": metsat_data.overview,
+    "natural": metsat_data.natural,
+    "fog": metsat_data.fog,
+    "nightfog": metsat_data.night_fog,
+    "convection": metsat_data.convection,
+    "airmass": metsat_data.airmass,
+    "ir9": metsat_data.ir108,
+    "wv_low": metsat_data.wv_low,
+    "wv_high": metsat_data.wv_high,
+    "greensnow": metsat_data.green_snow,
+    "redsnow": metsat_data.red_snow,
+    "cloudtop": metsat_data.cloudtop,
+    "hr_overview": metsat_data.hr_overview,
+    "PGE02": metsat_data.pge02,
+    "PGE02b": metsat_data.pge02b,
+    "PGE02bj": metsat_data.pge02b_with_overlay,
+    "PGE02c": metsat_data.pge02c,
+    "PGE02cj": metsat_data.pge02c_with_overlay,
+    "PGE02d": metsat_data.pge02d,
+    "PGE02e": metsat_data.pge02e,
+    "PGE03": metsat_data.pge03,
+    "CtypeHDF": metsat_data.cloudtype,
+    "NordRad": metsat_data.nordrad,
+    "CtthHDF": metsat_data.ctth
+    }
+
+_channels = set([])
+
+save_queue = Queue.Queue()
+
+t = ThreadSave(save_queue)
+t.setDaemon(True)
+t.start()
+
+
+area_queue = Queue.Queue()
+
+nb_cpus = detect_cpus()
+
+for i in range(max(nb_cpus - 2, 0)):
+    t = ThreadArea(area_queue, save_queue)
+    t.setDaemon(True)
+    t.start()
+
+for akey in PRODUCTS:
+    if akey == "globe":
+        continue
+    for pkey in PRODUCTS[akey]:
+        fun = cases.get(pkey, _dummy)
+        _channels |= fun.prerequisites
+
+metsat_data.load(_channels)
+
+LOG.debug("Loaded %s"%metsat_data.loaded_channels())
+
+
+for akey in PRODUCTS:
+    _channels = set([])
+    for pkey in PRODUCTS[akey]:
+        LOG.debug("Getting prerequisites for %s."%pkey)
+        fun = cases.get(pkey, _dummy)
+        _channels |= fun.prerequisites
+    if akey == "globe":
+        local_data = met09.MeteoSatSeviriSnapshot(time_slot = T, area = "globe")
+        local_data.load(_channels)
+    else:
+        local_data = metsat_data.project(akey, _channels)
+    if(nb_cpus <= 2):
+        process_area(local_data, save_queue)
+    else:
+        area_queue.put(local_data)
+
+if(nb_cpus > 2):
+    LOG.info("Finished projecting in %s, starting a new area thread."
+             %(datetime.datetime.now() - start_time))
+    t = ThreadArea(area_queue, save_queue)
+    t.setDaemon(True)
+    t.start()
+
+
+    area_queue.join()
+    LOG.info("All areas processed in %s."
+             %(datetime.datetime.now() - start_time))
+    
+
+LOG.info("Waiting for saving thread to finish.")
+save_queue.join()
+LOG.info("Done, exiting.")
+
