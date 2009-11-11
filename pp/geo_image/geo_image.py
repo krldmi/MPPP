@@ -4,23 +4,17 @@ import os
 import Image
 import numpy as np
 import area
-import misc_utils
 import acpgimage
-import msgpp_config
 import _acpgpilext
 import pps_array2image
 import image
-
+from pp.utils import ensure_dir
 from osgeo import gdal
 from osgeo import osr
 
 
 import logging
-import logging.config
 
-from msgpp_config import APPLDIR
-
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
 LOG = logging.getLogger("pp.geo_image")
 
 class GeoImage(image.Image):
@@ -76,7 +70,7 @@ class GeoImage(image.Image):
         LOG.info("Saving to GeoTiff.")
 
         if(self.mode == "L"):
-            misc_utils.ensure_dir(filename)
+            ensure_dir(filename)
             if self.fill_value is not None:
                 dst_ds = raster.Create( filename, 
                                         self.width, 
@@ -98,7 +92,7 @@ class GeoImage(image.Image):
                 alpha = np.where(mask, alpha, 255)
                 dst_ds.GetRasterBand(2).WriteArray(alpha)
         elif(self.mode == "RGB"):
-            misc_utils.ensure_dir(filename)
+            ensure_dir(filename)
             if self.fill_value is not None:
                 dst_ds = raster.Create( filename, 
                                         self.width, 
@@ -135,7 +129,7 @@ class GeoImage(image.Image):
                 dst_ds.GetRasterBand(4).WriteArray(alpha)
 
         elif(self.mode == "RGBA"):
-            misc_utils.ensure_dir(filename)
+            ensure_dir(filename)
             dst_ds = raster.Create( filename, 
                                     self.width, 
                                     self.height, 

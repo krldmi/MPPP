@@ -5,12 +5,11 @@ its Seviri instrument.
 import os
 import numpy as np
 import logging
-import logging.config
 import glob
 import ConfigParser
 
 import py_msg
-from satellite import SatelliteSnapshot, SatelliteChannel
+from pp.satellite.satellite import SatelliteSnapshot, SatelliteChannel
 import geo_image
 import time_utils
 import msg_ctype

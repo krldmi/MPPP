@@ -8,14 +8,11 @@ import Image as Pil
 import numpy as np
 import shutil
 import logging
-import logging.config
 import errno as err
 
-from msgpp_config import APPLDIR
-import misc_utils
+from pp.utils import ensure_dir
 
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
-LOG = logging.getLogger("pp.image")
+LOG = logging.getLogger("pp.geo_image")
 
 
 class Image(object):
@@ -103,7 +100,7 @@ class Image(object):
         first, then renaming it to the final filename. See also
         :meth:`save` and :meth:`double_save`.
         """
-        misc_utils.ensure_dir(filename)
+        ensure_dir(filename)
 
         trash, ext = os.path.splitext(filename)
         path, trash = os.path.split(filename)
@@ -122,7 +119,7 @@ class Image(object):
         :meth:`GeoImage.secure_save`.
         """
         self.secure_save(local_filename)
-        misc_utils.ensure_dir(remote_filename)
+        ensure_dir(remote_filename)
 
         trash, ext = os.path.splitext(remote_filename)
         path, trash = os.path.split(remote_filename)
@@ -197,7 +194,7 @@ class Image(object):
         """
         channels = self._finalize()
 
-        misc_utils.ensure_dir(filename)
+        ensure_dir(filename)
 
         cases = {"png": "png",
                  "jpg": "jpeg",
@@ -207,7 +204,7 @@ class Image(object):
         fileformat = cases[fileext]
 
         if(self.mode == "L"):
-            misc_utils.ensure_dir(filename)
+            ensure_dir(filename)
             if self.fill_value is not None:
                 img = Pil.fromarray(channels[0].filled(self.fill_value))
                 img.save(filename)
@@ -221,7 +218,7 @@ class Image(object):
                 Pil.merge("LA", (img, pil_alpha)).save(filename, fileformat)
 
         elif(self.mode == "RGB"):
-            misc_utils.ensure_dir(filename)
+            ensure_dir(filename)
             if self.fill_value is not None:
                 pil_r = Pil.fromarray(channels[0].filled(self.fill_value[0]))
                 pil_g = Pil.fromarray(channels[1].filled(self.fill_value[1]))
@@ -244,7 +241,7 @@ class Image(object):
                                                                      fileformat)
 
         elif(self.mode == "RGBA"):
-            misc_utils.ensure_dir(filename)
+            ensure_dir(filename)
             if self.fill_value is not None:
                 pil_r = Pil.fromarray(channels[0].filled(self.fill_value[0]))
                 pil_g = Pil.fromarray(channels[1].filled(self.fill_value[1]))

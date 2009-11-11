@@ -4,15 +4,11 @@ instruments, and satellite snapshots.
 import numpy as np
 import copy
 import logging
-import logging.config
 
-import geo_image
-import image_processing
+import pp.geo_image.geo_image
 import coverage
 import palettes
-from msgpp_config import APPLDIR
 
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
 LOG = logging.getLogger('pp.satellite')
 
 

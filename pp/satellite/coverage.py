@@ -9,16 +9,14 @@ import os
 import numpy
 
 import logging
-import logging.config
 
 import _pyhl
 import _satproj
 import area
 
-from msgpp_config import DATADIR, COMPRESS_LVL, APPLDIR
+COMPRESS_LVL = 6
 
-logging.config.fileConfig(APPLDIR+"/etc/logging.conf")
-LOG = logging.getLogger('pp.coverage')
+LOG = logging.getLogger('pp.satellite')
 
 # !!! This class is already defined in satproj somehow, would be nice to
 # extend it (inherit) instead of creating it from scratch...
