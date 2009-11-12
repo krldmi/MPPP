@@ -4,12 +4,13 @@
    contain the root `toctree` directive.
 
 ===========================================
- Welcome to NWCSAF/MSG PP's documentation!
+ Welcome to NWCSAF/MPPP's documentation!
 ===========================================
 
-NWCSAF/PostProcessing is a python library for generating RGB products for
-meteorological remote sensing. As such it can create RGB composites directly
-from satellite instrument channels, or take advantage of precomputed PGEs.
+NWCSAF's Meteorological Post-Processing Package is a python library for
+generating RGB products for meteorological remote sensing. As such it can
+create RGB composites directly from satellite instrument channels, or take
+advantage of precomputed PGEs.
 
 It is designed to be easily extendable to support any meteorological satellite
 by the creation of plugins. In the base distribution, we provide support for
