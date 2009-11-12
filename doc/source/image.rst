@@ -2,6 +2,6 @@
  Image
 =======
 
-.. automodule:: image
+.. automodule:: pp.geo_image.image
    :members:
    :undoc-members:

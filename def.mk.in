@@ -1,5 +1,0 @@
-# Just get all settings from the ACPG configuration, should be sufficient.
-
-include @ACPG_INSTALL_MKF@
-
-MSGPP_INSTALL_PATH=@prefix@
