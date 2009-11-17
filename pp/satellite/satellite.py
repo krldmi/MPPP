@@ -16,7 +16,8 @@ LOG = logging.getLogger('pp.satellite')
 class Satellite(object):
     """This is the satellite class.
     """
-    pass
+    #: Name of the satellite
+    satname = None
 
 class GenericChannel(object):
     """This is an abstract channel class.
@@ -83,7 +84,7 @@ class SatelliteChannel(GenericChannel):
             return cmp(self.wavelength_range[1] - key,
                        ch2.wavelength_range[1] - key)
 
-    def __repr__(self):
+    def __str__(self):
         return ("'%s: lambda (%.3f,%.3f,%.3f)um, shape %s, resolution %sm'"%
                 (self.name, 
                  self.wavelength_range[0], 
@@ -121,7 +122,7 @@ class SatelliteChannel(GenericChannel):
         """Make a projected copy of the current channel using the given
         *coverage_instance*.
 
-        See also the :mod:`coverage` module.
+        See also the :mod:`pp.satellite.coverage` module.
         """
         res = copy.copy(self)
         if self.isloaded():
@@ -134,6 +135,19 @@ class SatelliteChannel(GenericChannel):
             raise RuntimeError("Can't project, channel %s (%fum) not loaded."
                                %(self.name, self.wavelength_range[1]))
         
+
+    def show(self):
+        """Display the channel as an image.
+        """
+        if not self.isloaded():
+            raise ValueError("Channel not loaded, cannot display.")
+        
+        import Image as pil
+        
+        data = ((self.data - self.data.min()) * 255.0 /
+                (self.data.max() - self.data.min()))
+        img = pil.fromarray(np.array(data.filled(0), np.uint8))
+        img.show()
 
 class SatelliteInstrument(Satellite):
     """This is the satellite instrument class.
@@ -222,6 +236,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB")
         
         img.enhance(stretch = "crude")
@@ -251,12 +266,13 @@ class SatelliteSnapshot(SatelliteInstrument):
         ch3 = self[6.2].data
 
         img = geo_image.GeoImage((ch1, ch2, ch3),
-                                self.area,
-                                self.time_slot,
-                                mode = "RGB",
-                                crange = ((-25,0),
-                                          (-40,5),
-                                          (243 - 70, 208 + 20)))
+                                 self.area,
+                                 self.time_slot,
+                                 fill_value = (0, 0, 0),
+                                 mode = "RGB",
+                                 crange = ((-25,0),
+                                           (-40,5),
+                                           (243 - 70, 208 + 20)))
         return img
             
     airmass.prerequisites = set([6.2, 7.3, 9.7, 10.8])
@@ -269,6 +285,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage(self[10.8].data,
                                  self.area,
                                  self.time_slot,
+                                 fill_value = 0,
                                  mode = "L",
                                  crange = (-70+273.15,57.5+273.15))
         img.enhance(inverse = True)
@@ -283,6 +300,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img =  geo_image.GeoImage(self[6.2].data,
                                   self.area,
                                   self.time_slot,
+                                  fill_value = 0,
                                   mode = "L")
         img.enhance(inverse = True, stretch = "linear")
         return img
@@ -296,6 +314,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage(self[7.3].data,
                                  self.area,
                                  self.time_slot,
+                                 fill_value = 0,
                                  mode = "L")
         img.enhance(inverse = True, stretch = "linear")
         return img
@@ -314,6 +333,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB",
                                  crange = ((0,45),
                                           (0,45),
@@ -340,6 +360,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB")
 
         img.enhance(stretch = "crude")
@@ -361,6 +382,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB")
 
         img.enhance(stretch = "crude")
@@ -381,6 +403,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB",
                                  crange = ((-30, 0),
                                            (0, 55),
@@ -405,6 +428,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB",
                                  crange = ((-4, 2),
                                            (0, 6),
@@ -428,6 +452,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB",
                                  crange = ((-4, 2),
                                            (0, 6),
@@ -452,6 +477,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB")
 
         img.enhance(stretch = (0.005, 0.005))
@@ -471,6 +497,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage(ch1,
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "P",
                                  palette = palette)
 
@@ -501,6 +528,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage(clouds,
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "P",
                                  palette = palette)
 
@@ -540,6 +568,7 @@ class SatelliteSnapshot(SatelliteInstrument):
         img = geo_image.GeoImage(clouds,
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "P",
                                  palette = palette)
         
@@ -568,7 +597,8 @@ class SatelliteSnapshot(SatelliteInstrument):
         ctype = self["CloudType"].cloudtype.data
 
         img = self.pge02c()
-
+        img.fill_value = None
+        
         alpha = np.ma.where(ctype < 5, 0.0, 1.0)
         alpha = np.ma.where(ctype == 15, 0.5, alpha)
         alpha = np.ma.where(ctype == 19, 0.5, alpha)
@@ -585,7 +615,8 @@ class SatelliteSnapshot(SatelliteInstrument):
         self.check_channels(0.6, 0.8, 10.8, "CloudType")
 
         img = self.overview()
-
+        img.fill_value = None
+        
         ctype = self["CloudType"].cloudtype.data
 
         alpha = np.ma.where(ctype < 5, 0.0, 1.0)

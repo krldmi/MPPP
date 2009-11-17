@@ -53,9 +53,12 @@ class SatProjCov(object):
         if resolution is None:
             raise ValueError("The resolution must be an integer!")
 
-        self._filename = ("%s/msg_coverage_%s.%s.%d.hdf"
-                          %("/tmp", self.in_area_id, 
-                            self.out_area_id, self.resolution))
+        self._filename = ("%s/%s_coverage_%s.%s.%d.hdf"
+                          %("/tmp",
+                            snapshot.satname,
+                            self.in_area_id, 
+                            self.out_area_id,
+                            self.resolution))
 
 
         if((self.in_area_id is None) or (self.out_area_id is None)):

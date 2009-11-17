@@ -615,3 +615,18 @@ class Image(object):
 
         self.channels[ch_nb] = ((self.channels[ch_nb] - min_stretch) * 1.0 / 
                                 (max_stretch - min_stretch))
+
+    def merge(self, img):
+        """Use the provided image as background for the current *img* image,
+        that is if the current image has missing data.
+        """
+        if(self.mode != img.mode):
+            raise ValueError("Cannot merge image of different modes.")
+
+        selfmask = reduce(np.ma.mask_or, self.channels)
+
+        for i in range(len(self.channels)):
+            if self.channels[i].mask is not False:
+                self.channels[i] = np.ma.where(selfmask,
+                                               img.channels[i],
+                                               self.channels[i])

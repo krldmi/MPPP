@@ -20,7 +20,7 @@ from __init__ import BASE_PATH
 
 
 CONF = ConfigParser.ConfigParser()
-CONF.read(os.path.join(BASE_PATH,"etc","meteosat.cfg"))
+CONF.read(os.path.join(BASE_PATH, "etc", "meteosat.cfg"))
 
 MSG_DIR = CONF.get('dirs_in', 'msg_dir')
 MSG_LIB = CONF.get('dirs_in', 'msg_lib')
@@ -59,20 +59,19 @@ MET09_SEVIRI = [["VIS06", (0.56, 0.635, 0.71), 3000],
 class MeteoSatSeviriSnapshot(SatelliteSnapshot):
     """This class implements the MeteoSat snapshot as captured by the seviri
     instrument. It's constructor accepts the same arguments as
-    :class:`SatelliteSnapshot`.
+    :class:`pp.satellite.SatelliteSnapshot`.
     """
     
     def __init__(self, *args, **kwargs):
         super(MeteoSatSeviriSnapshot, self).__init__(*args, **kwargs)
-        self.channels = [None] * len(MET09_SEVIRI)
+
+        self.satname = "met09"
+        self.channels = []
         
-        i = 0
         for name, w_range, resolution in MET09_SEVIRI:
-            self.channels[i] = SatelliteChannel(name = name,
-                                                wavelength_range = w_range,
-                                                resolution = resolution)
-            i = i + 1
-            
+            self.channels.append(SatelliteChannel(name = name,
+                                                  wavelength_range = w_range,
+                                                  resolution = resolution))
         
 
     def load(self, channels = None):
@@ -86,8 +85,8 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         do_correct = False
 
         if channels is None:
-            for chn in self.channels:
-                _channels |= set([chn.name])
+            for chn in MET09_SEVIRI:
+                _channels |= set([chn[0]])
 
         elif(isinstance(channels, (list, tuple, set))):
             for chn in channels:
@@ -112,6 +111,9 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         if do_correct:
             for chn in self.co2corr.prerequisites:
                 _channels |= set([self[chn].name])
+
+        # Do not reload data.
+        _channels -= set([chn.name for chn in self.loaded_channels()])
         
         data = py_msg.get_channels(time_utils.time_string(self.time_slot), 
                                    self.area, 
@@ -253,6 +255,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB")
 
         img.enhance(stretch = (0.005, 0.005))
@@ -273,6 +276,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB",
                                  crange = ((-4, 2),
                                            (0, 6),
@@ -281,10 +285,8 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         img.enhance(gamma = (1.0, 2.0, 1.0))
         img.clip()
 
-# Old version, without co2 correction
-#        im.enhance(gamma = (1.0, 2.0, 1.0))
-#        im.clip()
-#        im.enhance(stretch = "crude")
+        # Old version: without co2 correction
+
         return img
 
     night_fog.prerequisites = set(["_IR39Corr", 10.8, 12.0])
@@ -303,6 +305,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         img = geo_image.GeoImage((ch1, ch2, ch3),
                                  self.area,
                                  self.time_slot,
+                                 fill_value = (0, 0, 0),
                                  mode = "RGB")
 
         img.enhance(stretch = "crude")
@@ -321,6 +324,32 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         return img
 
     hr_overview.prerequisites = set(["HRVIS", 0.6, 0.8, 10.8])
+
+    def pge03(self):
+        """Make an RGB composite of the CTTH.
+        """
+        self.check_channels("CTTH")
+        # This is ugly. format should not matter here.
+        # FIXME
+        import msg_ctth
+        ctth = msg_ctth.msg_ctth2ppsformat(self["CTTH"])
+        
+        arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
+        ctth_data = np.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)
+        ctth_data = np.ma.array(ctth_data)
+
+        palette = pp.satellite.palettes.ctth_height()
+
+        img = geo_image.GeoImage(ctth_data.astype(np.uint8),
+                                 self.area,
+                                 self.time_slot,
+                                 fill_value = (0, 0, 0),
+                                 mode = "P",
+                                 palette = palette)
+
+        return img
+        
+    pge03.prerequisites = set(["CTTH"])    
 
     def get_lat_lon(self, resolution):
         """Get the latitude and longitude grids of the current region for the
@@ -353,30 +382,6 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
     
     ctth.prerequisites = set(["CTTH"])
 
-    def pge03(self):
-        """Make an RGB composite of the CTTH.
-        """
-        self.check_channels("CTTH")
-        # This is ugly. format should not matter here.
-        # FIXME
-        import msg_ctth
-        ctth = msg_ctth.msg_ctth2ppsformat(self["CTTH"])
-        
-        arr = (ctth.height*ctth.h_gain+ctth.h_intercept)
-        ctth_data = np.where(ctth.height == ctth.h_nodata, 0, arr / 500.0 + 1)
-        ctth_data = np.ma.array(ctth_data)
-
-        palette = pp.satellite.palettes.ctth_height()
-
-        img = geo_image.GeoImage(ctth_data.astype(np.uint8),
-                                 self.area,
-                                 self.time_slot,
-                                 mode = "P",
-                                 palette = palette)
-
-        return img
-        
-    pge03.prerequisites = set(["CTTH"])    
 
     
 

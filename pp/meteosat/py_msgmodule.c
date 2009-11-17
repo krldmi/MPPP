@@ -44,7 +44,9 @@ channel_number(char * channel_string)
     channel=HRVIS;
   else
     {
-      PyErr_SetString(PyExc_KeyError,"Channel name not recognized.");
+      char error_msg[256];
+      sprintf(error_msg,"%s: Channel name not recognized.",channel_string);
+      PyErr_SetString(PyExc_KeyError,error_msg);
       return -1;
     }
 
@@ -141,7 +143,8 @@ msg_get_channels(PyObject *dummy, PyObject *args)
   char channel_name[128];
   Band_mask bands;
   int int_bandmask = 0;
-
+  int seviri_bands = 0;
+  int hr_seviri_band = 0;
 
   unsigned char got_hr = false;
   unsigned char got_nonhr = false;
@@ -281,13 +284,20 @@ msg_get_channels(PyObject *dummy, PyObject *args)
 
   // Check the channels
 
-  int_bandmask ^= CheckSevBand(&seviri);
+  if(got_nonhr)
+    seviri_bands = CheckSevBand(&seviri);
+  if(got_hr)
+    hr_seviri_band = CheckSevBand(&hr_seviri);
+
+  int_bandmask ^= (hr_seviri_band | seviri_bands);
 
   j = 0;
   for(i = int_bandmask; i != 0; i >>= 1)
-    if(i & 1)
-      bands[j] = false;
-    j++;
+    {
+      if(i & 1)
+        bands[j] = false;
+      j++;
+    }
 
   // Append channels to a python dict
 

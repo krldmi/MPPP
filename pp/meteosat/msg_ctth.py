@@ -59,6 +59,11 @@ class MsgCTTH(GenericChannel):
         self.temperature = None
         self.pressure = None
         
+    def __str__(self):
+        return ("'%s: shape %s, resolution %sm'"%
+                (self.name, 
+                 self.shape, 
+                 self.resolution))   
 
     def isloaded(self):
         return self.filled
@@ -200,6 +205,7 @@ class MsgCTTH(GenericChannel):
         a_node = a_node_list.getNode("/CTTH_QUALITY/ID")
         self.processing_flags.id = a_node.data()
 
+        self.shape = self.height.data.shape
         self.filled = True
 
 

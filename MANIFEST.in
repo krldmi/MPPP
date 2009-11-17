@@ -1,3 +1,5 @@
 include doc/Makefile
 include doc/source/*
 include etc/*
+include log/README
+include MANIFEST.in

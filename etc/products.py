@@ -5,7 +5,7 @@ BASE_PATH = os.path.sep.join(os.path.dirname(
     os.path.realpath(__file__)).split(os.path.sep)[:-1])
 
 CONF = ConfigParser.ConfigParser()
-CONF.read(os.path.join, "etc", "meteosat.cfg")
+CONF.read(os.path.join("etc", "meteosat.cfg"))
 
 LOCAL_SIR_DIR = CONF.get('dirs_out', 'local_sir')
 SIR_DIR = CONF.get('dirs_out', 'sir_dir')
