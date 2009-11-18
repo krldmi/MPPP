@@ -95,6 +95,12 @@ class Image(object):
         return channels
 
 
+    def show(self):
+        """Display the image on screen.
+        """
+        self.pil_image().show()
+        
+
     def secure_save(self, filename):
         """Save the current image to *filename* using a temporary file at
         first, then renaming it to the final filename. See also
@@ -188,26 +194,14 @@ class Image(object):
                 LOG.warning("Temp file is %s, removing it."%tmpfilename)
                 os.remove(tmpfilename)
 
-    def save(self, filename):
-        """Save the image to the given *filename*. See also
-        :meth:`double_save` and :meth:`secure_save`.
+    def pil_image(self):
+        """Return a PIL image from the current image.
         """
         channels = self._finalize()
 
-        ensure_dir(filename)
-
-        cases = {"png": "png",
-                 "jpg": "jpeg",
-                 "tif": "tiff"}
-
-        fileext =  os.path.splitext(filename)[1][1:4]
-        fileformat = cases[fileext]
-
         if(self.mode == "L"):
-            ensure_dir(filename)
             if self.fill_value is not None:
                 img = Pil.fromarray(channels[0].filled(self.fill_value))
-                img.save(filename)
             else:
                 img = Pil.fromarray(channels[0].filled(0))
                 alpha = np.zeros(channels[0].shape, np.uint8)
@@ -215,16 +209,14 @@ class Image(object):
                 alpha = np.where(mask, alpha, 255)
                 pil_alpha = Pil.fromarray(alpha)
                 
-                Pil.merge("LA", (img, pil_alpha)).save(filename, fileformat)
+                img = Pil.merge("LA", (img, pil_alpha))
 
         elif(self.mode == "RGB"):
-            ensure_dir(filename)
             if self.fill_value is not None:
                 pil_r = Pil.fromarray(channels[0].filled(self.fill_value[0]))
                 pil_g = Pil.fromarray(channels[1].filled(self.fill_value[1]))
                 pil_b = Pil.fromarray(channels[2].filled(self.fill_value[2]))
-                Pil.merge("RGB", (pil_r, pil_g, pil_b)).save(filename,
-                                                             fileformat)
+                img = Pil.merge("RGB", (pil_r, pil_g, pil_b))
             else:
                 pil_r = Pil.fromarray(channels[0].filled(0))
                 pil_g = Pil.fromarray(channels[1].filled(0))
@@ -237,18 +229,15 @@ class Image(object):
                 alpha = np.where(mask, alpha, 255)
                 pil_a = Pil.fromarray(alpha)
 
-                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename,
-                                                                     fileformat)
+                img = Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a))
 
         elif(self.mode == "RGBA"):
-            ensure_dir(filename)
             if self.fill_value is not None:
                 pil_r = Pil.fromarray(channels[0].filled(self.fill_value[0]))
                 pil_g = Pil.fromarray(channels[1].filled(self.fill_value[1]))
                 pil_b = Pil.fromarray(channels[2].filled(self.fill_value[2]))
                 pil_a = Pil.fromarray(channels[3].filled(self.fill_value[3]))
-                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename,
-                                                                     fileformat)
+                img = Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a))
             else:
                 pil_r = Pil.fromarray(channels[0].filled(0))
                 pil_g = Pil.fromarray(channels[1].filled(0))
@@ -262,8 +251,27 @@ class Image(object):
                 alpha = np.where(mask, 0, channels[3])
                 pil_a = Pil.fromarray(alpha)
 
-                Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a)).save(filename,
-                                                                     fileformat)
+                img = Pil.merge("RGBA", (pil_r, pil_g, pil_b, pil_a))
+
+        else:
+            raise TypeError("Does not know how to use mode %s."%(self.mode))
+
+        return img
+
+    def save(self, filename):
+        """Save the image to the given *filename*. See also
+        :meth:`double_save` and :meth:`secure_save`.
+        """
+        ensure_dir(filename)
+
+        cases = {"png": "png",
+                 "jpg": "jpeg",
+                 "tif": "tiff"}
+
+        fileext =  os.path.splitext(filename)[1][1:4]
+        fileformat = cases[fileext]
+
+        self.pil_image().save(filename, fileformat)
                     
 
     def putalpha(self, alpha):
