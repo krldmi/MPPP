@@ -153,10 +153,16 @@ class SatelliteInstrument(Satellite):
     """This is the satellite instrument class.
     """
     channels = []
+    channel_list = []
 
     def __init__(self, *args, **kwargs):
         super(SatelliteInstrument, self).__init__(*args, **kwargs)
         self.channels = []
+        
+        for name, w_range, resolution in self.channel_list:
+            self.channels.append(SatelliteChannel(name = name,
+                                                  wavelength_range = w_range,
+                                                  resolution = resolution))
 
     def __getitem__(self, key, aslist = False):
         if not isinstance(key, (tuple, list)):

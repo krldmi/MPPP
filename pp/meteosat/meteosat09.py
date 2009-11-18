@@ -63,15 +63,12 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
     """
     
     def __init__(self, *args, **kwargs):
+        
+        self.channel_list = MET09_SEVIRI
+        
         super(MeteoSatSeviriSnapshot, self).__init__(*args, **kwargs)
 
         self.satname = "met09"
-        self.channels = []
-        
-        for name, w_range, resolution in MET09_SEVIRI:
-            self.channels.append(SatelliteChannel(name = name,
-                                                  wavelength_range = w_range,
-                                                  resolution = resolution))
         
 
     def load(self, channels = None):

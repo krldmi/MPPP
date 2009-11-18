@@ -7,8 +7,9 @@ import numpy as np
 import ConfigParser
 import os.path
 import glob
+import math
 
-from pp.satellite.satellite import SatelliteSnapshot, SatelliteChannel
+from pp.satellite.satellite import SatelliteSnapshot
 import avhrr
 from pp.noaa import BASE_PATH
 
@@ -35,28 +36,22 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
     """
 
     def __init__(self, *args, **kwargs):
+
+        self.channel_list = NOAA_AVHRR
+        
         super(NoaaAvhrrSnapshot, self).__init__(*args, **kwargs)
 
         self.satname = "noaa"
         self.number = kwargs.get("number", 0)
-        self.channels = []
-        
-        for name, w_range, resolution in NOAA_AVHRR:
-            self.channels.append(SatelliteChannel(name = name,
-                                                  wavelength_range = w_range,
-                                                  resolution = resolution))
-            
-    def load(self, channels = None):
-        """Load data into the *channels*. Channels* is a list or a tuple
-        containing channels we will load data into. If None, all channels are
-        loaded.
-        """
 
-        
+        self.lat = None
+        self.lon = None
+
         if self.number != 0:
             number_string = str(self.number)
         else:
             number_string = "??"
+            
         filename = (L1B_DIR+"/noaa"+number_string+
                     "_%Y%m%d_%H%M_?????/hrpt_noaa"+
                     number_string+"_%Y%m%d_%H%M_?????.l1b")
@@ -65,6 +60,34 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
 
         if len(file_list) != 1:
             raise IOError("More than one l1b file matching!")
+
+        if self.number == 0:
+            self.number = file_list[0][-26:-24]
+            
+        self.area = self.time_slot.strftime("noaa"+str(self.number)+
+                                            "%Y%m%d%H%M")
+        
+    def load(self, channels = None):
+        """Load data into the *channels*. Channels* is a list or a tuple
+        containing channels we will load data into. If None, all channels are
+        loaded.
+
+        Note that with the current version of Ahamap (1.55), on which this
+        library depends, it is not possible to load one channel at the time, so
+        the user should read as many channels as needed at once.
+        """
+
+        
+        if self.number != 0:
+            number_string = str(self.number)
+        else:
+            number_string = "??"
+
+        filename = (L1B_DIR+"/noaa"+number_string+
+                    "_%Y%m%d_%H%M_?????/hrpt_noaa"+
+                    number_string+"_%Y%m%d_%H%M_?????.l1b")
+
+        file_list = glob.glob(self.time_slot.strftime(filename))
 
         avh = avhrr.avhrr(file_list[0])
         avh.get_unprojected()
@@ -102,5 +125,15 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
                 LOG.warning("Channel "+str(chn)+" not available,"
                             "thus not loaded.")
             
+        self.lat = instrument_data.latdata / math.pi * 180
+        self.lon = instrument_data.londata / math.pi * 180
         
 
+    def get_lat_lon(self, resolution):
+        """Get the latitude and longitude grids of the current region for the
+        given *resolution*.
+        """
+        if not isinstance(resolution, int):
+            raise TypeError("Resolution must be an integer number of meters.")
+
+        return self.lat, self.lon
