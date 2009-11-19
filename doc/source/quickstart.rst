@@ -81,6 +81,18 @@ or from the channel name::
    >>> print global_data["VIS06"]
    'VIS06: lambda (0.560,0.635,0.710)um, shape (1200, 3000), resolution 3000m'
 
+or from the resolution::
+ 
+   >>> print global_data[3000]
+   'VIS06: lambda (0.560,0.635,0.710)um, shape (1200, 3000), resolution 3000m'
+
+or more than one at the time::
+
+   >>> print global_data[3000, 0.8]
+   'VIS08: lambda (0.740,0.810,0.880)um, shape (1200, 3000), resolution 3000m'
+
+
+
 
 Projections
 ===========
