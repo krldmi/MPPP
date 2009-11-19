@@ -276,9 +276,9 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.time_slot,
                                  fill_value = (0, 0, 0),
                                  mode = "RGB",
-                                 crange = ((-25,0),
-                                           (-40,5),
-                                           (243 - 70, 208 + 20)))
+                                 crange = ((-25, 0),
+                                           (-40, 5),
+                                           (243, 208)))
         return img
             
     airmass.prerequisites = set([6.2, 7.3, 9.7, 10.8])
@@ -293,7 +293,7 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.time_slot,
                                  fill_value = 0,
                                  mode = "L",
-                                 crange = (-70+273.15,57.5+273.15))
+                                 crange = (-70 + 273.15, 57.5 + 273.15))
         img.enhance(inverse = True)
         return img
 
@@ -341,9 +341,9 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  self.time_slot,
                                  fill_value = (0, 0, 0),
                                  mode = "RGB",
-                                 crange = ((0,45),
-                                          (0,45),
-                                          (0,45)))
+                                 crange = ((0, 45),
+                                           (0, 45),
+                                           (0, 45)))
 
 
 
@@ -413,7 +413,7 @@ class SatelliteSnapshot(SatelliteInstrument):
                                  mode = "RGB",
                                  crange = ((-30, 0),
                                            (0, 55),
-                                           (- 70, 20)))
+                                           (-70, 20)))
 
         img.clip()
         img.enhance(stretch = "crude")
