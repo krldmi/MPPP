@@ -19,6 +19,7 @@ Meteosat 8 and 9.
 .. toctree::
    :maxdepth: 2
 
+   install
    quickstart
    satellites_h
    coverage

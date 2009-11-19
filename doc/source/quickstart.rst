@@ -6,6 +6,8 @@ The software uses OOP extensively, to allow higher level metaobject handling.
 
 For this tutorial, we will use the Meteosat plugin and data.
 
+Don’t forget to first source the `profile` file of interest located in the
+source `etc` directory.
 
 First example
 =============

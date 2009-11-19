@@ -7,7 +7,7 @@ import os.path
 import ConfigParser
 
 BASE_PATH = os.path.sep.join(os.path.dirname(
-    os.path.realpath(__file__)).split(os.path.sep)[:-1])
+    os.path.realpath(__file__)).split(os.path.sep))
 
 CONF = ConfigParser.ConfigParser()
 CONF.read(os.path.join(BASE_PATH, "etc", "meteosat.cfg"))
@@ -15,6 +15,8 @@ CONF.read(os.path.join(BASE_PATH, "etc", "meteosat.cfg"))
 MSG_LIB = CONF.get('dirs_in', 'msg_lib')
 MSG_INC = CONF.get('dirs_in', 'msg_inc')
 
+CONF.read(os.path.join(BASE_PATH, "setup.cfg"))
+NUMPY_INC = CONF.get('numpy', 'numpy_inc')
 NAME = 'NWCSAF_MPPP'
 
 setup(name=NAME,
@@ -45,6 +47,7 @@ setup(name=NAME,
                     'doc/source/misc_utils.rst',
                     'doc/source/palettes.rst',
                     'doc/source/quickstart.rst',
+                    'doc/source/install.rst',
                     'doc/source/rs_images.rst',
                     'doc/source/sat_ext.rst',
                     'doc/source/satellite.rst',
@@ -53,9 +56,7 @@ setup(name=NAME,
       ext_modules=[Extension('pp.meteosat.py_msg',
                              ['pp/meteosat/py_msgmodule.c'],
                              include_dirs=[MSG_INC,
-                                           # FIXME should be system independent
-                                           '/usr/lib64/python2.5/'
-                                           'site-packages/numpy/core/include'],
+                                           NUMPY_INC],
                              libraries=['nwclib','msg','m'],
                              library_dirs=[MSG_LIB])],
       requires=['acpg (>=2.03)','numpy (>=1.2.0)']

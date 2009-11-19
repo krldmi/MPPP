@@ -1,6 +1,6 @@
 #### for mppp
 
-PYTHONPATH=${PYTHONPATH}:/local_disk/usr/test/etc
+PYTHONPATH=${PYTHONPATH}:/local_disk/usr/test/etc:/local_disk/usr/test/lib64/python2.5/site-packages
 export PYTHONPATH
 
 #### for acpg
