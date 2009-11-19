@@ -4,10 +4,16 @@
 
 from distutils.core import setup, Extension
 import os.path
+import ConfigParser
 
-MSG_PATH = '/home/a001673/usr/src/msg/'
-MSG_INCLUDE = os.path.join(MSG_PATH, 'include')
-MSG_LIB = os.path.join(MSG_PATH, 'bin')
+BASE_PATH = os.path.sep.join(os.path.dirname(
+    os.path.realpath(__file__)).split(os.path.sep)[:-1])
+
+CONF = ConfigParser.ConfigParser()
+CONF.read(os.path.join(BASE_PATH, "etc", "meteosat.cfg"))
+
+MSG_LIB = CONF.get('dirs_in', 'msg_lib')
+MSG_INC = CONF.get('dirs_in', 'msg_inc')
 
 NAME = 'NWCSAF_MPPP'
 
@@ -46,7 +52,7 @@ setup(name=NAME,
                     'doc/source/time_utils.rst'])],
       ext_modules=[Extension('pp.meteosat.py_msg',
                              ['pp/meteosat/py_msgmodule.c'],
-                             include_dirs=[MSG_INCLUDE,
+                             include_dirs=[MSG_INC,
                                            # FIXME should be system independent
                                            '/usr/lib64/python2.5/'
                                            'site-packages/numpy/core/include'],

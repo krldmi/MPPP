@@ -8,15 +8,15 @@ import logging
 import glob
 import ConfigParser
 
-import py_msg
+import pp.meteosat.py_msg as py_msg
 from pp.satellite.satellite import SatelliteSnapshot, SatelliteChannel
 import pp.geo_image.geo_image as geo_image
-import time_utils
-import msg_ctype
-import msg_ctth
-from msg_ctype2radar import NordRadCType
+import pp.meteosat.time_utils as time_utils
+import pp.meteosat.msg_ctype as msg_ctype
+import pp.meteosat.msg_ctth as msg_ctth
+from pp.meteosat.msg_ctype2radar import NordRadCType
 import pp.satellite.palettes
-from __init__ import BASE_PATH
+from pp.meteosat import BASE_PATH
 
 
 CONF = ConfigParser.ConfigParser()
@@ -28,7 +28,7 @@ MSG_BIN = CONF.get('dirs_in', 'msg_bin')
 CTYPE_DIR = CONF.get('dirs_in', 'ctype_dir')
 CTTH_DIR = CONF.get('dirs_in', 'ctth_dir')
 
-MSG_PGE_EXTENTIONS = ["PLAX.CTTH.0.h5","PLAX.CLIM.0.h5","h5"]
+MSG_PGE_EXTENTIONS = ["PLAX.CTTH.0.h5", "PLAX.CLIM.0.h5", "h5"]
 
 LOG = logging.getLogger("pp.meteosat")
 

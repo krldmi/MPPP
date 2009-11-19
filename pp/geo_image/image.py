@@ -428,7 +428,7 @@ class Image(object):
     def resize(self, shape):
         """Resize the image to the given *shape* tuple, in place.
         """
-        factor = self.channels[0] * 1.0 / shape[0]
+        factor = shape[0] * 1.0 / self.channels[0].shape[0]
 
         if int(factor) != factor:
             raise ValueError("Resize not of integer factor!")
