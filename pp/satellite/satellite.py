@@ -7,8 +7,8 @@ import logging
 
 import pp.geo_image.geo_image as geo_image
 import pp.geo_image.image_processing as image_processing
-import coverage
-import palettes
+import pp.satellite.coverage as coverage
+import pp.satellite.palettes as palettes
 
 LOG = logging.getLogger('pp.satellite')
 

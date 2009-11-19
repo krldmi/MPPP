@@ -39,7 +39,7 @@ class Image(object):
     fill_value = None
     palette = None
     
-    #Shape (dimensions) of the image.
+    #: Shape (dimensions) of the image.
     shape = None
     
     def __init__(self, channels, mode = "L", color_range = None, 

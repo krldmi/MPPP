@@ -82,7 +82,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         do_correct = False
 
         if channels is None:
-            for chn in MET09_SEVIRI:
+            for chn in self.channel_list:
                 _channels |= set([chn[0]])
 
         elif(isinstance(channels, (list, tuple, set))):

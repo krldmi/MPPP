@@ -64,8 +64,7 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
         if self.number == 0:
             self.number = file_list[0][-26:-24]
             
-        self.area = self.time_slot.strftime("noaa"+str(self.number)+
-                                            "%Y%m%d%H%M")
+        self.area = self.time_slot.strftime(str(self.number)+"_%Y%m%d%H%M")
         
     def load(self, channels = None):
         """Load data into the *channels*. Channels* is a list or a tuple
@@ -103,7 +102,7 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
             data_channels[channel_name] = chn.data
         
         if channels is None:
-            for chn in NOAA_AVHRR:
+            for chn in self.channel_list:
                 _channels |= set([chn[0]])
 
         elif(isinstance(channels, (list, tuple, set))):
@@ -120,10 +119,22 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
 
         for chn in _channels:
             if chn in available_channels:
+                if chn in ["1", "2", "3A"]:
+                    gain = instrument_data.info["vis_gain"]
+                    intercept = instrument_data.info["vis_intercept"]
+                else:
+                    gain = instrument_data.info["ir_gain"]
+                    intercept = instrument_data.info["ir_intercept"]
+
                 self[chn].add_data(np.ma.array(data_channels[chn]))
+                np.ma.masked_equal(self[chn].data,
+                                   instrument_data.info["missing_data"])
+                np.ma.masked_equal(self[chn].data,
+                                   instrument_data.info["nodata"])
+                self[chn].data =  self[chn].data * gain + intercept
+                
             else:
-                LOG.warning("Channel "+str(chn)+" not available,"
-                            "thus not loaded.")
+                LOG.warning("Channel "+str(chn)+" not available, not loaded.")
             
         self.lat = instrument_data.latdata / math.pi * 180
         self.lon = instrument_data.londata / math.pi * 180
