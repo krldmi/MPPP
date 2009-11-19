@@ -94,3 +94,24 @@ Just run::
 Then don’t forget to source the `etc/offline.profile` before you start playing.
 
 Happy hacking !
+
+Distributing
+============
+
+After you hack the hell out of MPPP, you might want to package it and sell it
+to make money. We can tell you how to do the first part.
+
+To build a source tarball, and output it to the `dist` directory::
+
+  python setup.py sdist
+
+To build a binary tarball, and output it to the `dist` directory::
+
+  python setup.py bdist
+
+To build rpms, and output them to the `dist` directory::
+
+  python setup.py bdist_rpm
+
+Don’t forget to send us a bottle of wine or two if you become rich with this :)
+
