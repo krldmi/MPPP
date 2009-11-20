@@ -1,6 +1,6 @@
-==========================
- Installation instruction
-==========================
+===========================
+ Installation instructions
+===========================
 
 Getting the files
 =================
@@ -17,7 +17,7 @@ the moment. You might be fine with this, but if you want to be up-to-date,
 there are two more branches you have to be aware of: *test* and *unstable*.
 
 *test* receives bugfixes during freezing periods, while *unstable* has all the
-latest great feature, but is, as it's name suggests, potentially unstable.
+latest great features, but is, as it's name suggests, potentially unstable.
 
 To retrieve these branches from the repository, just do::
 
@@ -56,7 +56,7 @@ following lines::
   numpy_inc = /usr/lib64/python2.5/site-packages/numpy/core/include
 
 `prefix` defines the directory to install to. It is the directory that will
-then be in your `PYTHONPATH` and that contain the compiled libs.
+then be in your `PYTHONPATH` and that contains the compiled libs.
 
 `numpy_inc` is the location of your numpy C headers. This is needed for the
 Meteosat plugin only.
@@ -91,7 +91,12 @@ Just run::
 
   python setup.py install
 
-Then don’t forget to source the `etc/offline.profile` before you start playing.
+or if you want to specify a different prefix::
+
+  python setup.py install --prefix=/my/path/
+
+Then don’t forget to source the `etc/offline.profile` file before you start
+playing.
 
 Happy hacking !
 

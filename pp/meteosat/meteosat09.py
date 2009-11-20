@@ -201,11 +201,11 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
 
     def co2corr(self):
         """CO2 correction of the brightness temperature of the MSG 3.9um
-        channel:
+        channel::
         
-        T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
-        Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
-        dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
+          T4_CO2corr = (BT(IR3.9)^4 + Rcorr)^0.25
+          Rcorr = BT(IR10.8)^4 - (BT(IR10.8)-dt_CO2)^4
+          dt_CO2 = (BT(IR10.8)-BT(IR13.4))/4.0
         """
         try:
             self.check_channels(3.9, 10.8, 13.4)

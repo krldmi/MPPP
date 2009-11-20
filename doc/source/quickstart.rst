@@ -29,19 +29,29 @@ we will work on and the time of the snapshot of interest. The time is defined
 as a datetime object. The area defines which data to load in the next step.
 
 The next step is loading the data. Here we call it with a list of the
-wavelengths of the channels we are interested in. The wavelengths are given in
-micrometers and have to be given as a floating point number (*i.e.*, don't type
-'1', but '1.0').
+wavelengths of the channels we are interested in. Each retrieved channel is the
+closest in terms of central wavelength, provided that the required wavelength
+is within the bounds of the channel.
+
+The wavelengths are given in micrometers and have to be given as a floating
+point number (*i.e.*, don't type '1', but '1.0'). Using an integer number
+instead returns a channel based on resolution, while using a string retrieves a
+channels based on its name.
 
 Once the channels are loaded, we generate an overview RGB composite image, and
-save it as a png image.
+save it as a png image. Instead of :meth:`save`, one could also use
+:meth:`show` if the only purpose is to display the image on screen.
+
+Available composites are listed in the :mod:`pp.satellite.satellite` module
+documentation.
 
 We want more !
 ==============
 
-Now, this last step worked because the channels needed for the overview are
-loaded. If we try to generate a natural color composite, it will result in an
-error::
+In the last example, the composite generation worked because the channels
+needed for the overview (0.6, 0.8, 10.8 um) were loaded. If we try to generate
+a natural color composite, which requires also the 1.6um channel, it will
+result in an error::
 
    
     >>> img = global_data.natural()
@@ -49,9 +59,9 @@ error::
       ...
     RuntimeError: Required channel 1.6 not loaded, aborting.
 
-So it means that we have to load the channels first. To do this we could enter
-the channels list to load manually, as we did for the overview, but we provide
-a way to get the list of channels needed by a given method using the
+So it means that we have to load the missing channel first. To do this we could
+enter the channels list to load manually, as we did for the overview, but we
+provide a way to get the list of channels needed by a given method using the
 `prerequisites` method attribute::
 
     >>> global_data.load(global_data.natural.prerequisites)
@@ -63,7 +73,8 @@ Now you can save the image::
     >>> img.save("./mynaturalcolors.png")
     >>>
 
-If you want to combine several prerequisites for channel loading, you can do::
+If you want to combine several prerequisites for channel loading, since
+prerequisites are python sets, you can do::
 
     >>> global_data.load(global_data.overview.prerequisites | global_data.natural.prerequisites)
     >>>
@@ -93,7 +104,13 @@ or more than one at the time::
    >>> print global_data[3000, 0.8]
    'VIS08: lambda (0.740,0.810,0.880)um, shape (1200, 3000), resolution 3000m'
 
+The printed lines consists of the following values:
 
+* First the name is displayed,
+* then the lambda triplet gives the min-, center-, and max-wavelength of the
+  channel,
+* follows the shape of the loaded data, or `None` if the data is not loaded,
+* and finally the theoretical wavelength of the channel is shown.
 
 
 Projections

@@ -14,13 +14,16 @@ LOG = logging.getLogger('pp.satellite')
 
 
 class Satellite(object):
-    """This is the satellite class.
+    """This is the satellite class. It is the most general class for
+    satellites, and thus shall remain quite abstract.
     """
     #: Name of the satellite
     satname = None
 
 class GenericChannel(object):
-    """This is an abstract channel class.
+    """This is an abstract channel class. It can be a super class for
+    calibrated channels data or more elaborate channels such as cloudtype or
+    CTTH.
     """
     #: Name of the channel.
     name = None
@@ -37,8 +40,7 @@ class GenericChannel(object):
 
 class SatelliteChannel(GenericChannel):
     """This is the satellite channel class. It defines satellite channels as a
-    container tfor channel data. The data calibrated channels data or mor
-    elaborate such as cloudtype or CTTH.
+    container for calibrated channel data. 
 
     The *resolution* sets the resolution of the channel, in meters. The
     *wavelength_range* is a 3 member tuple, containing the lowest-, center-,
@@ -150,7 +152,8 @@ class SatelliteChannel(GenericChannel):
         img.show()
 
 class SatelliteInstrument(Satellite):
-    """This is the satellite instrument class.
+    """This is the satellite instrument class. It is an abstract channel
+    container.
     """
     channels = []
     channel_list = []
@@ -219,9 +222,14 @@ class SatelliteInstrument(Satellite):
 
 
 class SatelliteSnapshot(SatelliteInstrument):
-    """This is the satellite snapshot class.
+    """This is the satellite snapshot class. It is a capture of the satellite
+    (channels) data at given *time_slot* and *area*. 
     """
+
+    #: Time of the snapshot
     time_slot = None
+
+    #: Area on which the snapshot is defined.
     area = None
 
     def __init__(self, time_slot = None, area = None, *args, **kwargs):
@@ -493,7 +501,7 @@ class SatelliteSnapshot(SatelliteInstrument):
     cloudtop.prerequisites = set([3.9, 10.8, 12.0])
 
     def pge02(self):
-        """Make a Cloudtype RGB image composite.
+        """Make a Cloudtype RGB image composite, using paletted colors.
         """
         self.check_channels("CloudType")
 
@@ -512,8 +520,8 @@ class SatelliteSnapshot(SatelliteInstrument):
     pge02.prerequisites = set(["CloudType"])
 
     def pge02b(self):
-        """Make a Cloudtype RGB image composite, depicting low clouds with
-        palette colors, and the other as in the IR 10.8 channel.
+        """Make a Cloudtype RGB image composite, depicting low clouds, land and
+        sea with palette colors, and the rest as in the IR 10.8 channel.
         """
         self.check_channels(10.8, "CloudType")
 
@@ -596,7 +604,8 @@ class SatelliteSnapshot(SatelliteInstrument):
     pge02c_with_overlay.prerequisites = set(["CloudType", 10.8])
 
     def pge02d(self):
-        """Same as :meth:`pge02c` with transparent cloud-free areas.
+        """Same as :meth:`pge02c` with transparent cloud-free areas, and
+        semi-transparent thin clouds.
         """
         self.check_channels(10.8, "CloudType")
 
@@ -638,9 +647,10 @@ class SatelliteSnapshot(SatelliteInstrument):
 
     def project(self, dest_area, channels = None):
         """Make a copy of the current snapshot projected onto the
-        *dest_area*. Available areas are defined in the main configuration
-        file. *channels* tells which channels are going to be present in the
-        returned snapshot, and if None, all channels are copied over.
+        *dest_area*. Available areas are defined in the region configuration
+        file (ACPG). *channels* tells which channels are to be projected, and
+        if None, all channels are projected and copied over to the return
+        snapshot.
 
         Note: channels have to be loaded to be projected, otherwise an
         exception is raised.

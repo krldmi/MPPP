@@ -466,11 +466,18 @@ msg_missing_value()
 
 static PyMethodDef MsgMethods[] = {
     {"get_channels",  msg_get_channels, METH_VARARGS,
-     "Gets a list of Seviri channels from MSG."},
+     "Loads the data of a list of Seviri *channels* from MSG into numpy arrays,"
+     " for given *time_slot* and *region_name*. If *read_rad* is true, the "
+     "radiance values are loaded also.\n\nThe return value is presented as a "
+     "dictionnary of dictionnaries. The first level of keys are the channel "
+     "names, the second level contains RAD, CAL, MASK, respectively for the "
+     "radiance data, calibrated data, and the mask of invalid data (true where"
+     " data is invalid). RAD is None if the radiance is not loaded (default)."},
     {"lat_lon_from_region",  msg_lat_lon_from_region, METH_VARARGS,
-     "Gets latitudes and longitudes for a given region file."},
+     "Return a tuple of latitudes and longitudes 2D grids for a given "
+     "*region_name* and a given *channel* (name)."},
     {"missing_value",  msg_missing_value, METH_VARARGS,
-     "Gets the fill value for missing data."},
+     "Returns the fill value for missing data."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

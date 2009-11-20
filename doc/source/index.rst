@@ -22,12 +22,7 @@ Meteosat 8 and 9.
    install
    quickstart
    satellites_h
-   coverage
    rs_images
-   time_utils
-   misc_utils
-   palettes
-
 
 
 Indices and tables
