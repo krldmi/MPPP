@@ -236,6 +236,27 @@ class SatelliteSnapshot(SatelliteInstrument):
         super(SatelliteSnapshot, self).__init__(*args, **kwargs)
         self.time_slot = time_slot
         self.area = area
+        self.channels_to_load = set([])
+
+    def load(self, channels = None):
+        """Load satellite data into the *channels*. Channels* is a list or a
+        tuple containing channels we will load data into. If None, all channels
+        are loaded.
+        """
+        if channels is None:
+            for chn in self.channel_list:
+                self.channels_to_load |= set([chn[0]])
+
+        elif(isinstance(channels, (list, tuple, set))):
+            for chn in channels:
+                try:
+                    self.channels_to_load |= set([self[chn].name])
+                except KeyError:
+                    LOG.warning("Channel "+str(chn)+" not found,"
+                                "thus not loaded.")
+        else:
+            raise TypeError("Channels must be a list/"
+                            "tuple/set of channel keys!")
 
 
     def overview(self):

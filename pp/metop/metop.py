@@ -1,6 +1,5 @@
-"""This is the main module for noaa handling.
+"""This is the main module for metop handling.
 """
-
 
 import logging
 import numpy as np
@@ -11,48 +10,40 @@ import math
 
 from pp.satellite.satellite import SatelliteSnapshot
 import avhrr
-from pp.noaa import BASE_PATH
+from pp.metop import BASE_PATH
 
 
 CONF = ConfigParser.ConfigParser()
-CONF.read(os.path.join(BASE_PATH, "etc", "noaa.cfg"))
+CONF.read(os.path.join(BASE_PATH, "etc", "metop.cfg"))
 
 L1B_DIR = CONF.get('dirs_in', 'l1b_dir')
 
-LOG = logging.getLogger("pp.noaa")
+LOG = logging.getLogger("pp.metop")
 
 
-NOAA_AVHRR = [["1", (0.58, 0.635, 0.68), 1090],
-              ["2", (0.725, 0.81, 1.00), 1090],
-              ["3A", (1.58, 1.61, 1.64), 1090],
-              ["3B", (3.55, 3.74, 3.93), 1090],
-              ["4", (10.30, 10.80, 11.30), 1090],
-              ["5", (11.50, 12.00, 12.50), 1090]]
+METOP_AVHRR = [["1", (0.58, 0.635, 0.68), 1090],
+               ["2", (0.725, 0.81, 1.00), 1090],
+               ["3A", (1.58, 1.61, 1.64), 1090],
+               ["3B", (3.55, 3.74, 3.93), 1090],
+               ["4", (10.30, 10.80, 11.30), 1090],
+               ["5", (11.50, 12.00, 12.50), 1090]]
 
-class NoaaAvhrrSnapshot(SatelliteSnapshot):
-    """A snapshot of Noaa's avhrr instrument.
+class MetopAvhrrSnapshot(SatelliteSnapshot):
+    """A snapshot of Metop's avhrr instrument.
     """
 
     def __init__(self, *args, **kwargs):
 
-        self.channel_list = NOAA_AVHRR
+        self.channel_list = METOP_AVHRR
         
-        super(NoaaAvhrrSnapshot, self).__init__(*args, **kwargs)
+        super(MetopAvhrrSnapshot, self).__init__(*args, **kwargs)
 
-        self.satname = "noaa"
-        self.number = kwargs.get("number", 0)
+        self.satname = "metop"
 
         self.lat = None
         self.lon = None
 
-        if self.number != 0:
-            number_string = str(self.number)
-        else:
-            number_string = "??"
-            
-        filename = (L1B_DIR+"/noaa"+number_string+
-                    "_%Y%m%d_%H%M_?????/hrpt_noaa"+
-                    number_string+"_%Y%m%d_%H%M_?????.l1b")
+        filename = (L1B_DIR+"/M02_avhrr_%Y%m%d_%H%M_%S_?????_svl.aappl1b")
 
         file_list = glob.glob(self.time_slot.strftime(filename))
 
@@ -61,10 +52,7 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
 
         self.file = file_list[0]
 
-        if self.number == 0:
-            self.number = self.file[-26:-24]
-            
-        self.area = self.time_slot.strftime(str(self.number)+"_%Y%m%d%H%M")
+        self.area = self.time_slot.strftime("%Y%m%d%H%M%S")
         
     def load(self, channels = None):
         """Load data into the *channels*. Channels* is a list or a tuple
@@ -75,8 +63,8 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
         library depends, it is not possible to load one channel at the time, so
         the user should read as many channels as needed at once.
         """
-        super(NoaaAvhrrSnapshot, self).load(channels)
-        
+        super(MetopAvhrrSnapshot, self).load(channels)
+
         avh = avhrr.avhrr(self.file)
         avh.get_unprojected()
         instrument_data = avh.build_raw()
