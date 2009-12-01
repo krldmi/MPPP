@@ -1,5 +1,6 @@
 """This module defines the image class. It overlaps largely the PIL library,
-but has the advandage of using masked arrays as pixel arrays.
+but has the advandage of using masked arrays as pixel arrays, so that data
+arrays containing invalid values may be properly handled.
 """
 
 import os
@@ -42,7 +43,7 @@ class Image(object):
     #: Shape (dimensions) of the image.
     shape = None
     
-    def __init__(self, channels, mode = "L", color_range = None, 
+    def __init__(self, channels = None, mode = "L", color_range = None, 
                  fill_value = None, palette = None):
         self.mode = mode
         self.fill_value = fill_value
@@ -64,7 +65,7 @@ class Image(object):
                 self.channels.append((chn - color_min) * 1.0 / 
                                      (color_max - color_min))
                 i = i + 1
-        else:
+        elif channels is not None:
             self.height = channels.shape[0]
             self.width = channels.shape[1]
             self.shape = channels.shape
@@ -77,6 +78,11 @@ class Image(object):
                 color_max = 1.0
             self.channels.append((channels - color_min) * 1.0 / 
                                  (color_max - color_min))
+
+        else:
+            self.shape = (0, 0)
+            self.width = 0
+            self.height = 0
 
     def _finalize(self):
         """Finalize the image, that is put it in RGB mode, and set the channels
@@ -93,6 +99,14 @@ class Image(object):
                                         np.uint8,
                                         mask = chn.mask))
         return channels
+
+    def is_empty(self):
+        """Checks for an empty image.
+        """
+        if(((self.channels == []) and (not self.shape == (0, 0))) or
+           ((not self.channels == []) and (self.shape == (0, 0)))):
+            raise RuntimeError("Channels-shape mismatch.")
+        return self.channels == [] and self.shape == (0, 0)
 
 
     def show(self):
@@ -199,6 +213,9 @@ class Image(object):
         """
         channels = self._finalize()
 
+        if self.is_empty():
+            return Pil.new(self.mode, (0, 0))
+
         if(self.mode == "L"):
             if self.fill_value is not None:
                 img = Pil.fromarray(channels[0].filled(self.fill_value))
@@ -262,6 +279,9 @@ class Image(object):
         """Save the image to the given *filename*. See also
         :meth:`double_save` and :meth:`secure_save`.
         """
+        if self.is_empty():
+            raise IOError("Cannot save an empty image")
+        
         ensure_dir(filename)
 
         cases = {"png": "png",
@@ -280,7 +300,8 @@ class Image(object):
         """
         if(not self.mode.endswith("A")):
             self.convert(self.mode+"A")
-        self.channels[-1] = alpha
+        if not self.is_empty():
+            self.channels[-1] = alpha
         
     def rgb2ycbcr(self):
         """Convert the image from RGB mode to YCbCr."""
@@ -345,6 +366,14 @@ class Image(object):
         if mode == self.mode:
             return
 
+        if mode not in ["L", "LA", "RGB", "RGBA",
+                        "YCbCr", "YCbCrA", "P", "PA"]:
+            raise ValueError("Mode %s not recognized."%(mode))
+
+        if self.is_empty():
+            self.mode = mode
+            return
+        
         if(mode == self.mode+"A"):
             self.channels.append(np.ma.ones(self.channels[0].shape))
             self.mode = mode
@@ -411,8 +440,17 @@ class Image(object):
             
             self.ycbcr2rgb()
 
+        elif((self.mode == "L" and
+              mode == "RGB") or
+             (self.mode == "LA" and
+              mode == "RGBA")):
+            self.channels.append(self.channels[0].copy())
+            self.channels.append(self.channels[0].copy())
+            if self.mode == "LA":
+                self.channels[1], self.channels[3] = \
+                self.channels[3], self.channels[1]
         else:
-            raise NameError("Conversion from %s to %s not implemented !"
+            raise ValueError("Conversion from %s to %s not implemented !"
                             %(self.mode,mode))
             
     def clip(self, channels = True):
@@ -448,6 +486,9 @@ class Image(object):
         image is not in YCbCr mode, it is converted automatically to and
         from that mode.
         """
+        if self.is_empty():
+            return
+        
         if (luminance.shape != self.channels[0].shape):
             if ((luminance.shape[0] * 1.0 / luminance.shape[1]) ==
                 (self.channels[0].shape[0] * 1.0 / self.channels[0].shape[1])):
@@ -486,10 +527,18 @@ class Image(object):
         are several channels in the image. The behaviour of :func:`gamma` is
         undefined outside the normal [0,1] range of the channels.
         """
+        if not isinstance(gamma, (int, long, float, tuple, list, set)):
+            raise TypeError("Gamma should be a real number.")
+        
+        if gamma < 0:
+            raise ValueError("Gamma correction must be a positive number.")
+        
         if gamma == 1.0:
             return
         if (isinstance(gamma, (tuple, list))):
-            for i in range(len(gamma)):
+            for i in range(len(self.channels)):
+                if not isinstance(gamma[i], (int, long, float)):
+                    raise TypeError("Gamma elements should be real numbers.")
                 self.channels[i] = np.where(self.channels[i] >= 0,
                                             self.channels[i] ** (1 / gamma[i]),
                                             self.channels[i])
@@ -512,21 +561,29 @@ class Image(object):
         [0.0,1.0].
         """
         if((isinstance(stretch, tuple) or
-            isinstance(stretch,list)) and
-           len(stretch) == 2):
-            for i in range(len(self.channels)):
-                self.stretch_linear(i, cutoffs = stretch)
+            isinstance(stretch,list))):
+            if len(stretch) == 2:
+                for i in range(len(self.channels)):
+                    self.stretch_linear(i, cutoffs = stretch)
+            else:
+                raise ValueError("Tuple must have exactly two elements")
         elif stretch == "linear":
             for i in range(len(self.channels)):
                 self.stretch_linear(i)
         elif stretch == "histogram":
             for i in range(len(self.channels)):
                 self.stretch_hist_equalize(i)
-        elif(stretch == "crude" or
-             stretch == "crude-stretch"):
+        elif(stretch in ["crude", "crude-stretch"]):
             for i in range(len(self.channels)):
                 self.crude_stretch(i)
+        elif(stretch == "no"):
+            return
+        elif isinstance(stretch, str):
+            raise ValueError("Stretching method not recognized.")
+        else:
+            raise TypeError("Stretch parameter must be a string or a tuple.")
 
+            
     def invert(self, invert = False):
         """Inverts all the channels of a image according to *invert*. If invert
         is a tuple or a list, elementwise invertion is performed, otherwise all
