@@ -96,18 +96,8 @@ class SatelliteChannel(GenericChannel):
                  self.resolution))
 
     
-    # Should be replaced by setitem !!!!
-    def add_data(self, data):
-        """Set the data of the channel.
-        """
-        self.data = data
-        if isinstance(data, (np.ndarray, np.ma.core.MaskedArray)):
-            self.shape = data.shape
-        else:
-            self.shape = np.nan
-
-    def isloaded(self):
-        """Tells if a channel contains loaded data.
+    def is_loaded(self):
+        """Tells if the channel contains loaded data.
         """
         return self.data is not None
 
@@ -127,7 +117,7 @@ class SatelliteChannel(GenericChannel):
         See also the :mod:`pp.satellite.coverage` module.
         """
         res = copy.copy(self)
-        if self.isloaded():
+        if self.is_loaded():
             LOG.info("Projecting channel %s (%fum)..."
                      %(self.name, self.wavelength_range[1]))
             res.data = coverage_instance.project_array(self.data)
@@ -141,7 +131,7 @@ class SatelliteChannel(GenericChannel):
     def show(self):
         """Display the channel as an image.
         """
-        if not self.isloaded():
+        if not self.is_loaded():
             raise ValueError("Channel not loaded, cannot display.")
         
         import Image as pil
@@ -206,11 +196,23 @@ class SatelliteInstrument(Satellite):
         else:
             return channels[0]
 
+    def __setitem__(self, key, data):
+        self[key].data = data
+        if isinstance(data, (np.ndarray, np.ma.core.MaskedArray)):
+            self[key].shape = data.shape
+        else:
+            self[key].shape = np.nan
+
+    def __str__(self):
+        return "\n".join([str(chn) for chn in self.channels])
+
+
+
     def check_channels(self, *channels):
         """Check if the *channels* are loaded, raise an error otherwise.
         """
         for chan in channels:
-            if not self[chan].isloaded():
+            if not self[chan].is_loaded():
                 raise RuntimeError("Required channel %s not loaded, aborting."
                                    %chan)
 
@@ -218,7 +220,7 @@ class SatelliteInstrument(Satellite):
     def loaded_channels(self):
         """Return the set of loaded_channels.
         """
-        return set([chan for chan in self.channels if chan.isloaded()])
+        return set([chan for chan in self.channels if chan.is_loaded()])
 
 
 class SatelliteSnapshot(SatelliteInstrument):
@@ -238,6 +240,11 @@ class SatelliteSnapshot(SatelliteInstrument):
         self.area = area
         self.channels_to_load = set([])
 
+        self.lat = None
+        self.lon = None
+
+
+
     def load(self, channels = None):
         """Load satellite data into the *channels*. Channels* is a list or a
         tuple containing channels we will load data into. If None, all channels
@@ -253,7 +260,7 @@ class SatelliteSnapshot(SatelliteInstrument):
                     self.channels_to_load |= set([self[chn].name])
                 except KeyError:
                     LOG.warning("Channel "+str(chn)+" not found,"
-                                "thus not loaded.")
+                                " will not load.")
         else:
             raise TypeError("Channels must be a list/"
                             "tuple/set of channel keys!")

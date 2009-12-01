@@ -65,7 +65,9 @@ class MsgCTTH(GenericChannel):
                  self.shape, 
                  self.resolution))   
 
-    def isloaded(self):
+    def is_loaded(self):
+        """Tells if the channel contains loaded data.
+        """
         return self.filled
 
     def read_msgCtth(self, filename):

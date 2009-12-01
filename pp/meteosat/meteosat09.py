@@ -77,52 +77,40 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         loaded.
         """
         LOG.info("Loading channels...")
-        _channels = set([])
+
+        super(MeteoSatSeviriSnapshot, self).load(channels)
 
         do_correct = False
 
-        if channels is None:
-            for chn in self.channel_list:
-                _channels |= set([chn[0]])
+        if "_IR39Corr" in channels:
+            do_correct = True
+            self.channels.append(
+                SatelliteChannel(name = "_IR39Corr",
+                                 wavelength_range = (3.48, 3.92, 4.36),
+                                 resolution = 3000))
+        if "CTTH" in channels and "CTTH" not in self.channels:
+            self.channels.append(self.ctth_channel())
+        if "CloudType" in channels and "CloudType" not in self.channels:
+            self.channels.append(self.cloudtype_channel())
 
-        elif(isinstance(channels, (list, tuple, set))):
-            for chn in channels:
-                if chn == "_IR39Corr":
-                    do_correct = True
-                elif chn == "CloudType":
-                    if chn not in self.channels:
-                        self.channels.append(self.cloudtype_channel())
-                elif chn == "CTTH":
-                    if chn not in self.channels:
-                        self.channels.append(self.ctth_channel())
-                else:
-                    try:
-                        _channels |= set([self[chn].name])
-                    except KeyError:
-                        LOG.warning("Channel "+str(chn)+" not found,"
-                                    "thus not loaded.")
-        else:
-            raise TypeError("Channels must be a list/"
-                            "tuple/set of channel keys!")
-        
         if do_correct:
             for chn in self.co2corr.prerequisites:
-                _channels |= set([self[chn].name])
+                self.channels_to_load |= set([self[chn].name])
 
         # Do not reload data.
-        _channels -= set([chn.name for chn in self.loaded_channels()])
+        self.channels_to_load -= set([chn.name for chn in
+                                      self.loaded_channels()])
         
         data = py_msg.get_channels(time_utils.time_string(self.time_slot), 
                                    self.area, 
-                                   list(_channels),
+                                   list(self.channels_to_load),
                                    False)
 
         for chn in data:
-            self[chn].add_data(np.ma.array(data[chn]["CAL"], 
-                                               mask = data[chn]["MASK"]))
+            self[chn] = np.ma.array(data[chn]["CAL"], mask = data[chn]["MASK"])
 
         if do_correct:
-            self.channels.append(self.co2corr())
+            self["_IR39Corr"] = self.co2corr()
         LOG.info("Loading channels done.")
 
     def ctth_channel(self):
@@ -227,16 +215,7 @@ class MeteoSatSeviriSnapshot(SatelliteSnapshot):
         t4_co2corr = np.ma.where(t4_co2corr > 0.0, t4_co2corr, 0)
         t4_co2corr = t4_co2corr ** 0.25
         
-        ir39corr = SatelliteChannel(name = "_IR39Corr",
-                                    wavelength_range = 
-                                    self[3.9].wavelength_range,
-                                    resolution = 
-                                    self[3.9].resolution,
-                                    data = t4_co2corr)
-
-        
-
-        return ir39corr
+        return t4_co2corr
 
     co2corr.prerequisites = set([3.9, 10.8, 13.4])
 

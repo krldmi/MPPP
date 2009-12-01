@@ -70,8 +70,8 @@ class MsgCloudType(GenericChannel):
                  self.cloudtype.data.shape, 
                  self.resolution))
 
-    def isloaded(self):
-        """Say if the channel is loaded or not.
+    def is_loaded(self):
+        """Tells if the channel contains loaded data.
         """
         return self.filled
         

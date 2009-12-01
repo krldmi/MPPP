@@ -42,9 +42,6 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
         self.satname = "noaa"
         self.number = kwargs.get("number", 0)
 
-        self.lat = None
-        self.lon = None
-
         if self.number != 0:
             number_string = str(self.number)
         else:
@@ -98,7 +95,7 @@ class NoaaAvhrrSnapshot(SatelliteSnapshot):
                     gain = instrument_data.info["ir_gain"]
                     intercept = instrument_data.info["ir_intercept"]
 
-                self[chn].add_data(np.ma.array(data_channels[chn]))
+                self[chn] = np.ma.array(data_channels[chn])
                 np.ma.masked_equal(self[chn].data,
                                    instrument_data.info["missing_data"])
                 np.ma.masked_equal(self[chn].data,

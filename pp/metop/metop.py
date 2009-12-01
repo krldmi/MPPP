@@ -40,16 +40,16 @@ class MetopAvhrrSnapshot(SatelliteSnapshot):
 
         self.satname = "metop"
 
-        self.lat = None
-        self.lon = None
-
-        filename = (L1B_DIR+"/M02_avhrr_%Y%m%d_%H%M_%S_?????_svl.aappl1b")
+        filename = (L1B_DIR+"/metop02_%Y%m%d_%H%M_?????/"
+                    "hrpt_metop02_%Y%m%d_%H%M_?????.l1b")
 
         file_list = glob.glob(self.time_slot.strftime(filename))
 
-        if len(file_list) != 1:
+        if len(file_list) > 1:
             raise IOError("More than one l1b file matching!")
-
+        elif len(file_list) == 0:
+            raise IOError("No l1b file matching!")
+        
         self.file = file_list[0]
 
         self.area = self.time_slot.strftime("%Y%m%d%H%M%S")
@@ -86,7 +86,7 @@ class MetopAvhrrSnapshot(SatelliteSnapshot):
                     gain = instrument_data.info["ir_gain"]
                     intercept = instrument_data.info["ir_intercept"]
 
-                self[chn].add_data(np.ma.array(data_channels[chn]))
+                self[chn] = np.ma.array(data_channels[chn])
                 np.ma.masked_equal(self[chn].data,
                                    instrument_data.info["missing_data"])
                 np.ma.masked_equal(self[chn].data,
