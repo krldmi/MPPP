@@ -1,3 +1,32 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright (c) 2009.
+
+# SMHI,
+# Folkborgsvägen 1,
+# Norrköping, 
+# Sweden
+
+# Author(s):
+ 
+#   Martin Raspaud <martin.raspaud@smhi.se>
+#   Adam Dybbroe <adam.dybbroe@smhi.se>
+
+# This file is part of the MPPP.
+
+# MPPP is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# MPPP is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with MPPP.  If not, see <http://www.gnu.org/licenses/>.
+
 """This module defines the image class. It overlaps largely the PIL library,
 but has the advandage of using masked arrays as pixel arrays, so that data
 arrays containing invalid values may be properly handled.
@@ -9,23 +38,25 @@ import Image as Pil
 import numpy as np
 import shutil
 import logging
+import re
 import errno as err
 
 from pp.utils import ensure_dir
 
 LOG = logging.getLogger("pp.geo_image")
 
-
 class Image(object):
     """This class defines images. As such, it contains data of the different
     *channels* of the image (red, green, and blue for example). The *mode*
     tells if the channels define a black and white image ("L"), an rgb image
-    ("RGB"), an rgba image ("RGBA"), an YCbCr image ("YCbCr"), or an indexed
-    image ("P"), in which case a *palette* is needed. *fill_value* sets how the
-    image is filled where data is missing, since channels are numpy masked
-    arrays. Setting it to (0,0,0) in RGB mode for example will produce black
-    where data is missing. "None" (default) will produce transparency if the
-    file format allows it, black otherwise.
+    ("RGB"), an YCbCr image ("YCbCr"), or an indexed image ("P"), in which case
+    a *palette* is needed. Each mode has also a corresponding alpha mode, which
+    is the mode with an "A" in the end: for example "RGBA" is rgb with an alpha
+    channel. *fill_value* sets how the image is filled where data is missing,
+    since channels are numpy masked arrays. Setting it to (0,0,0) in RGB mode
+    for example will produce black where data is missing."None" (default) will
+    produce transparency (thus adding an alpha channel) if the file format
+    allows it, black otherwise.
     
     The channels are considered to contain floating point values in the range
     [0.0,1.0]. In order to normalize the input data, the *range* parameter
@@ -39,16 +70,29 @@ class Image(object):
     height = 0
     fill_value = None
     palette = None
+
+    modes = ["L", "LA", "RGB", "RGBA", "YCbCr", "YCbCrA", "P", "PA"]
     
     #: Shape (dimensions) of the image.
     shape = None
     
     def __init__(self, channels = None, mode = "L", color_range = None, 
                  fill_value = None, palette = None):
+
+        if(channels is not None and
+           not isinstance(channels, (tuple, set, list, np.ndarray))):
+            raise TypeError("Channels should a tuple, set, list, or ndarray.")
+        
+        if mode not in self.modes:
+            raise ValueError("Unknown mode.")
+
         self.mode = mode
         self.fill_value = fill_value
         self.channels = []
         self.palette = palette
+        if(isinstance(channels, (tuple, list)) and
+           len(channels) != len(re.findall("[A-Z]", self.mode))):
+            raise ValueError("Number of channels does not match mode.")
         if isinstance(channels, (tuple, list)):
             self.height = channels[0].shape[0]
             self.width = channels[0].shape[1]
@@ -466,6 +510,9 @@ class Image(object):
     def resize(self, shape):
         """Resize the image to the given *shape* tuple, in place.
         """
+        if self.is_empty():
+            raise ValueError("Cannot resize an empty image")
+        
         factor = shape[0] * 1.0 / self.channels[0].shape[0]
 
         if int(factor) != factor:
@@ -529,6 +576,10 @@ class Image(object):
         """
         if not isinstance(gamma, (int, long, float, tuple, list, set)):
             raise TypeError("Gamma should be a real number.")
+
+        if(isinstance(gamma, (list, tuple, set)) and
+           len(gamma) != len(self.channels)):
+            raise ValueError("Number of channels and gamma components differ.")
         
         if gamma < 0:
             raise ValueError("Gamma correction must be a positive number.")
@@ -566,7 +617,7 @@ class Image(object):
                 for i in range(len(self.channels)):
                     self.stretch_linear(i, cutoffs = stretch)
             else:
-                raise ValueError("Tuple must have exactly two elements")
+                raise ValueError("Stretch tuple must have exactly two elements")
         elif stretch == "linear":
             for i in range(len(self.channels)):
                 self.stretch_linear(i)
@@ -579,7 +630,7 @@ class Image(object):
         elif(stretch == "no"):
             return
         elif isinstance(stretch, str):
-            raise ValueError("Stretching method not recognized.")
+            raise ValueError("Stretching method %s not recognized."%stretch)
         else:
             raise TypeError("Stretch parameter must be a string or a tuple.")
 
@@ -589,8 +640,11 @@ class Image(object):
         is a tuple or a list, elementwise invertion is performed, otherwise all
         channels are inverted if *invert* is true.
         """
-        if(isinstance(invert, tuple) or
-           isinstance(invert, list)):
+        if(isinstance(invert, (tuple, list, set)) and
+           len(self.channels) != len(invert)):
+            raise ValueError("Number of channels and invert components differ.")
+        
+        if isinstance(invert, (tuple, list, set)):
             i = 0
             for chn in self.channels:
                 if(invert[i]):
@@ -685,13 +739,19 @@ class Image(object):
         """Use the provided image as background for the current *img* image,
         that is if the current image has missing data.
         """
+        if self.is_empty():
+            raise ValueError("Cannot merge an empty image.")
+        
         if(self.mode != img.mode):
             raise ValueError("Cannot merge image of different modes.")
 
-        selfmask = reduce(np.ma.mask_or, self.channels)
+        selfmask = reduce(np.ma.mask_or, [chn.mask for chn in self.channels])
 
         for i in range(len(self.channels)):
-            if self.channels[i].mask is not False:
-                self.channels[i] = np.ma.where(selfmask,
-                                               img.channels[i],
-                                               self.channels[i])
+            self.channels[i] = np.ma.where(selfmask,
+                                           img.channels[i],
+                                           self.channels[i])
+            self.channels[i].mask = np.logical_and(selfmask,
+                                                   img.channels[i].mask)
+
+
