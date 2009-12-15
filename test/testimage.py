@@ -199,7 +199,7 @@ class TestEmptyImage(unittest.TestCase):
     def test_resize(self):
         """Resize an empty image.
         """
-        self.assertRaises(ValueError, self.img.resize,(10, 10))
+        self.assertRaises(ValueError, self.img.resize, (10, 10))
         
     def test_merge(self):
         """Merging of an empty image with another.
